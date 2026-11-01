@@ -196,3 +196,16 @@ details.table td.n, details.table th.n { text-align: right; font-variant-numeric
 .empty { text-align: center; color: var(--muted); padding: 40px 10px; }
 .linkbtn { background: none; border: 0; padding: 0; color: var(--accent-2); font: inherit; cursor: pointer; }
 .linkbtn:hover { text-decoration: underline; }
+
+/* ---------- Photo X-ray ---------- */
+.xray { background: linear-gradient(135deg, rgba(251,191,36,.07), rgba(37,137,255,.05)); }
+.xray-top { display: flex; gap: 14px; flex-wrap: wrap; align-items: flex-start; margin-bottom: 14px; }
+.xray-top figure { margin: 0; text-align: center; font-size: 12px; color: var(--muted); }
+.xray-top img { width: 96px; height: 96px; image-rendering: pixelated; border-radius: 10px; border: 1px solid var(--line); display: block; margin-bottom: 4px; background: #fff; }
+.xray-note { flex: 1; min-width: 220px; color: var(--muted); font-size: 13.5px; align-self: center; }
+.xray-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 10px; }
+.xray-item { background: var(--raised); border: 1px solid var(--line); border-radius: 12px; padding: 8px; display: grid; gap: 6px; }
+.xray-item.odd { border-color: rgba(251,191,36,.6); }
+.xray-imgs { display: flex; gap: 4px; } .xray-imgs img { width: 33%; aspect-ratio: 1; image-rendering: pixelated; border-radius: 8px; background: #fff; }
+.xray-meta { font-size: 12.5px; } .xray-meta .sbar { height: 6px; background: var(--bg); border-radius: 99px; overflow: hidden; margin: 3px 0 4px; }
+.xray-meta .sbar i { display: block; height: 100%; background: linear-gradient(90deg, var(--accent), var(--warn)); border-radius: 99px; }

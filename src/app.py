@@ -5,6 +5,7 @@ Serves the dashboard (index.html = live search, evidence.html = how the model wa
   POST /api/search  name / link / photo -> offers from many stores, grouped into "same item" by the model
   GET  /api/link    the real product page of one offer at its store
   POST /api/ask     a question about the current search -> answer from a Groq-hosted LLM (src/assistant.py)
+  POST /api/xray    Photo X-ray: PCA on a listing's product photos (src/photo_xray.py)
   /api/track, /api/tracked   price tracker: history, buy-now-or-wait advice, alerts (src/tracker.py)
   POST /api/check   one listing (title + photo) -> is it already in the 698-listing test catalog?
 Run: python -m src.app   then open http://127.0.0.1:8000
@@ -54,6 +55,33 @@ class Track(BaseModel):
 def track(t: Track):
     """Start tracking an item; the page sends today's prices of the item it is showing."""
     return {"id": tracker.add(t.query, t.title, t.image, t.target, t.snapshot)}
+
+
+class XrayRequest(BaseModel):
+    images: list[str]
+
+
+def run_xray(urls):
+    import io
+    from PIL import Image
+    from src.photo_xray import xray
+    datas = [live.cached_download(u) for u in urls]
+    keep = [i for i, d in enumerate(datas) if d]
+    if len(keep) < 3:
+        raise ValueError("Need at least 3 photos for the Photo X-ray.")
+    ims = [Image.open(io.BytesIO(datas[i])).convert("RGB") for i in keep]
+    out = xray(ims, dino=matcher.encoders()[2](ims))
+    out["index"] = keep  # positions in the request that had a photo
+    return out
+
+
+@app.post("/api/xray")
+async def photo_xray(r: XrayRequest):
+    """PCA on one model's listing photos: mean photo, eigen-images, rebuilt photos, residual heatmaps, odd-one-out."""
+    try:
+        return await run_in_threadpool(run_xray, r.images[:30])
+    except ValueError as err:
+        raise HTTPException(400, str(err))
 
 
 @app.get("/api/tracked")

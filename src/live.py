@@ -16,6 +16,7 @@ file .env in the repo root (line: SERPER_API_KEY=...). Every Serper answer is sa
 cache/live/, so repeating a search costs no credit and works offline.
 Run once from the command line: python -m src.live "boat airdopes 141"
 """
+import functools
 import hashlib
 import io
 import json
@@ -138,6 +139,12 @@ def download(url):
         return r.content
     except Exception:
         return None
+
+
+@functools.lru_cache(maxsize=1024)
+def cached_download(url):
+    """download() with a memory cache, so the Photo X-ray does not fetch photos the search already fetched."""
+    return download(url)
 
 
 # ---------- 1. understand the input ----------

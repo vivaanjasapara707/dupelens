@@ -1,0 +1,8 @@
+pair_id,llm_label,llm_reason,model
+L000,variant,"The listings are for the same Redmi 20000mAh power bank model, but they differ in color (White vs. Black).",qwen/qwen3.8-27b
+L001,variant,"Both listings feature the Prestige Popular pressure cooker, but Listing A is a 2L/3L combo set while Listing B is a single 3L unit with a ladle.",qwen/qwen3.8-27b
+L002,variant,The listings are for different models (Nakshatra Duo Plus vs. Nakshatra Pro Plus) and different colors (Red vs. Silver/Aluminium).,qwen/qwen3.8-27b
+L003,variant,"Both are 9W Wipro Garnet LED bulbs, but Listing A is a fixed Cool Day White (6500K) model while Listing B is a CCT 3-in-1 (adjustable color temperature) model.",qwen/qwen3.8-27b
+L004,variant,"Both are 20000mAh Xiaomi power banks, but they differ in color (Luxe Green vs. Black) and charging wattage (22.5W vs. 33W).",qwen/qwen3.8-27b
+L005,variant,"Both are 20000mAh power banks from the same brand, but they differ in color (black vs. white) and design features (listing B has a strap and 67W marking).",qwen/qwen3.8-27b
+L006,different,"The listings are for different brands and models, with Listing A being a Casio FX-991MS and Listing B being a Dupota OA-991ES Plus.",qwen/qwen3.8-27b

@@ -1,0 +1,451 @@
+{
+ "searches": 48,
+ "dino_top1": 0.312,
+ "dino_top1_ci": [
+  0.167,
+  0.458
+ ],
+ "pixel_top1": 0.229,
+ "pixel_top1_ci": [
+  0.12447500000000003,
+  0.354
+ ],
+ "dino_flagged_z_over_2_5": 0.25,
+ "chance_mean": 0.124,
+ "method": "one photo of an offer from a different search added to each main listing; success = it gets the highest leave-one-out PCA residual; CIs resample searches",
+ "rows": [
+  {
+   "query": "boAt Rockerz 255 Pro Plus",
+   "intruder_from": "boAt Rockerz 255 Pro Plus",
+   "n": 7,
+   "dino_top1": true,
+   "pixel_top1": true,
+   "dino_flagged": true,
+   "chance": 0.143
+  },
+  {
+   "query": "boAt Airdopes 141",
+   "intruder_from": "boAt Airdopes 141",
+   "n": 7,
+   "dino_top1": true,
+   "pixel_top1": false,
+   "dino_flagged": true,
+   "chance": 0.143
+  },
+  {
+   "query": "Sony WH-1000XM5 headphones",
+   "intruder_from": "Sony WH-1000XM5 headphones",
+   "n": 11,
+   "dino_top1": true,
+   "pixel_top1": false,
+   "dino_flagged": true,
+   "chance": 0.091
+  },
+  {
+   "query": "boAt Rockerz 450 headphones",
+   "intruder_from": "boAt Rockerz 450 headphones",
+   "n": 10,
+   "dino_top1": true,
+   "pixel_top1": true,
+   "dino_flagged": true,
+   "chance": 0.1
+  },
+  {
+   "query": "iPhone 15 128GB",
+   "intruder_from": "iPhone 15 128GB",
+   "n": 7,
+   "dino_top1": false,
+   "pixel_top1": false,
+   "dino_flagged": false,
+   "chance": 0.143
+  },
+  {
+   "query": "Anker 20W USB C charger",
+   "intruder_from": "Anker 20W USB C charger",
+   "n": 7,
+   "dino_top1": false,
+   "pixel_top1": false,
+   "dino_flagged": false,
+   "chance": 0.143
+  },
+  {
+   "query": "SanDisk Ultra 128GB microSD",
+   "intruder_from": "SanDisk Ultra 128GB microSD",
+   "n": 12,
+   "dino_top1": false,
+   "pixel_top1": false,
+   "dino_flagged": false,
+   "chance": 0.083
+  },
+  {
+   "query": "Mi Power Bank 3i 20000 mAh",
+   "intruder_from": "Mi Power Bank 3i 20000 mAh",
+   "n": 6,
+   "dino_top1": true,
+   "pixel_top1": true,
+   "dino_flagged": false,
+   "chance": 0.167
+  },
+  {
+   "query": "Redmi 13C 5G 128GB",
+   "intruder_from": "Redmi 13C 5G 128GB",
+   "n": 7,
+   "dino_top1": false,
+   "pixel_top1": false,
+   "dino_flagged": false,
+   "chance": 0.143
+  },
+  {
+   "query": "Logitech MK270 keyboard mouse combo",
+   "intruder_from": "Logitech MK270 keyboard mouse combo",
+   "n": 8,
+   "dino_top1": false,
+   "pixel_top1": false,
+   "dino_flagged": false,
+   "chance": 0.125
+  },
+  {
+   "query": "HP 680 ink cartridge black",
+   "intruder_from": "HP 680 ink cartridge black",
+   "n": 6,
+   "dino_top1": true,
+   "pixel_top1": false,
+   "dino_flagged": true,
+   "chance": 0.167
+  },
+  {
+   "query": "TP-Link Archer C6 router",
+   "intruder_from": "TP-Link Archer C6 router",
+   "n": 13,
+   "dino_top1": false,
+   "pixel_top1": false,
+   "dino_flagged": false,
+   "chance": 0.077
+  },
+  {
+   "query": "Samsung T7 portable SSD 1TB",
+   "intruder_from": "Samsung T7 portable SSD 1TB",
+   "n": 15,
+   "dino_top1": true,
+   "pixel_top1": true,
+   "dino_flagged": true,
+   "chance": 0.067
+  },
+  {
+   "query": "Casio FX-991ES Plus calculator",
+   "intruder_from": "Casio FX-991ES Plus calculator",
+   "n": 8,
+   "dino_top1": false,
+   "pixel_top1": false,
+   "dino_flagged": false,
+   "chance": 0.125
+  },
+  {
+   "query": "Milton Thermosteel Duo DLX 1000 ml",
+   "intruder_from": "Milton Thermosteel Duo DLX 1000 ml",
+   "n": 7,
+   "dino_top1": true,
+   "pixel_top1": false,
+   "dino_flagged": false,
+   "chance": 0.143
+  },
+  {
+   "query": "Hawkins Contura pressure cooker 3 litre",
+   "intruder_from": "Hawkins Contura pressure cooker 3 litre",
+   "n": 12,
+   "dino_top1": false,
+   "pixel_top1": false,
+   "dino_flagged": false,
+   "chance": 0.083
+  },
+  {
+   "query": "Philips HD9252 air fryer",
+   "intruder_from": "Philips HD9252 air fryer",
+   "n": 7,
+   "dino_top1": false,
+   "pixel_top1": false,
+   "dino_flagged": true,
+   "chance": 0.143
+  },
+  {
+   "query": "Prestige Popular pressure cooker 3 litre",
+   "intruder_from": "Prestige Popular pressure cooker 3 litre",
+   "n": 8,
+   "dino_top1": true,
+   "pixel_top1": false,
+   "dino_flagged": true,
+   "chance": 0.125
+  },
+  {
+   "query": "Prestige PIC 20 induction cooktop",
+   "intruder_from": "Prestige PIC 20 induction cooktop",
+   "n": 10,
+   "dino_top1": true,
+   "pixel_top1": true,
+   "dino_flagged": false,
+   "chance": 0.1
+  },
+  {
+   "query": "Himalaya Neem face wash 150 ml",
+   "intruder_from": "Himalaya Neem face wash 150 ml",
+   "n": 8,
+   "dino_top1": false,
+   "pixel_top1": false,
+   "dino_flagged": false,
+   "chance": 0.125
+  },
+  {
+   "query": "Dove shampoo 650 ml",
+   "intruder_from": "Dove shampoo 650 ml",
+   "n": 9,
+   "dino_top1": true,
+   "pixel_top1": false,
+   "dino_flagged": false,
+   "chance": 0.111
+  },
+  {
+   "query": "Maybelline Fit Me foundation 128",
+   "intruder_from": "Maybelline Fit Me foundation 128",
+   "n": 6,
+   "dino_top1": false,
+   "pixel_top1": false,
+   "dino_flagged": false,
+   "chance": 0.167
+  },
+  {
+   "query": "Gillette Mach3 razor",
+   "intruder_from": "Gillette Mach3 razor",
+   "n": 9,
+   "dino_top1": false,
+   "pixel_top1": false,
+   "dino_flagged": false,
+   "chance": 0.111
+  },
+  {
+   "query": "Colgate MaxFresh toothpaste 150 g",
+   "intruder_from": "Colgate MaxFresh toothpaste 150 g",
+   "n": 14,
+   "dino_top1": false,
+   "pixel_top1": false,
+   "dino_flagged": false,
+   "chance": 0.071
+  },
+  {
+   "query": "Nivea Soft light moisturising cream 200 ml",
+   "intruder_from": "Nivea Soft light moisturising cream 200 ml",
+   "n": 12,
+   "dino_top1": true,
+   "pixel_top1": false,
+   "dino_flagged": true,
+   "chance": 0.083
+  },
+  {
+   "query": "Philips BT3221 beard trimmer",
+   "intruder_from": "Philips BT3221 beard trimmer",
+   "n": 11,
+   "dino_top1": false,
+   "pixel_top1": false,
+   "dino_flagged": false,
+   "chance": 0.091
+  },
+  {
+   "query": "Boroplus antiseptic cream 80 ml",
+   "intruder_from": "Boroplus antiseptic cream 80 ml",
+   "n": 12,
+   "dino_top1": false,
+   "pixel_top1": false,
+   "dino_flagged": false,
+   "chance": 0.083
+  },
+  {
+   "query": "Lakme 9 to 5 primer matte lipstick",
+   "intruder_from": "Lakme 9 to 5 primer matte lipstick",
+   "n": 9,
+   "dino_top1": true,
+   "pixel_top1": true,
+   "dino_flagged": false,
+   "chance": 0.111
+  },
+  {
+   "query": "Vaseline intensive care deep restore body lotion 400 ml",
+   "intruder_from": "Vaseline intensive care deep restore body lotion 400 ml",
+   "n": 7,
+   "dino_top1": false,
+   "pixel_top1": false,
+   "dino_flagged": false,
+   "chance": 0.143
+  },
+  {
+   "query": "Dettol original liquid handwash 200 ml",
+   "intruder_from": "Dettol original liquid handwash 200 ml",
+   "n": 10,
+   "dino_top1": false,
+   "pixel_top1": false,
+   "dino_flagged": false,
+   "chance": 0.1
+  },
+  {
+   "query": "Tata Salt 1 kg",
+   "intruder_from": "Tata Salt 1 kg",
+   "n": 7,
+   "dino_top1": false,
+   "pixel_top1": true,
+   "dino_flagged": true,
+   "chance": 0.143
+  },
+  {
+   "query": "Fortune sunflower oil 1 litre",
+   "intruder_from": "Fortune sunflower oil 1 litre",
+   "n": 6,
+   "dino_top1": false,
+   "pixel_top1": false,
+   "dino_flagged": false,
+   "chance": 0.167
+  },
+  {
+   "query": "Nescafe Classic coffee 100 g",
+   "intruder_from": "Nescafe Classic coffee 100 g",
+   "n": 9,
+   "dino_top1": false,
+   "pixel_top1": false,
+   "dino_flagged": false,
+   "chance": 0.111
+  },
+  {
+   "query": "Maggi noodles 12 pack",
+   "intruder_from": "Maggi noodles 12 pack",
+   "n": 8,
+   "dino_top1": false,
+   "pixel_top1": false,
+   "dino_flagged": false,
+   "chance": 0.125
+  },
+  {
+   "query": "Cadbury Dairy Milk Silk 150 g",
+   "intruder_from": "Cadbury Dairy Milk Silk 150 g",
+   "n": 6,
+   "dino_top1": false,
+   "pixel_top1": false,
+   "dino_flagged": false,
+   "chance": 0.167
+  },
+  {
+   "query": "Red Label tea 1 kg",
+   "intruder_from": "Red Label tea 1 kg",
+   "n": 10,
+   "dino_top1": false,
+   "pixel_top1": false,
+   "dino_flagged": false,
+   "chance": 0.1
+  },
+  {
+   "query": "Havells Stealth Air ceiling fan 1200 mm",
+   "intruder_from": "Havells Stealth Air ceiling fan 1200 mm",
+   "n": 7,
+   "dino_top1": false,
+   "pixel_top1": true,
+   "dino_flagged": false,
+   "chance": 0.143
+  },
+  {
+   "query": "Syska 9W LED bulb pack of 4",
+   "intruder_from": "Syska 9W LED bulb pack of 4",
+   "n": 6,
+   "dino_top1": false,
+   "pixel_top1": false,
+   "dino_flagged": false,
+   "chance": 0.167
+  },
+  {
+   "query": "Wipro 9W LED bulb",
+   "intruder_from": "Wipro 9W LED bulb",
+   "n": 7,
+   "dino_top1": false,
+   "pixel_top1": false,
+   "dino_flagged": false,
+   "chance": 0.143
+  },
+  {
+   "query": "Usha table fan 400 mm",
+   "intruder_from": "Usha table fan 400 mm",
+   "n": 9,
+   "dino_top1": true,
+   "pixel_top1": false,
+   "dino_flagged": true,
+   "chance": 0.111
+  },
+  {
+   "query": "Bajaj DX 6 dry iron",
+   "intruder_from": "Bajaj DX 6 dry iron",
+   "n": 7,
+   "dino_top1": false,
+   "pixel_top1": true,
+   "dino_flagged": false,
+   "chance": 0.143
+  },
+  {
+   "query": "Parker Vector pen",
+   "intruder_from": "Parker Vector pen",
+   "n": 14,
+   "dino_top1": false,
+   "pixel_top1": false,
+   "dino_flagged": false,
+   "chance": 0.071
+  },
+  {
+   "query": "Faber-Castell colour pencils 24",
+   "intruder_from": "Faber-Castell colour pencils 24",
+   "n": 6,
+   "dino_top1": false,
+   "pixel_top1": true,
+   "dino_flagged": false,
+   "chance": 0.167
+  },
+  {
+   "query": "Rubik's cube 3x3",
+   "intruder_from": "Rubik's cube 3x3",
+   "n": 7,
+   "dino_top1": false,
+   "pixel_top1": false,
+   "dino_flagged": false,
+   "chance": 0.143
+  },
+  {
+   "query": "Atomic Habits book paperback",
+   "intruder_from": "Atomic Habits book paperback",
+   "n": 7,
+   "dino_top1": true,
+   "pixel_top1": true,
+   "dino_flagged": true,
+   "chance": 0.143
+  },
+  {
+   "query": "Fastrack analog watch men",
+   "intruder_from": "Fastrack analog watch men",
+   "n": 10,
+   "dino_top1": false,
+   "pixel_top1": false,
+   "dino_flagged": false,
+   "chance": 0.1
+  },
+  {
+   "query": "Wildcraft 35 L backpack",
+   "intruder_from": "Wildcraft 35 L backpack",
+   "n": 7,
+   "dino_top1": false,
+   "pixel_top1": false,
+   "dino_flagged": false,
+   "chance": 0.143
+  },
+  {
+   "query": "Ray-Ban RB2132 sunglasses",
+   "intruder_from": "Ray-Ban RB2132 sunglasses",
+   "n": 7,
+   "dino_top1": false,
+   "pixel_top1": false,
+   "dino_flagged": false,
+   "chance": 0.143
+  }
+ ],
+ "test": "hard (look-alike from the same search)"
+}
