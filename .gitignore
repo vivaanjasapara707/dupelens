@@ -22,6 +22,7 @@ cache/*
 !cache/live_eval_key.csv
 !cache/live_test_key.csv
 !cache/live_final_key.csv
+!cache/ablation_key.csv
 .venv/
 __pycache__/
 .pytest_cache/

@@ -1,37 +1,48 @@
 {
- "S": {
-  "what": "model says same: truly same item",
+ "set": "final",
+ "labels": "Claude, an AI assistant, not humans",
+ "S_same": {
+  "what": "model says same -> truly the identical item",
   "n": 40,
-  "correct": 23,
+  "hits": 23,
   "rate": 0.575,
-  "ci": [
-   0.4,
-   0.725
+  "searches": 8,
+  "ci_search_bootstrap": [
+   0.286,
+   0.814
   ]
  },
- "R": {
-  "what": "random pair from a search: truly same item",
+ "S_same_or_variant": {
+  "what": "model says same -> at least the same product line",
+  "n": 40,
+  "hits": 33,
+  "rate": 0.825,
+  "searches": 8,
+  "ci_search_bootstrap": [
+   0.639,
+   0.943
+  ]
+ },
+ "R_same": {
+  "what": "random pair from a search -> identical item (naive baseline)",
   "n": 30,
-  "correct": 3,
+  "hits": 3,
   "rate": 0.1,
-  "ci": [
-   0.0,
-   0.233
+  "searches": 7,
+  "ci_search_bootstrap": [
+   0.034,
+   0.154
   ]
  },
- "H": {
-  "what": "rejected look-alike: truly same item (missed)",
+ "H_same": {
+  "what": "rejected look-alike -> actually identical (missed)",
   "n": 30,
-  "correct": 2,
+  "hits": 2,
   "rate": 0.067,
-  "ci": [
+  "searches": 8,
+  "ci_search_bootstrap": [
    0.0,
-   0.167
+   0.154
   ]
- },
- "S_same_or_variant": 33,
- "S_same_or_variant_ci": [
-  0.675,
-  0.95
- ]
+ }
 }

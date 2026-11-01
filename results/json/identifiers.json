@@ -1,0 +1,38 @@
+{
+ "coverage": {
+  "offers": 978,
+  "fields": {
+   "title": 978,
+   "source": 978,
+   "price": 978,
+   "imageUrl": 978,
+   "productId": 978,
+   "position": 978,
+   "link": 487,
+   "rating": 438,
+   "ratingCount": 438
+  },
+  "gtin_ean_upc_mpn_asin_fields": 0,
+  "distinct_product_ids": 971,
+  "product_ids_shared_by_2_or_more_offers": 6,
+  "offers_with_model_code_in_title": 228
+ },
+ "final_round": {
+  "pairs": 100,
+  "pairs_with_code_in_both_titles": 26,
+  "id_label_counts": {
+   "different_model": 14,
+   "same_model": 12
+  },
+  "agreement_with_claude_model_level": "25/26",
+  "disagreements": [
+   {
+    "pair_id": "L030",
+    "a_title": "सोनी WH-1000XM5 (WH1000XM5) शोर रद्द करने वाले हेडफ़ोन के लिए रिप्लेसमेंट इयरपैड, शोर अलगाव मेमोरी फोम के साथ कान पैड कुशन, शीतल प्रोटीन चमड़ा-चांदी",
+    "b_title": "सोनी WH-1000XM5 SM प्लैटिनम सिल्वर वायरलेस हेडफ़ोन",
+    "id_label": "same_model",
+    "label": "different"
+   }
+  ]
+ }
+}

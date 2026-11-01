@@ -1,0 +1,20 @@
+pair_id,kind,claude_label,error_type,note
+L000,false_same,variant,colour_or_finish,one title says White; photos both black
+L014,false_same,variant,colour_or_finish,one title says White
+L021,false_same,variant,colour_or_finish,colour differs only in the photos (bronze vs silver)
+L029,false_same,variant,colour_or_finish,Series 3000 black vs navy with an extra attachment (photos)
+L032,false_same,variant,colour_or_finish,Series 3000 silver vs white (photos)
+L056,false_same,variant,colour_or_finish,warm white vs cool day white written in Hindi
+L001,false_same,variant,bundle_combo_or_pack,2 L + 3 L set vs single 3 L cooker
+L016,false_same,variant,bundle_combo_or_pack,headphones bundled with a clip-on light
+L071,false_same,variant,bundle_combo_or_pack,calculator + a second calculator joined with '&'
+L084,false_same,variant,bundle_combo_or_pack,bundle with accessories shown only in the photo
+L003,false_same,different,other_model_same_line,Garnet 9W vs Garnet CCT 3-in-1 (hyphenated 3-in-1 not caught)
+L038,false_same,different,other_model_same_line,Deluxe Alpha Svachh vs Svachh Clip (share the rare word Svachh)
+L060,false_same,different,other_model_same_line,Svachh Duo Cute vs Svachh Apple Duo
+L063,false_same,different,other_model_same_line,Popular stainless steel vs Deluxe Alpha Svachh
+L067,false_same,different,formulation,Deep Restore vs Deep Moisture lotion
+L005,false_same,different,vague_vs_specific,Mi 50W Power Bank vs Xiaomi Power Bank (no model named)
+L096,false_same,different,hyphenated_code_split,WH-1000XM5 vs WF-1000XM5 both read as 1000xm5
+L069,missed_same,same,strict_model_rule,"MI PLM18ZM 3I" vs "MI Power Bank 3i": code in one title only -> rejected"
+L095,missed_same,same,verdict_variant,"Popular Pressure Cooker Aluminium vs the same title cut short; model said variant"

@@ -1,0 +1,29 @@
+{
+ "labels": "Claude, an AI assistant, not humans (blind; removed pairs mixed with decoys)",
+ "pairs_called_same": {
+  "lr": 995,
+  "lr_plus_rules": 171
+ },
+ "precision_identical": {
+  "lr": 0.264,
+  "lr_ci": [
+   0.078,
+   0.495
+  ],
+  "lr_plus_rules": 0.575,
+  "lr_plus_rules_ci": [
+   0.286,
+   0.814
+  ]
+ },
+ "removed_by_rules_but_identical": {
+  "labelled": 40,
+  "identical": 8,
+  "rate": 0.2,
+  "ci": [
+   0.023,
+   0.421
+  ]
+ },
+ "ci_method": "bootstrap over the 8 final searches"
+}

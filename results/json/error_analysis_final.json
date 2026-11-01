@@ -1,0 +1,16 @@
+{
+ "source": "final round, labels and error types assigned by Claude, an AI assistant, not humans",
+ "false_same_by_type": {
+  "colour_or_finish": 6,
+  "bundle_combo_or_pack": 4,
+  "other_model_same_line": 4,
+  "formulation": 1,
+  "vague_vs_specific": 1,
+  "hyphenated_code_split": 1
+ },
+ "false_same_total": 17,
+ "missed_same_by_type": {
+  "strict_model_rule": 1,
+  "verdict_variant": 1
+ }
+}

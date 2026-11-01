@@ -245,13 +245,15 @@ def score_pairs(matcher, sig, titles):
     other_model = np.array([model_conflict(titles[i], titles[j]) or names(i, j) for i, j in zip(a, b)])
     sizes = np.array([size_conflict(titles[i], titles[j]) for i, j in zip(a, b)])  # watt/litre/gm: verdict only
     verdict = classify(prob, num[:, 1].astype(bool) | sizes, X["colour_dist"].to_numpy(), combo, matcher.cfg, other_model)
-    P, V = np.eye(n), np.full((n, n), "same", dtype=object)
+    verdict_lr = classify(prob, num[:, 1], X["colour_dist"].to_numpy(), combo, matcher.cfg)  # ablation: no live rules
+    P, V, V_lr = np.eye(n), np.full((n, n), "same", dtype=object), np.full((n, n), "same", dtype=object)
     P[a, b] = P[b, a] = prob
     V[a, b] = V[b, a] = verdict
+    V_lr[a, b] = V_lr[b, a] = verdict_lr
     F = {f: np.zeros((n, n)) for f in ("tfidf_cos", "img_cos", "dino_cos", "colour_dist")}
     for f in F:
         F[f][a, b] = F[f][b, a] = X[f].to_numpy()
-    return P, V, F, ret
+    return P, V, F, ret, V_lr
 
 
 def pca_map(ret):
@@ -308,13 +310,14 @@ def search(matcher, text=None, image_bytes=None, image_url=None, num=40):
         titles = [o["title"] for o in offers]
         sig = encode_all(matcher, titles, photos)
         t["encode"] = time.time()
-        P, V, F, ret = score_pairs(matcher, sig, titles)
+        P, V, F, ret, V_lr = score_pairs(matcher, sig, titles)
         # Start each group from the offer most other offers confirm as the same item (the user's photo first).
         links = (V == "same").sum(1)
         order = sorted(range(len(offers)), key=lambda j: (not offers[j].get("is_ref"), -links[j], j))
         out["groups"] = group_offers(V, order)
         out["prob"] = np.round(P, 4).tolist()          # lets the page re-group around any offer the user clicks
         out["verdict"] = [[v[0].upper() for v in row] for row in V]  # S / V / D
+        out["verdict_lr"] = [[v[0].upper() for v in row] for row in V_lr]  # model + v2 rules only (ablation)
         out["features"] = {f: np.round(m, 3).tolist() for f, m in F.items()}
         out["pca_xy"], out["pca_share"] = pca_map(ret)
         t["score"] = time.time()

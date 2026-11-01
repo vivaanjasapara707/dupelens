@@ -87,22 +87,38 @@ def grids(sheet, per=10, size=180):
         canvas.save(out / f"live_{SET}_{start // per:02d}.jpg", quality=85)
 
 
+def search_bootstrap(df, hit, rng, n_boot=config.N_BOOT):
+    """Rate of `hit` over the pairs in df, with a 95% CI that resamples whole SEARCHES (not pairs).
+
+    Pairs from one search share offers and photos, so they are not independent; resampling the 8
+    searches with replacement and pooling their pairs gives an honest (wider) interval."""
+    groups = [g for _, g in df.groupby("query")]
+    if not groups:
+        return None
+    rates = []
+    for _ in range(n_boot):
+        pick = [groups[k] for k in rng.integers(0, len(groups), len(groups))]
+        n = sum(len(g) for g in pick)
+        rates.append(sum(hit(g).sum() for g in pick) / n if n else np.nan)
+    y = hit(df)
+    return dict(n=len(df), hits=int(y.sum()), rate=round(float(y.mean()), 3), searches=len(groups),
+                ci_search_bootstrap=[round(float(np.nanpercentile(rates, 2.5)), 3), round(float(np.nanpercentile(rates, 97.5)), 3)])
+
+
 def stats():
     lab = pd.read_csv(SHEET).merge(pd.read_csv(KEY), on="pair_id")
     assert lab["label"].isin(["same", "variant", "different"]).all(), "fill every label first"
-    rng, out = np.random.default_rng(config.SEED), {}
-    for s, name in [("S", "model says same: truly same item"), ("R", "random pair from a search: truly same item"),
-                    ("H", "rejected look-alike: truly same item (missed)")]:
-        y = (lab[lab.stratum == s]["label"] == "same").to_numpy(dtype=float)
-        if not len(y):
-            continue
-        boot = [rng.choice(y, len(y)).mean() for _ in range(config.N_BOOT)]
-        out[s] = dict(what=name, n=len(y), correct=int(y.sum()), rate=round(y.mean(), 3),
-                      ci=[round(np.percentile(boot, 2.5), 3), round(np.percentile(boot, 97.5), 3)])
-        print(f"{s} {name}: {int(y.sum())}/{len(y)} = {y.mean():.3f} [{out[s]['ci'][0]}, {out[s]['ci'][1]}]")
-    s = lab[lab.stratum == "S"]
-    out["S_same_or_variant"] = int(s["label"].isin(["same", "variant"]).sum())
-    print("S pairs that are at least the same product line (same or variant):", out["S_same_or_variant"], "/", len(s))
+    rng, out = np.random.default_rng(config.SEED), {"set": SET, "labels": "Claude, an AI assistant, not humans"}
+    same = lambda g: (g["label"] == "same").to_numpy(dtype=float)
+    line = lambda g: g["label"].isin(["same", "variant"]).to_numpy(dtype=float)
+    for key, s, hit, name in [("S_same", "S", same, "model says same -> truly the identical item"),
+                              ("S_same_or_variant", "S", line, "model says same -> at least the same product line"),
+                              ("R_same", "R", same, "random pair from a search -> identical item (naive baseline)"),
+                              ("H_same", "H", same, "rejected look-alike -> actually identical (missed)")]:
+        r = search_bootstrap(lab[lab.stratum == s], hit, rng)
+        if r:
+            out[key] = dict(what=name, **r)
+            print(f"{key:<18} {r['hits']}/{r['n']} = {r['rate']:.3f}  CI (search bootstrap) {r['ci_search_bootstrap']}  - {name}")
     import json
     (config.RESULTS_DIR / "json" / f"live_eval_{SET}.json").write_text(json.dumps(out, indent=1))
     return out
