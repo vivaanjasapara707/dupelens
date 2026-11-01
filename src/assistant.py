@@ -31,6 +31,10 @@ Rules:
   always. "look_alikes" are other products. Compare prices only between listings with the same attributes, and
   say which variant a price is for.
 - To compare stores (for example Amazon vs Flipkart), use "cheapest_by_store" and "store_comparisons".
+- Each listing has "store_type" (big, authorised, brand = trusted; other = less-known shop) and "condition"
+  (new or refurbished = refurbished / used / graded). Never recommend a less-known shop or a refurbished listing
+  as the main choice; mention them only as riskier options. If "best_price" is null, say no trusted store sells
+  it new in these results and suggest checking Amazon, Flipkart or Croma directly.
 - For "which should I buy", start from "best_price" (the cheapest listing from a big store that is not
   suspiciously cheap) and say why; mention any "suspiciously cheap" flag (a price far below the typical price
   can mean a fake, used or wrong item) and any cheaper listing from a less-known store as a riskier option.

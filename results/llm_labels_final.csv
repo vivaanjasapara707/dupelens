@@ -15,3 +15,11 @@ L012,variant,The listings are for the same Wipro 9W LED bulb model but with diff
 L013,same,Both listings feature the same black Xiaomi Redmi 20000mAh 18W power bank model.,qwen/qwen3.8-27b
 L014,variant,The listings are for the same power bank model but specify different colors (Listing B is explicitly White while Listing A is Black).,qwen/qwen3.8-27b
 L015,same,Both listings feature the Vaseline Intensive Care Deep Moisture body lotion in the same 400ml size and packaging.,qwen/qwen3.8-27b
+L016,variant,"Listing A is a bundle that includes a rechargeable clip-on light, whereas Listing B is the standalone headphone.",qwen/qwen3.8-27b
+L017,same,Both listings feature the Sony WH-1000XM5 headphones in the same Midnight Blue color.,qwen/qwen3.8-27b
+L018,same,Both listings feature the identical Boroplus Soft Ayurvedic Antiseptic Cream with matching packaging design and product details.,qwen/qwen3.8-27b
+L019,variant,"Both are 20000mAh power banks from the same brand, but they are different models (Mi 3i vs. Xiaomi 5i) with different charging speeds and physical designs.",qwen/qwen3.8-27b
+L020,different,"Listing A is a book titled 'Mastering Casio FX-991ES Plus', while Listing B is a physical OSALO brand calculator.",qwen/qwen3.8-27b
+L021,same,Both listings feature the same Noise 20000 mAh power bank model with a built-in cable and matching gold/silver color finish.,qwen/qwen3.8-27b
+L022,variant,"The listings are for different models within the same product line, specifically the 'Popular' (stainless steel) versus the 'Popular Plus' (virgin aluminium).",qwen/qwen3.8-27b
+L023,variant,The listings are for different product lines within the Vaseline Intensive Care range (Deep Restore vs. Deep Moisture) and different pack sizes.,qwen/qwen3.8-27b

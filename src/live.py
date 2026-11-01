@@ -122,6 +122,33 @@ def attributes(title):
     return out
 
 
+# Authorised resellers (store names that say so, and well-known Apple Premium Resellers in India).
+AUTHORISED = re.compile(r"authori[sz]ed|premium reseller|\bofficial\b|\bunicorn\b|\bimagine\b|icrescent|maple store|"
+                        r"aptronix|iplanet|\bample\b", re.IGNORECASE)
+# Refurbished / used: words in the title, or sellers whose business is refurbished or used goods.
+REFURB_WORDS = re.compile(r"\b(refurbished|renewed|pre-?owned|pre-?loved|second[- ]hand|used|open[- ]box|unboxed|"
+                          r"(?:super|good|fair|excellent|superb|very good|a|b|c) grade|grade [abc]|excellent condition|"
+                          r"like new|certified refurbished|wholesale)\b|/\s*(?:excellent|good|fair|superb)\b", re.IGNORECASE)
+REFURB_STORES = re.compile(r"cashify|ovantica|budli|grest|gudfast|control ?z|rebuysell|yaantra|togofogo|easyphones|"
+                           r"tetro|refit|befach|eazypc|fonezone", re.IGNORECASE)
+
+
+def store_tier(store, title):
+    """'big' (retailer, marketplace, quick commerce, pharmacy), 'authorised' (authorised / official reseller),
+    'brand' (the brand's own store), or 'other' (a less-known shop)."""
+    store = store or ""
+    if WELL_KNOWN.search(store):
+        return "big"
+    if AUTHORISED.search(store):
+        return "authorised"
+    return "brand" if well_known(store, title) else "other"
+
+
+def condition(title, store):
+    """'refurbished' when the title says refurbished / used / renewed / graded, or the seller deals in them."""
+    return "refurbished" if REFURB_WORDS.search(title or "") or REFURB_STORES.search(store or "") else "new"
+
+
 def parse_price(text):
     """'₹1,299.00' -> 1299.0; None when there is no number."""
     m = re.search(r"\d[\d,]*(\.\d+)?", str(text or ""))
@@ -349,6 +376,22 @@ def search(matcher, text=None, image_bytes=None, image_url=None, num=40, vectors
     # accessories (cases, covers), not more sellers of the product.
     raw = serper("shopping", {"q": inp["query"], "gl": "in", "hl": "en", "num": num}, tag=tag).get("shopping", [])
     raw = [o for o in raw if o.get("title") and o.get("imageUrl")]
+    # Smart fallback: if no trusted store sells the item new in these results, ask Google Shopping again with the
+    # big marketplaces' names (2 credits each, only then). Discontinued products may still return only accessories.
+    trusted_new = [o for o in raw if store_tier(o.get("source"), o["title"]) != "other"
+                   and condition(o["title"], o.get("source")) == "new" and not is_accessory(o["title"])]
+    extra = []
+    if len(trusted_new) < 2 and tag is None:
+        with ThreadPoolExecutor(2) as pool:
+            more = list(pool.map(lambda st: serper("shopping", {"q": f"{inp['query']} {st}", "gl": "in", "hl": "en", "num": num}).get("shopping", []),
+                                 ["amazon", "flipkart"]))
+        seen = {(o["title"].lower(), o.get("source", "").lower(), o.get("price")) for o in raw}
+        for o in more[0] + more[1]:
+            key = (o.get("title", "").lower(), o.get("source", "").lower(), o.get("price"))
+            if o.get("title") and o.get("imageUrl") and key not in seen and len(raw) < 2 * num:
+                seen.add(key)
+                raw.append(o)
+        extra = ["amazon", "flipkart"]
     t["offers"] = time.time()
     with ThreadPoolExecutor(16) as pool:
         photos = list(pool.map(lambda o: download(o["imageUrl"]), raw))
@@ -356,7 +399,9 @@ def search(matcher, text=None, image_bytes=None, image_url=None, num=40, vectors
     offers = [dict(title=raw[i]["title"], store=raw[i].get("source", ""), price=raw[i].get("price"),
                    price_value=parse_price(raw[i].get("price")), link=raw[i].get("link"),
                    image=raw[i]["imageUrl"], rating=raw[i].get("rating"), rating_count=raw[i].get("ratingCount"),
-                   delivery=raw[i].get("delivery"), known=well_known(raw[i].get("source"), raw[i]["title"]),
+                   delivery=raw[i].get("delivery"), known=store_tier(raw[i].get("source"), raw[i]["title"]) != "other",
+                   tier=store_tier(raw[i].get("source"), raw[i]["title"]),
+                   condition=condition(raw[i]["title"], raw[i].get("source")),
                    accessory=is_accessory(raw[i]["title"]), attrs=attributes(raw[i]["title"]))
               for i in keep]
     photos = [photos[i] for i in keep]
@@ -365,7 +410,7 @@ def search(matcher, text=None, image_bytes=None, image_url=None, num=40, vectors
                               image=image_url, is_ref=True))
         photos.insert(0, inp["ref_photo"])
     t["photos"] = time.time()
-    out = dict(query=inp["query"], mode=inp["mode"], seen_on=inp["seen_on"], found=len(raw),
+    out = dict(query=inp["query"], mode=inp["mode"], seen_on=inp["seen_on"], found=len(raw), extra_search=extra,
                dropped_no_photo=len(raw) - len(keep), offers=offers, groups=[])
     if len(offers) >= 2:
         titles = [o["title"] for o in offers]

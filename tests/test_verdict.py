@@ -92,3 +92,15 @@ def test_suffixed_model_numbers_are_other_models():
     assert model_conflict("Redmi 13C 5G", "Redmi 13 5G")
     assert not model_conflict("iPhone 16 128Gb", "Apple iPhone 16")
     assert not model_conflict("Redmi 13C 6GB 128GB", "Xiaomi Redmi 13C 6GB RAM, 128GB Storage")
+
+
+def test_store_tiers_and_condition():
+    from src.live import condition, store_tier
+    assert store_tier("Reliance Digital", "Apple iPhone 16") == "big"
+    assert store_tier("Unicorn Store", "iPhone 16") == "authorised"
+    assert store_tier("boAt", "boAt Airdopes 141") == "brand"
+    assert store_tier("GudFast", "OnePlus Nord CE4") == "other"
+    assert condition("Refurbished Apple iPhone 15 Pro", "Cashify") == "refurbished"
+    assert condition("Apple iPhone 15 pro, 128GB / Black Titanium / Excellent", "Shop") == "refurbished"
+    assert condition("OnePlus Nord CE4 (128 GB)", "GudFast") == "refurbished"
+    assert condition("Apple iPhone 16 (128 GB)", "Croma") == "new"

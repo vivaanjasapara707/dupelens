@@ -261,6 +261,14 @@ Affiliate API for a fresh Indian catalog once the user has an affiliate account.
   price; savings shown vs typical price (not vs the dearest outlier). New rule verdict.model_conflict: a model
   number with a letter suffix is another model (16e vs 16, 13C vs 13). NOTE: this rule came after round 4, so
   round-4 numbers describe the rules before it. 46 tests.
+- 2026-11-01: user: "iphone 15 pro" recommended GudFast (a refurbished seller). Cause: discontinued model, Google
+  Shopping showed only refurbished/used/grey sellers; fallback picked the cheapest anywhere. Fix (live.py):
+  store_tier (big / authorised [authorised, official, Apple premium resellers] / brand / other) and condition
+  (refurbished: title words incl. graded "/ Excellent", or refurbished sellers list). Best price ONLY from a
+  trusted tier, new, not suspicious, not accessory; otherwise the card says "No trusted store sells it new" with
+  Amazon/Flipkart/Croma/Reliance search buttons and shows the cheapest risky options with warnings. Smart fallback
+  search: when < 2 trusted new offers, also query "<q> amazon" and "<q> flipkart" (4 credits; out["extra_search"]).
+  List order: trusted new, other new, refurbished, suspicious. Assistant told the same. 47 tests.
   NEXT (user said: deploy LAST): Hugging Face Spaces (needs user's HF account + write
   token; set SERPER_API_KEY as a Space secret and PUBLIC_URL for photo upload), update Vercel static site, push to
   GitHub (ask first).

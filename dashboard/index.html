@@ -191,16 +191,24 @@ function groupAround(seed) {
   const typical = prices.length >= 3 ? median(prices) : null;
   const scored = shown.map(j => ({ j, ...sellerScore(O[j], j === seed ? 1 : sameProb(seed, j), typical) }));
   // a price far below the typical price, an accessory or a missing price can never be the best price
-  const ok = x => !x.suspicious && !O[x.j].accessory && O[x.j].price_value != null;
+  // a price far below the typical price, an accessory, a refurbished/used listing or a missing price is never the best price
+  const ok = x => !x.suspicious && !O[x.j].accessory && O[x.j].price_value != null && O[x.j].condition !== "refurbished";
   const byPrice = (a, b) => O[a.j].price_value - O[b.j].price_value;
-  const top = scored.filter(x => ok(x) && isKnown(O[x.j])).sort(byPrice)[0] || scored.filter(ok).sort(byPrice)[0] || scored[0];
-  if (top) scored.forEach(x => x.same = x.j === top.j || V[top.j][x.j] === "S");   // same item as the best price?
-  if (SORT === "price") scored.sort((a, b) => (ok(b) - ok(a)) || (isKnown(O[b.j]) - isKnown(O[a.j])) || ((O[a.j].price_value ?? 1e12) - (O[b.j].price_value ?? 1e12)));
+  // best price only from a trusted store (big store, authorised reseller, brand store), new, not suspicious
+  const top = scored.filter(x => ok(x) && isKnown(O[x.j])).sort(byPrice)[0] || null;
+  const ref = top ? top.j : seed;
+  scored.forEach(x => x.same = x.j === ref || V[ref][x.j] === "S");   // same item as the best price?
+  // fallbacks shown (with warnings) when no trusted store sells it new
+  const riskyNew = scored.filter(x => ok(x) && !isKnown(O[x.j])).sort(byPrice)[0] || null;
+  const refurb = scored.filter(x => O[x.j].condition === "refurbished" && !x.suspicious && O[x.j].price_value != null && !O[x.j].accessory).sort(byPrice)[0] || null;
+  // order: trusted new, then other new, then refurbished / used, then suspicious or accessories; cheapest first in each
+  const rank = x => ok(x) ? (isKnown(O[x.j]) ? 0 : 1) : (O[x.j].condition === "refurbished" && !x.suspicious ? 2 : 3);
+  if (SORT === "price") scored.sort((a, b) => (rank(a) - rank(b)) || ((O[a.j].price_value ?? 1e12) - (O[b.j].price_value ?? 1e12)));
   else scored.sort((a, b) => b.total - a.total);
   const members = scored.filter(x => x.same).map(x => x.j), variants = scored.filter(x => !x.same).map(x => x.j);
   const okPrices = scored.filter(ok).map(x => O[x.j].price_value);
   const cheapest = scored.filter(ok).sort(byPrice).map(x => x.j)[0];
-  return { seed, members, variants, listing, shown, scored, top, cheapest, typical, n_prices: prices.length, hidden, picked,
+  return { seed, members, variants, listing, shown, scored, top, riskyNew, refurb, cheapest, typical, n_prices: prices.length, hidden, picked,
            min: okPrices.length ? Math.min(...okPrices) : null, max: okPrices.length ? Math.max(...okPrices) : null };
 }
 
@@ -234,6 +242,7 @@ async function openStore(j, el) {
 function render(seed) {
   const O = DATA.offers, g = groupAround(seed);
   const top = g.top, b = top ? O[top.j] : O[seed];
+  const TIER = { big: "Big store", authorised: "Authorised reseller", brand: "Brand's own store", other: "Less-known store" };
   const ref = O[seed].is_ref;
   // what we understood
   const how = { name: "Searched by name", link: "Read the product name from your link", photo: "Recognised your photo as" }[DATA.mode] || "Searched";
@@ -244,7 +253,23 @@ function render(seed) {
   $("#seen-card").hidden = !(DATA.seen_on && DATA.seen_on.length);
   $("#seen").innerHTML = (DATA.seen_on || []).slice(0, 6).map(s => `<a class="tile" href="${esc(s.link)}" target="_blank" rel="noopener">${s.image ? `<img class="ph" src="${esc(s.image)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : ""}<span class="t">${esc(s.title)}</span><span class="s">${esc(s.store)}</span></a>`).join("");
 
-  if (!top) { $("#best").innerHTML = `<div style="grid-column:1/-1"><div class="label" style="color:var(--warn)">No likely match with a price</div><h2>The model did not find another store selling the likely same item.</h2><p class="sub">Look at the similar products below, or try a more specific name.</p></div>`; $("#side").innerHTML = ""; }
+  if (!top) {
+    // no trusted store sells it new: say so, never push a random shop as "Buy"
+    const q = encodeURIComponent(DATA.query), alt = (x, label, warn) => x ? `<div class="stat" style="margin-top:10px"><div class="v num" style="font-size:18px">${esc(O[x.j].price)}</div><div class="l">${label}: <b>${esc(O[x.j].store)}</b> · ${esc(O[x.j].title)} <span class="pill warn">${warn}</span></div></div>` : "";
+    $("#best").innerHTML = `<div style="grid-column:1/-1">
+      <div class="label" style="color:var(--warn)">No trusted store sells it new in these results</div>
+      <h2>No big store, authorised reseller or brand store has a new "${esc(DATA.query)}" here${(DATA.extra_search || []).length ? " (we also searched Amazon and Flipkart specifically)" : ""}.</h2>
+      <p class="sub">It may be discontinued or out of stock. Check the big stores directly:</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <a class="go" href="https://www.amazon.in/s?k=${q}" target="_blank" rel="noopener">Search Amazon</a>
+        <a class="go" href="https://www.flipkart.com/search?q=${q}" target="_blank" rel="noopener">Search Flipkart</a>
+        <a class="go" href="https://www.croma.com/searchB?q=${q}%3Arelevance" target="_blank" rel="noopener">Search Croma</a>
+        <a class="go" href="https://www.reliancedigital.in/search?q=${q}" target="_blank" rel="noopener">Search Reliance Digital</a></div>
+      ${alt(g.riskyNew, "Cheapest new listing from a less-known shop", "check the seller before paying")}
+      ${alt(g.refurb, "Cheapest refurbished / used listing", "refurbished or used")}
+    </div>`;
+    $("#side").innerHTML = `<div class="stat"><div class="v num">${g.listing.length}</div><div class="l">listings of this model, ${g.listing.filter(j => O[j].condition === "refurbished").length} of them refurbished or used</div></div>`;
+  }
   else {
     const save = g.typical != null && b.price_value != null ? g.typical - b.price_value : 0;   // vs the typical price, not the dearest outlier
     $("#best").innerHTML = `
@@ -283,7 +308,7 @@ function render(seed) {
   document.querySelectorAll("[data-sort]").forEach(b => b.onclick = () => { SORT = b.dataset.sort; render(seed); });
   $("#same").innerHTML = g.scored.map((s, k) => {
     const o = O[s.j], pills = [];
-    if (s.j === top.j) pills.push(`<span class="pill g">Best price</span>`);
+    if (top && s.j === top.j) pills.push(`<span class="pill g">Best price</span>`);
     else pills.push(s.same ? `<span class="pill conf">same item as best price</span>` : `<span class="pill">other variant</span>`);
     Object.values(o.attrs || {}).forEach(v => pills.push(`<span class="pill">${esc(v)}</span>`));
     if (s.j === g.cheapest) pills.push(`<span class="pill c">Cheapest</span>`);
@@ -292,8 +317,9 @@ function render(seed) {
     else if (s.pct != null && s.pct < -0.05) pills.push(`<span class="pill down">${Math.round(-100 * s.pct)}% below typical price</span>`);
     if (s.j !== seed) pills.push(`<span class="pill conf">${DATA.prob_cal ? "same item" : "model score"} ${(100 * sameProb(seed, s.j)).toFixed(0)}%</span>`);
     if (o.rating) pills.push(`<span class="pill">★ ${esc(o.rating)}${o.rating_count ? ` (${Number(o.rating_count).toLocaleString("en-IN")})` : ""}</span>`);
-    pills.push(isKnown(o) ? `<span class="pill">Big store</span>` : `<span class="pill warn">Less-known store</span>`);
-    return `<div class="row ${s.j === top.j ? "top" : ""}">
+    pills.push(isKnown(o) ? `<span class="pill">${TIER[o.tier] || "Big store"}</span>` : `<span class="pill warn">Less-known store</span>`);
+    if (o.condition === "refurbished") pills.push(`<span class="pill warn">Refurbished / used</span>`);
+    return `<div class="row ${top && s.j === top.j ? "top" : ""}">
       <div class="rk">${k + 1}</div>
       <img class="ph" src="${esc(o.image)}" alt="" loading="lazy" referrerpolicy="no-referrer">
       <div><div class="store">${esc(o.store)}</div><div class="t">${esc(o.title)}</div><div class="pills">${pills.join("")}</div></div>
@@ -438,7 +464,7 @@ function cheapestByStore(ids) {
 // Everything the AI may use, computed here so it never has to do arithmetic or guess.
 function askContext() {
   const O = DATA.offers, g = CURRENT;
-  const offer = j => ({ store: O[j].store, title: O[j].title, price: O[j].price, rating: O[j].rating ?? null, reviews: O[j].rating_count ?? null,
+  const offer = j => ({ store: O[j].store, store_type: O[j].tier || null, condition: O[j].condition || "new", title: O[j].title, price: O[j].price, rating: O[j].rating ?? null, reviews: O[j].rating_count ?? null,
                         well_known_store: !!O[j].known, delivery: O[j].delivery ?? null });
   const stores = cheapestByStore(g.members), comparisons = [];
   for (let a = 0; a < stores.length; a++) for (let b = a + 1; b < stores.length && comparisons.length < 20; b++) {
