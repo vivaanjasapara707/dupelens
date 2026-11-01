@@ -130,7 +130,8 @@ const sameProb = (a, b) => (DATA.prob_cal || DATA.prob)[a][b];
 // ---------- sort order: a fixed, transparent rule (not a trained model) ----------
 // "known" is set by the server (src/live.py well_known): big Indian retailers, quick-commerce apps, pharmacies, brand's own store.
 const isKnown = o => !!o.known;
-let ONLY_KNOWN = true;   // show and recommend only well-known stores (the model still compares every offer)
+let ONLY_KNOWN = false;  // optional filter; by default every store is shown, well-known stores first
+let PICK = {};           // chosen variant, e.g. {storage: "256 GB", colour: "Orange"}
 const visible = o => !o.is_ref && (!ONLY_KNOWN || isKnown(o));
 function sellerScore(o, prob, typical) {
   const pct = typical && o.price_value ? o.price_value / typical - 1 : null;
@@ -150,29 +151,61 @@ function sellerScore(o, prob, typical) {
 // Which product to show first: the user's photo if given; else, among groups that are not accessories
 // (cases, covers) and have a visible seller, the one most sellers agree on (server order breaks ties).
 function bestSeed() {
-  const O = DATA.offers, G = DATA.groups || [];
-  if (G.length && O[G[0].seed].is_ref) return G[0].seed;
-  const ok = G.filter(g => !O[g.seed].accessory && g.members.some(j => visible(O[j])));
-  const pool = ok.length ? ok : G.filter(g => g.members.some(j => visible(O[j])));
-  if (!pool.length) return G.length ? G[0].seed : 0;
-  const best = pool.reduce((a, b) => b.members.length > a.members.length ? b : a);
-  return best.members.find(j => visible(O[j]));
+  const O = DATA.offers, V = DATA.verdict, n = O.length;
+  const ref = O.findIndex(o => o.is_ref);
+  if (ref >= 0) return ref;
+  // the offer with the most listings of the same model (same item or variant), not an accessory; big stores break ties
+  let best = 0, bestKey = -1;
+  for (let i = 0; i < n; i++) {
+    if (O[i].accessory || !visible(O[i])) continue;
+    let model = 0, same = 0;
+    for (let j = 0; j < n; j++) if (j !== i && visible(O[j])) { if (V[i][j] === "S") { same++; model++; } else if (V[i][j] === "V") model++; }
+    const key = model * 1000 + same * 10 + (isKnown(O[i]) ? 1 : 0);
+    if (key > bestKey) { bestKey = key; best = i; }
+  }
+  return best;
 }
+const ATTRS = [["storage", "Storage"], ["colour", "Colour"], ["size", "Size"], ["pack", "Pack"]];
+const matchesPick = o => Object.entries(PICK).every(([k, v]) => !v || (o.attrs || {})[k] === v || !(o.attrs || {})[k]);
 
 // ---------- grouping around one offer (same rule as src/live.py) ----------
 function groupAround(seed) {
   const V = DATA.verdict, O = DATA.offers, n = O.length;
   const all = [...Array(n).keys()];
-  const members = all.filter(j => (j === seed || V[seed][j] === "S") && visible(O[j]));
-  const hidden = all.filter(j => (j === seed || V[seed][j] === "S") && !O[j].is_ref).length - members.length;
-  const variants = all.filter(j => V[seed][j] === "V" && visible(O[j]));
-  const prices = members.map(j => O[j].price_value).filter(v => v != null);
+  const inModel = j => j === seed || V[seed][j] === "S" || V[seed][j] === "V";
+  const model = all.filter(j => inModel(j) && !O[j].is_ref);
+  const hidden = model.filter(j => !visible(O[j])).length;
+  const listing = model.filter(j => visible(O[j]));
+  const members = listing.filter(j => j === seed || V[seed][j] === "S");      // likely the same item as the top pick
+  const variants = listing.filter(j => V[seed][j] === "V");                   // same model, other colour/size/pack
+  // fair price: offers of the chosen variant if one is picked, else offers of the likely same item
+  const picked = Object.values(PICK).some(Boolean);
+  const basis = picked ? listing.filter(j => matchesPick(O[j]) && Object.entries(PICK).every(([k, v]) => !v || (O[j].attrs || {})[k] === v)) : members;
+  const prices = basis.map(j => O[j].price_value).filter(v => v != null);
   const typical = prices.length >= 3 ? median(prices) : null;   // fair price needs at least 3 prices
-  const scored = members.map(j => ({ j, ...sellerScore(O[j], j === seed ? 1 : sameProb(seed, j), typical) }));
-  scored.sort((a, b) => b.total - a.total);
-  const cheapest = members.filter(j => O[j].price_value != null).sort((a, b) => O[a].price_value - O[b].price_value)[0];
-  return { seed, members, variants, scored, cheapest, typical, n_prices: prices.length, hidden,
+  const shown = listing.filter(j => matchesPick(O[j]));
+  const scored = shown.map(j => ({ j, same: members.includes(j), ...sellerScore(O[j], j === seed ? 1 : sameProb(seed, j), typical) }));
+  // well-known stores first, then the sort order (same-item listings before other variants at equal score)
+  scored.sort((a, b) => (isKnown(O[b.j]) - isKnown(O[a.j])) || (b.total + 3 * b.same) - (a.total + 3 * a.same));
+  const top = scored.find(s => s.same) || scored[0];
+  const cheapest = basis.filter(j => O[j].price_value != null).sort((a, b) => O[a].price_value - O[b].price_value)[0];
+  return { seed, members, variants, listing, shown, scored, top, cheapest, typical, n_prices: prices.length, hidden, picked,
            min: prices.length ? Math.min(...prices) : null, max: prices.length ? Math.max(...prices) : null };
+}
+
+// One row of chips per attribute that differs across this model's listings (storage, colour, size, pack).
+function variantChips(g) {
+  const O = DATA.offers, rows = [];
+  for (const [key, name] of ATTRS) {
+    const counts = {};
+    g.listing.forEach(j => { const v = (O[j].attrs || {})[key]; if (v) counts[v] = (counts[v] || 0) + 1; });
+    const vals = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+    if (vals.length < 2 && !PICK[key]) continue;
+    rows.push(`<div class="seg" style="margin:10px 0 0"><span class="hint" style="margin:0 6px 0 0;align-self:center">${name}:</span>
+      <button type="button" data-attr="${key}" data-val="" aria-pressed="${!PICK[key]}">All</button>
+      ${vals.map(([v, c]) => `<button type="button" data-attr="${key}" data-val="${esc(v)}" aria-pressed="${PICK[key] === v}">${esc(v)} (${c})</button>`).join("")}</div>`);
+  }
+  return rows.length ? `<div>${rows.join("")}<div class="hint" style="margin:6px 0 0">Listings that do not state a value stay in the list.</div></div>` : "";
 }
 
 function storeSearch(o) {
@@ -189,13 +222,13 @@ async function openStore(j, el) {
 
 function render(seed) {
   const O = DATA.offers, g = groupAround(seed);
-  const top = g.scored[0], b = top ? O[top.j] : O[seed];
+  const top = g.top, b = top ? O[top.j] : O[seed];
   const ref = O[seed].is_ref;
   // what we understood
   const how = { name: "Searched by name", link: "Read the product name from your link", photo: "Recognised your photo as" }[DATA.mode] || "Searched";
   const nOffers = O.filter(o => !o.is_ref).length, nKnown = O.filter(o => !o.is_ref && isKnown(o)).length;
   $("#understood").innerHTML = `${how}: <b>${esc(DATA.query)}</b> · ${nOffers} offers compared by the model in ${DATA.seconds} s · ${nKnown} from well-known stores` + (DATA.cached_at ? ` · saved example (${esc(DATA.cached_at)})` : "") +
-    ` <label class="chip" style="cursor:pointer;margin-left:6px"><input type="checkbox" id="only-known" ${ONLY_KNOWN ? "checked" : ""} style="margin:0 4px 0 0">Well-known stores only</label>`;
+    ` <label class="chip" style="cursor:pointer;margin-left:6px"><input type="checkbox" id="only-known" ${ONLY_KNOWN ? "checked" : ""} style="margin:0 4px 0 0">Big stores only</label>`;
   $("#only-known").onchange = e => { ONLY_KNOWN = e.target.checked; render(bestSeed()); };
   $("#seen-card").hidden = !(DATA.seen_on && DATA.seen_on.length);
   $("#seen").innerHTML = (DATA.seen_on || []).slice(0, 6).map(s => `<a class="tile" href="${esc(s.link)}" target="_blank" rel="noopener">${s.image ? `<img class="ph" src="${esc(s.image)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : ""}<span class="t">${esc(s.title)}</span><span class="s">${esc(s.store)}</span></a>`).join("");
@@ -210,7 +243,7 @@ function render(seed) {
         <h2>${esc(b.title)}</h2>
         <div class="facts">
           <div class="fact"><div class="v num">${esc(b.price ?? "–")}</div><div class="l">at ${esc(b.store)}</div></div>
-          ${g.typical ? `<div class="fact"><div class="v num">${inr(g.typical)}</div><div class="l">fair price (median of ${g.n_prices})</div></div>` : ""}
+          ${g.typical ? `<div class="fact"><div class="v num">${inr(g.typical)}</div><div class="l">fair price (median of ${g.n_prices}${g.picked ? " offers of this variant" : " offers of this item"})</div></div>` : ""}
           ${save > 0 ? `<div class="fact"><div class="v good num">${inr(save)}</div><div class="l">less than the dearest seller</div></div>` : ""}
         </div>
         <div class="pills" style="margin-bottom:14px">${Object.entries(top.parts).map(([k, [w, v]]) => `<span class="pill">${k} ${Math.round(w * v)}/${w}</span>`).join("")}</div>
@@ -221,27 +254,31 @@ function render(seed) {
       </div>`;
     const ch = g.cheapest != null ? O[g.cheapest] : null;
     $("#side").innerHTML = `
-      <div class="stat"><div class="v num">${g.members.length}</div><div class="l">offers of the likely same item${new Set(g.members.map(j => O[j].store)).size > 1 ? ` from ${new Set(g.members.map(j => O[j].store)).size} stores` : ""}</div></div>
+      <div class="stat"><div class="v num">${g.listing.length}</div><div class="l">listings of this model from ${new Set(g.listing.map(j => O[j].store)).size} stores (${g.listing.filter(j => isKnown(O[j])).length} from big stores); ${g.members.length} likely the same item as the top pick</div></div>
       ${ch ? `<div class="stat"><div class="v num">${esc(ch.price)}</div><div class="l">cheapest: ${esc(ch.store)}${g.cheapest !== top.j ? " (lower in the sort order, see list)" : " (also first in the sort order)"}</div></div>` : ""}
       ${g.min != null && g.max != null && g.max > g.min ? `<div class="stat"><div class="v num">${inr(g.min)} – ${inr(g.max)}</div><div class="l">price range for the same item: ${Math.round(100 * (g.max / g.min - 1))}% difference</div></div>` : ""}
-      ${g.variants.length ? `<div class="stat"><div class="v num">${g.variants.length}</div><div class="l">colour / size / pack variants (listed below)</div></div>` : ""}`;
+      ${g.variants.length ? `<div class="stat"><div class="v num">${g.variants.length}</div><div class="l">other colours / sizes / packs of the same model (in the list, marked "other variant")</div></div>` : ""}`;
   }
 
-  $("#same-h").textContent = g.members.length > 1 ? `Likely same item: ${g.members.length} sellers, in sort order` : "Likely same item";
+  $("#same-h").textContent = `Where to buy: ${g.shown.length} listing${g.shown.length === 1 ? "" : "s"} of this model, big stores first`;
   $("#same-sub").innerHTML = "Sort order = how sure the model is it's the same item (35) + fair price (25) + star rating (15) + number of reviews (10) + well-known store (15). A price far below the fair price is a warning sign, not a bargain." +
-    (g.hidden > 0 ? ` <b>${g.hidden} more seller${g.hidden > 1 ? "s" : ""} of the likely same item from less-known stores hidden.</b> <button class="linkbtn" id="show-all" type="button">Show them</button>` : "");
+    (g.hidden > 0 ? ` <b>${g.hidden} listing${g.hidden > 1 ? "s" : ""} from less-known stores hidden.</b> <button class="linkbtn" id="show-all" type="button">Show them</button>` : "") +
+    variantChips(g);
   if (g.hidden > 0) $("#show-all").onclick = () => { ONLY_KNOWN = false; render(seed); };
+  document.querySelectorAll("[data-attr]").forEach(b => b.onclick = () => { PICK[b.dataset.attr] = b.dataset.val || null; render(seed); });
   $("#same").innerHTML = g.scored.map((s, k) => {
     const o = O[s.j], pills = [];
-    if (k === 0) pills.push(`<span class="pill g">Top pick</span>`);
+    if (s.j === top.j) pills.push(`<span class="pill g">Top pick</span>`);
+    pills.push(s.same ? `<span class="pill conf">same item as top pick</span>` : `<span class="pill">other variant</span>`);
+    Object.values(o.attrs || {}).forEach(v => pills.push(`<span class="pill">${esc(v)}</span>`));
     if (s.j === g.cheapest) pills.push(`<span class="pill c">Cheapest</span>`);
     if (s.suspicious) pills.push(`<span class="pill warn">Suspiciously cheap</span>`);
     else if (s.pct != null && s.pct > 0.05) pills.push(`<span class="pill up">${Math.round(100 * s.pct)}% above fair price</span>`);
     else if (s.pct != null && s.pct < -0.05) pills.push(`<span class="pill down">${Math.round(-100 * s.pct)}% below fair price</span>`);
     if (s.j !== seed) pills.push(`<span class="pill conf">${DATA.prob_cal ? "same item" : "model score"} ${(100 * sameProb(seed, s.j)).toFixed(0)}%</span>`);
     if (o.rating) pills.push(`<span class="pill">★ ${esc(o.rating)}${o.rating_count ? ` (${Number(o.rating_count).toLocaleString("en-IN")})` : ""}</span>`);
-    if (isKnown(o)) pills.push(`<span class="pill">Known store</span>`);
-    return `<div class="row ${k === 0 ? "top" : ""}">
+    pills.push(isKnown(o) ? `<span class="pill">Big store</span>` : `<span class="pill warn">Less-known store</span>`);
+    return `<div class="row ${s.j === top.j ? "top" : ""}">
       <div class="rk">${k + 1}</div>
       <img class="ph" src="${esc(o.image)}" alt="" loading="lazy" referrerpolicy="no-referrer">
       <div><div class="store">${esc(o.store)}</div><div class="t">${esc(o.title)}</div><div class="pills">${pills.join("")}</div></div>
@@ -254,9 +291,8 @@ function render(seed) {
   const tile = (j, note) => { const o = O[j]; return `<button class="tile" data-seed="${j}" type="button">
       <img class="ph" src="${esc(o.image)}" alt="" loading="lazy" referrerpolicy="no-referrer">
       <span class="t">${esc(o.title)}</span><span class="p num">${esc(o.price ?? "–")}</span><span class="s">${esc(o.store)}${note ? " · " + note : ""}</span></button>`; };
-  $("#var-card").hidden = !g.variants.length;
-  $("#variants").innerHTML = g.variants.map(j => tile(j)).join("");
-  const shown = new Set([...g.members, ...g.variants, seed]);
+  $("#var-card").hidden = true;   // variants are now in the main list, marked "other variant"
+  const shown = new Set([...g.listing, seed]);
   const others = (DATA.groups || []).filter(x => !shown.has(x.seed))
     .map(x => ({ first: x.members.find(j => visible(O[j])), n: x.members.filter(j => visible(O[j])).length }))
     .filter(x => x.first != null && !shown.has(x.first));
@@ -360,7 +396,7 @@ function askContext() {
   return {
     query: DATA.query, input_type: DATA.mode, data_source: "Google Shopping India via Serper, prices as shown at search time" + (DATA.cached_at ? ` (saved on ${DATA.cached_at})` : ""),
     showing: ONLY_KNOWN ? "well-known stores only" : "all stores", hidden_likely_same_item_sellers_from_less_known_stores: g.hidden,
-    likely_same_item_sellers: g.scored.map((s, k) => ({ rank_in_sort_order: k + 1, ...offer(s.j), sort_order: s.total,
+    listings_of_this_model: g.scored.map((s, k) => ({ rank_in_list: k + 1, same_item_as_top_pick: !!s.same, ...offer(s.j), attributes: DATA.offers[s.j].attrs || {}, sort_order: s.total,
       score_parts: Object.fromEntries(Object.entries(s.parts).map(([n, [w, v]]) => [n, `${Math.round(w * v)}/${w}`])),
       same_item_probability_pct: s.j === g.seed ? 100 : Math.round(100 * sameProb(g.seed, s.j)), probability_is_calibrated: !!DATA.prob_cal,
       vs_fair_price_pct: s.pct == null ? null : Math.round(100 * s.pct), suspiciously_cheap: s.suspicious })),
@@ -446,7 +482,7 @@ async function run(q) {
       const r = await fetch("/api/search", { method: "POST", body: fd });
       data = await r.json(); if (!r.ok) throw new Error(data.detail || r.statusText);
     } else data = await (await fetch(`data/searches/${ex.file}`)).json();
-    DATA = data; hideSteps();
+    DATA = data; PICK = {}; hideSteps();
     if (!data.offers.filter(o => !o.is_ref).length) { note(`No offers with photos came back for "${esc(data.query)}". Try a more common product name.`); return; }
     render(bestSeed());
     $("#results").scrollIntoView({ behavior: "smooth" });

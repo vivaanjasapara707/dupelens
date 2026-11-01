@@ -33,7 +33,8 @@ import requests
 from src import config
 from src.extra import colour_dist
 from src.numtokens import compare, extract
-from src.verdict import classify, combo_mismatch, is_accessory, model_conflict, name_conflicts, size_conflict
+from src.verdict import (classify, colour_conflict, colours, combo_mismatch, is_accessory, model_conflict,
+                         name_levels, pack_mismatch, size_conflict, storage_unconfirmed)
 
 SERPER = "https://google.serper.dev/"
 LIVE_CACHE = config.CACHE_DIR / "live"
@@ -85,6 +86,39 @@ def well_known(store, title):
         return True
     first = store.lower().split()[0] if store.split() else ""  # "Wildcraft Official" selling "Cargo Pack ... Wildcraft"
     return "official" in store.lower() and len(first) > 2 and first in words
+
+
+def attributes(title):
+    """Variant attributes written in a title: storage, RAM, colour, size and pack count (for the variant filter)."""
+    from src.verdict import SIZE, SIZE_UNIT, network_free
+    t, out = title.lower(), {}
+    storage = []
+    for value, unit, ram in re.findall(r"(\d+(?:\.\d+)?)\s?(gb|tb)\b(\s*(?:ram|ddr\w*))?", t):
+        gb = float(value) * (1024 if unit == "tb" else 1)
+        if ram:
+            out["ram"] = f"{value} GB RAM"
+        else:
+            storage.append(gb)
+    if storage:
+        gb = max(storage)
+        out["storage"] = f"{gb / 1024:g} TB" if gb >= 1024 else f"{gb:g} GB"
+    c = colours(title)
+    if c:
+        out["colour"] = " / ".join(sorted(w.capitalize() for w in c))
+    for value, unit in SIZE.findall(network_free(t)):
+        kind, factor = SIZE_UNIT[unit]
+        if kind == "volume":
+            ml = float(value) * factor
+            out["size"] = f"{ml / 1000:g} L" if ml >= 1000 else f"{ml:g} ml"
+        elif kind == "mass":
+            g = float(value) * factor
+            out["size"] = f"{g / 1000:g} kg" if g >= 1000 else f"{g:g} g"
+        if "size" in out:
+            break
+    m = re.search(r"\b(?:pack|set) of (\d+)|\b(\d+)\s?(?:pcs|pieces)\b", t)
+    if m:
+        out["pack"] = f"Pack of {m.group(1) or m.group(2)}"
+    return out
 
 
 def parse_price(text):
@@ -242,9 +276,13 @@ def score_pairs(matcher, sig, titles):
     })[matcher.cfg["features_v2"]]
     prob = matcher.model.predict_proba(X)[:, 1]
     combo = np.array([combo_mismatch(titles[i], titles[j]) for i, j in zip(a, b)])
-    names = name_conflicts(titles)  # rare words in this search = model / line / shade names
-    other_model = np.array([model_conflict(titles[i], titles[j]) or names(i, j) for i, j in zip(a, b)])
-    sizes = np.array([size_conflict(titles[i], titles[j]) for i, j in zip(a, b)])  # watt/litre/gm: verdict only
+    names = name_levels(titles)  # rare words in this search = model / line / shade names: 2 other model, 1 variant
+    level = np.array([names(i, j) for i, j in zip(a, b)])
+    other_model = np.array([model_conflict(titles[i], titles[j]) for i, j in zip(a, b)]) | (level == 2)
+    # same model but another size, colour or pack -> "variant" (rules in src/verdict.py; not model features)
+    sizes = np.array([size_conflict(titles[i], titles[j]) or colour_conflict(titles[i], titles[j])
+                      or pack_mismatch(titles[i], titles[j]) or storage_unconfirmed(titles[i], titles[j])
+                      for i, j in zip(a, b)]) | (level == 1)
     verdict = classify(prob, num[:, 1].astype(bool) | sizes, X["colour_dist"].to_numpy(), combo, matcher.cfg, other_model)
     verdict_lr = classify(prob, num[:, 1], X["colour_dist"].to_numpy(), combo, matcher.cfg)  # ablation: no live rules
     P, V, V_lr = np.eye(n), np.full((n, n), "same", dtype=object), np.full((n, n), "same", dtype=object)
@@ -312,7 +350,7 @@ def search(matcher, text=None, image_bytes=None, image_url=None, num=40, vectors
                    price_value=parse_price(raw[i].get("price")), link=raw[i].get("link"),
                    image=raw[i]["imageUrl"], rating=raw[i].get("rating"), rating_count=raw[i].get("ratingCount"),
                    delivery=raw[i].get("delivery"), known=well_known(raw[i].get("source"), raw[i]["title"]),
-                   accessory=is_accessory(raw[i]["title"]))
+                   accessory=is_accessory(raw[i]["title"]), attrs=attributes(raw[i]["title"]))
               for i in keep]
     photos = [photos[i] for i in keep]
     if inp["ref_photo"]:  # the user's own photo is item 0, compared with every offer like a listing

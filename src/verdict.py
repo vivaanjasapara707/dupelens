@@ -48,6 +48,12 @@ def _model_parts(title):
     variant = {w for w in words if w in VARIANT_WORDS}
     accessory = bool({w for w in words if w in ACCESSORY_WORDS})
     codes = {w for w in words if re.search(r"[a-z]", w) and re.search(r"\d", w) and len(w) >= 2 and not SPEC.match(w)}
+    # a hyphenated code is one code: "WH-1000XM5" -> wh1000xm5 (its pieces wh / 1000xm5 alone would match WF-1000XM5)
+    for joined in re.findall(r"[a-z0-9]+(?:-[a-z0-9]+)+", t):
+        flat = joined.replace("-", "")
+        if re.search(r"[a-z]", flat) and re.search(r"\d", flat) and not SPEC.match(flat):
+            codes -= set(joined.split("-"))
+            codes.add(flat)
     named = {(w, float(n)) for w, n in NAMED_NUMBER.findall(t) if w not in STOP}
     # a glued code reads like a spaced one: "DX2" = "DX 2", so "DX 6" vs "DX2" is a conflict
     named |= {(m.group(1), float(m.group(2))) for c in codes for m in [re.fullmatch(r"([a-z]{2,})(\d+)", c)] if m}
@@ -86,38 +92,84 @@ FILLER = {"with", "and", "for", "the", "buy", "new", "free", "online", "best", "
           "from", "upto", "get", "more", "size", "combo", "pcs", "piece", "pieces", "india", "indian", "genuine"}
 
 
-def name_conflicts(titles, max_share=0.3, min_offers=8):
-    """Pairs whose titles use different NAME words (one search's offers at a time).
+def name_levels(titles, max_share=0.3, min_offers=8):
+    """How different two titles' NAME words are (one search's offers at a time): 0 none, 1 variant, 2 other model.
 
     A name word is one that fewer than max_share of the offers in this search use, so it names a
     model, line, shade or scent (Matchless vs Xeno, Plum Pick vs Red Coat), while words most offers
-    share (the brand, "mixer", "grinder") are ignored. Two titles that both carry name words but share
-    none of them describe different items, and so do a vague title and a named one. Needs enough
-    offers to know which words are rare.
-    Returns a function (i, j) -> bool.
+    share (the brand, "mixer", "grinder") are ignored.
+      2 (other model): both titles carry name words, share none, and those words are not only colours.
+      1 (variant):     only colour words differ (Cosmic Orange vs Deep Blue), or one title is vague and the
+                       other names its item: the same model, but not confirmed as the identical item.
+    Needs enough offers to know which words are rare. Returns a function (i, j) -> 0, 1 or 2.
     """
     docs = [{w for w in re.findall(r"[a-z]{3,}", t.lower()) if w not in FILLER} for t in titles]
     n = len(titles)
     if n < min_offers:
-        return lambda i, j: False
+        return lambda i, j: 0
     df = {}
     for d in docs:
         for w in d:
             df[w] = df.get(w, 0) + 1
     names = [{w for w in d if df[w] / n < max_share} for d in docs]
-    # also when only one title names its item: a vague title cannot confirm it is the same one
-    return lambda i, j: bool(names[i]) != bool(names[j]) or (bool(names[i]) and not names[i] & names[j])
+
+    def level(i, j):
+        a, b = names[i], names[j]
+        if not a and not b or a & b:
+            return 0
+        if bool(a) != bool(b) or (a | b) <= COLOURS:
+            return 1
+        return 2
+    return level
+
+
+def storage_unconfirmed(title_a, title_b):
+    """True when only one title states a storage size (256 GB): the identical item cannot be confirmed."""
+    has = lambda t: bool(re.search(r"\d+\s?(?:gb|tb)\b(?!\s*ram)", t.lower()))
+    return has(title_a) != has(title_b)
+
+
+COLOURS = {"black", "white", "silver", "grey", "gray", "gold", "golden", "rose", "pink", "red", "blue", "navy", "green", "olive",
+           "yellow", "orange", "purple", "violet", "lavender", "brown", "beige", "cream", "peach", "teal", "turquoise",
+           "maroon", "titanium", "graphite", "midnight", "starlight", "champagne", "copper", "bronze", "mint", "coral",
+           "multicolor", "multicolour", "transparent"}
+BUNDLE = re.compile(r"\bbundle\b|\bwith free\b|\bfree gift\b|\bcombo\b|\b(?:pack|set) of \d+|\bbuy \d+ get \d+", re.IGNORECASE)
+
+
+def colours(title):
+    return set(re.findall(r"[a-z]+", title.lower())) & COLOURS
+
+
+def colour_conflict(title_a, title_b):
+    """True when both titles name a colour and they share none (Black vs Silver)."""
+    ca, cb = colours(title_a), colours(title_b)
+    return bool(ca and cb and not ca & cb)
+
+
+def network_free(text):
+    """'4G' / '5G' are phone networks, not grams: drop them before reading sizes."""
+    return re.sub(r"\b[2-5]g\b", " ", text.lower())
+
+
+def _sizes(title):
+    out = {}
+    for value, unit in SIZE.findall(network_free(title)):
+        kind, factor = SIZE_UNIT[unit]
+        out.setdefault(kind, set()).add(round(float(value) * factor, 3))
+    return out
+
+
+def pack_mismatch(title_a, title_b):
+    """True when one title is a bundle/combo/multi-pack and the other is not, including combos written as
+    several sizes in one title ("Popular 2 L 3 L" vs "Popular 3 L")."""
+    def is_pack(t):
+        return bool(BUNDLE.search(t)) or any(len(v) >= 2 for k, v in _sizes(t).items() if k != "power")
+    return is_pack(title_a) != is_pack(title_b)
 
 
 def size_conflict(title_a, title_b):
     """True when both titles give a power, volume or mass and no value matches (1600 W vs 1200 Watt)."""
-    def sizes(t):
-        out = {}
-        for value, unit in SIZE.findall(t.lower()):
-            kind, factor = SIZE_UNIT[unit]
-            out.setdefault(kind, set()).add(round(float(value) * factor, 3))
-        return out
-    sa, sb = sizes(title_a), sizes(title_b)
+    sa, sb = _sizes(title_a), _sizes(title_b)
     return any(not sa[k] & sb[k] for k in sa.keys() & sb.keys())
 
 

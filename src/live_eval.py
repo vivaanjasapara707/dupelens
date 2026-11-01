@@ -28,13 +28,18 @@ SETS = {
              "Redmi 13C 5G 128GB", "Lakme 9 to 5 primer matte lipstick", "Wildcraft 35 L backpack",
              "Butterfly mixer grinder 750 W", "Usha table fan 400 mm"],
     # "final": run once after the name-word rule was frozen (the "test" set was used to design it).
+    # "round4": run once after the model-level view and rules v3 (hyphen codes, colours, packs, storage, name levels)
+    # were frozen; adds stratum V (pairs called "other variant", shown in the listing) to measure same-MODEL precision.
+    "round4": ["OnePlus Nord CE4 Lite 5G 128GB", "Samsung Galaxy S24 FE 128GB", "boAt Stone 350 speaker",
+               "Philips HL7756 mixer grinder 750 W", "Maybelline Colossal kajal", "Head & Shoulders shampoo 340 ml",
+               "Cello Opalware dinner set", "Skybags backpack 30 L"],
     "final": ["Prestige Popular pressure cooker 3 litre", "Philips BT3221 beard trimmer", "Mi Power Bank 3i 20000 mAh",
               "Boroplus antiseptic cream 80 ml", "Casio FX-991ES Plus calculator", "Sony WH-1000XM5 headphones",
               "Wipro 9W LED bulb", "Vaseline intensive care deep restore body lotion 400 ml"],
 }
-SET = "final" if "--final" in sys.argv else "test" if "--test" in sys.argv else "tune"
+SET = next((k for k in ("round4", "final", "test") if f"--{k}" in sys.argv), "tune")
 QUERIES = SETS[SET]
-N = {"S": 40, "R": 30, "H": 30}
+N = {"S": 40, "V": 30, "R": 30, "H": 30}
 SHEET = config.RESULTS_DIR / ("live_eval_sheet.csv" if SET == "tune" else f"live_{SET}_sheet.csv")
 KEY = config.CACHE_DIR / ("live_eval_key.csv" if SET == "tune" else f"live_{SET}_key.csv")
 
@@ -54,8 +59,12 @@ def make_sheet():
     pool = pd.DataFrame(rows)
     picks = [pool[pool.verdict == "S"].sample(min(N["S"], (pool.verdict == "S").sum()), random_state=1).assign(stratum="S")]
     rest = pool.drop(picks[0].index)
+    if SET == "round4":  # pairs shown as "other variant" of the same model
+        picks.append(rest[rest.verdict == "V"].sample(min(N["V"], (rest.verdict == "V").sum()), random_state=5).assign(stratum="V"))
+        rest = rest.drop(picks[-1].index)
+        pool.groupby("query").verdict.value_counts().unstack(fill_value=0).to_csv(config.RESULTS_DIR / f"live_{SET}_counts.csv")
     picks.append(rest.sample(N["R"], random_state=2).assign(stratum="R"))
-    rest = rest.drop(picks[1].index)
+    rest = rest.drop(picks[-1].index)
     hard = rest[(rest.verdict != "S") & (rest.tfidf >= 0.5)]
     picks.append(hard.sample(min(N["H"], len(hard)), random_state=3).assign(stratum="H"))
     sheet = pd.concat(picks).sample(frac=1, random_state=4).reset_index(drop=True)
@@ -114,7 +123,10 @@ def stats():
     for key, s, hit, name in [("S_same", "S", same, "model says same -> truly the identical item"),
                               ("S_same_or_variant", "S", line, "model says same -> at least the same product line"),
                               ("R_same", "R", same, "random pair from a search -> identical item (naive baseline)"),
-                              ("H_same", "H", same, "rejected look-alike -> actually identical (missed)")]:
+                              ("V_same_model", "V", line, "model says other variant -> at least the same product line"),
+                              ("V_same", "V", same, "model says other variant -> actually the identical item"),
+                              ("H_same", "H", same, "rejected look-alike -> actually identical (missed)"),
+                              ("H_same_model", "H", line, "rejected look-alike -> actually the same product line (missed)")]:
         r = search_bootstrap(lab[lab.stratum == s], hit, rng)
         if r:
             out[key] = dict(what=name, **r)

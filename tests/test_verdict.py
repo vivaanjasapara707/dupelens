@@ -50,14 +50,19 @@ def test_size_conflict_reads_watts_and_litres():
 
 
 def test_glued_codes_jars_and_name_words():
-    from src.verdict import name_conflicts, size_conflict
+    from src.verdict import name_levels, size_conflict, storage_unconfirmed
     assert model_conflict("Bajaj DX 6", "Bajaj Bajaj_Dx2 600 W Dry Iron")
     assert size_conflict("Butterfly Smart 750W Mixer Grinder with 3 Jars", "Butterfly Smart 750 Watts Mixer Grinder with 4 Jars")
-    titles = ["Butterfly Matchless 750 W Mixer Grinder", "Butterfly Xeno 750 W Mixer Grinder"] + \
+    titles = ["Butterfly Matchless 750 W Mixer Grinder", "Butterfly Xeno 750 W Mixer Grinder",
+              "Butterfly Orange 750 W Mixer Grinder", "Butterfly Purple 750 W Mixer Grinder"] + \
              [f"Butterfly Mixer Grinder 750 W model{k}" for k in range(8)]
-    names = name_conflicts(titles)
-    assert names(0, 1)                      # Matchless vs Xeno: different name words
-    assert not name_conflicts(titles[:2])(0, 1)  # too few offers to know which words are rare
+    level = name_levels(titles)
+    assert level(0, 1) == 2                 # Matchless vs Xeno: other model
+    assert level(2, 3) == 1                 # only colours differ: variant
+    assert level(0, 4) == 1                 # named vs vague title: same model, not confirmed identical
+    assert name_levels(titles[:2])(0, 1) == 0  # too few offers to know which words are rare
+    assert storage_unconfirmed("Apple iPhone 17 Pro 512gb", "Apple iPhone 17 Pro")
+    assert not storage_unconfirmed("Redmi 13C 8GB RAM 128GB", "Redmi 13C 128 GB")
 
 
 def test_accessories_and_well_known_stores():
@@ -69,3 +74,14 @@ def test_accessories_and_well_known_stores():
     assert well_known("boAt", "boAt Airdopes 141 Gen 2")                       # the brand's own store
     assert well_known("Wildcraft Official", "Cargo Pack 35 Exp Wildcraft Black")
     assert not well_known("addmecart", "boAt Airdopes 141") and not well_known("Tradeindia.com", "Pigeon Kettle")
+
+
+def test_rules_v3_hyphen_codes_colours_packs():
+    from src.verdict import colour_conflict, pack_mismatch
+    assert model_conflict("Sony WH-1000XM5 Wireless Headphones", "Sony WF-1000XM5 Earbuds")
+    assert not model_conflict("Sony WH-1000XM5 Headphones", "SONY WH-1000XM5 Wireless Noise Cancelling")
+    assert colour_conflict("Apple iPhone 17 Pro 256 GB Cosmic Orange", "Apple iPhone 17 Pro 256GB Deep Blue")
+    assert not colour_conflict("Redmi 13C Stardust Black 128GB", "Redmi 13C 128 GB (Black)")
+    assert pack_mismatch("Prestige Popular 2 L 3 L", "Prestige Popular 3 L Pressure Cooker")
+    assert pack_mismatch("Sony WH-1000XM5 Bundle with Case", "Sony WH-1000XM5")
+    assert not pack_mismatch("Pigeon Kettle 1.5 Litre 1500 W", "Pigeon Hot Kettle 1.5 L")
