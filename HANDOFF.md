@@ -186,3 +186,8 @@ Affiliate API for a fresh Indian catalog once the user has an affiliate account.
   variant 33/40 = 0.825 [0.675, 0.95]; R 3/30 = 0.10; H missed 2/30 = 0.067 (results/json/live_eval_final.json).
   Do not tune on "final"; any new rule needs a 4th fresh set. Grouping now starts from the offer with most
   "same" links (display only). 6 example searches saved in dashboard/data/searches/. 35 tests pass.
+- 2026-11-01: README top rewritten for live search (measured numbers only); PRESENTATION.md = pitch, demo script,
+  plain-words explanation, numbers, limits, Q&A for the user's presentation. evidence.html notes the 2 known
+  wrong price-gap rows. NEXT (user said: deploy LAST): Hugging Face Spaces (needs user's HF account + write
+  token; set SERPER_API_KEY as a Space secret and PUBLIC_URL for photo upload), update Vercel static site, push to
+  GitHub (ask first).

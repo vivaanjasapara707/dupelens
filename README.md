@@ -1,14 +1,46 @@
 # DupeLens
 
-**Give it an Amazon listing (title + photo, optionally your price). It tells you whether the same product is already listed by other sellers, shows those listings with their photos and prices, and says whether the price is fair.**
+**Same product, many sellers: know where to buy it.** Type a product name, paste an Amazon/Flipkart link, or give a product photo. DupeLens collects offers from Indian online stores, uses machine learning to keep only the listings that are *exactly the same item* (not a look-alike, another colour or another pack), and tells you the fair price, the seller to trust and where to buy.
+
+## Live search (any product)
+
+```bash
+.venv\Scripts\python.exe -m src.app        # Windows   (Mac/Linux: .venv/bin/python -m src.app)
+```
+Open http://127.0.0.1:8000 and type, for example, `Sony WH-1000XM5 headphones`. Needs a free Serper key (serper.dev) in a file `.env`: `SERPER_API_KEY=...`.
+
+1. **Understand the input.** A name is searched as is; a store link gives the name from the link (`src/live.py: name_from_link`); a photo goes to Google Lens, which names the product, and the photo itself is compared with every offer.
+2. **Collect offers.** Up to 40 offers from Google Shopping (India) through Serper: title, photo, price, store, rating.
+3. **Read photos and titles.** CLIP (photo, 512 numbers), DINOv2 (exact object, 384), MPNet (title meaning, 768), colour histogram, perceptual hash. PCA (fitted on Shopee train) compresses CLIP and MPNet to 32 numbers each.
+4. **Judge every pair.** The trained logistic-regression model (M1_v2 below) gives each pair a probability; rules in `src/verdict.py` turn it into same / variant / different: model words (Pro, Neo, Gen 2, UV), model numbers (PIC 20 vs PIC 3.1, DX2), accessories (cover, replacement), sizes (1600 W vs 1200 W, 3 vs 4 jars), and per-search name words (Matchless vs Xeno, Plum Pick vs Red Coat).
+5. **Rank the sellers** of the exact item: fair price = median; seller score = same-item confidence 35 + fair price 25 + star rating 15 + number of reviews 10 + known store 15 (a fixed rule, not a trained model); a price more than 40% below the median is flagged "suspiciously cheap". Price is never a matching feature.
+
+Example (search on 1 Nov 2026, saved in `dashboard/data/searches/`): Sony WH-1000XM5 — 5 offers of the exact item from 3 stores at ₹19,900–₹48,928 (146% apart); variants in silver, pink and blue, the XM6, the WF earbuds and replacement ear pads kept apart.
+
+**Live-search accuracy** (`src/live_eval.py`, `results/json/live_eval_final.json`). Eight fresh products searched only after every rule was frozen (Prestige cooker, Philips trimmer, Mi power bank, Boroplus, Casio calculator, Sony headphones, Wipro bulb, Vaseline lotion); offer pairs labelled blind by **Claude, an AI assistant, not humans**:
+
+| When DupeLens says "same item" | Result | 95% CI |
+|---|---|---|
+| it is the identical item | 23 / 40 = 57.5% | 40–72.5% |
+| it is at least the same product line (identical or colour/size/pack variant) | 33 / 40 = 82.5% | 67.5–95% |
+| baseline: a random pair of offers from the same search is the identical item | 3 / 30 = 10% | 0–23% |
+| true matches missed among look-alikes the model rejected | 2 / 30 = 6.7% | 0–17% |
+
+Two earlier rounds of 8 searches each were used to design the rules and are not reported as accuracy (on the first, before the rules, "same" was right 20 / 40 times). Once the models are loaded a search took 2–4 s on a Windows laptop CPU.
+
+Limits of live search: shades, scents and pack sizes that only differ in the photo or are not named in the title are still the main error; the seller score weights are a design choice; uploaded photos need the online version (Google Lens must reach the photo), on a laptop paste the photo's address instead; prices are what Google Shopping shows at search time.
+
+## How the matching model was built and tested
+
+The model below was trained and tested before live search existed; its numbers come from the Shopee data and a 2023 Amazon India catalog.
 
 A logistic-regression matcher over image, text and variant-aware features reaches **per-listing F1 0.838 (95% CI 0.825–0.851)** on a held-out set of Shopee product groups, against 0.461 for a self-only floor and 0.794 for the best single feature. An upgraded model (v2: adds DINOv2 exact-item photo matching and a colour check) raises Shopee validation F1 from 0.843 to 0.864 and, on fresh Amazon India pairs, is right **82.5% of the time (95% CI 70–92.5%)** when it says two listings are the same product, up from 50%. It also tells exact duplicates apart from colour/pack variants.
 
-**Live dashboard: https://dupelens.vercel.app**
+**Older static demo (2023 catalog only): https://dupelens.vercel.app**
 
 Every number below comes from code in this repo; the raw rows are in `results/results.csv`.
 
-## Use it
+## Check one listing against the 2023 test catalog
 
 - **Online demo:** https://dupelens.vercel.app — pick any of the 698 catalog listings; it is hidden from the catalog and checked as if new (real model output, precomputed).
 - **Check a brand-new listing (runs the models on your Mac):**
@@ -23,11 +55,11 @@ Example (a real Amazon listing that is *not* in the catalog): "FIT & SHAPE Hair 
 
 The app works best for products in the trained category (personal-care appliances: hair straighteners, dryers, curlers, trimmers). To use another category, change `INDIA_CATEGORY` in `src/config.py` and re-run the India steps.
 
-## The problem
+### The problem
 
 On Amazon and Flipkart one product often appears as many separate listings from different sellers, with different titles, photos and prices (for example the same hair-straightener comb at ₹299, ₹399 and ₹499). Buyers cannot tell which listings are the same item, or whether a cheaper one is a different variant or pack size.
 
-## How it works
+### How the model works
 
 1. **Data.** Shopee Price Match Guarantee (Kaggle): 34,250 listings in 11,014 product groups (`label_group` = same product). Split **by product group** 70/15/15 (seed 42): train 24,065 listings / 7,710 groups, validation 5,045 / 1,652, test 5,140 / 1,652. No product appears in two splits, so the test score measures matching *new* products.
 2. **Embeddings.** CLIP ViT-B/32 image vectors (512-d) and multilingual MPNet title vectors (768-d), unit length; perceptual hash (`imagehash.phash`) recomputed for every photo.
@@ -111,7 +143,9 @@ kaggle competitions download -c shopee-product-matching -p data/ && unzip data/s
 .venv/bin/python -m src.train_v2            # v2 model, compared on validation
 .venv/bin/python -m src.variant --calibrate  # v2 verdict cut-offs on earlier labels (then --sheet, --stats)
 .venv/bin/python -m src.service             # demo results for every catalog listing
-.venv/bin/python -m src.app                 # live app at http://127.0.0.1:8000
+.venv/bin/python -m src.app                 # live app at http://127.0.0.1:8000 (live search needs SERPER_API_KEY in .env)
+.venv/bin/python -m src.live "boat airdopes 141"   # one live search in the terminal
+.venv/bin/python -m src.live_eval --sheet --final  # blind sheet for the final accuracy round (then --stats --final)
 .venv/bin/python -m http.server 8765 --directory dashboard   # open http://localhost:8765 (live: https://dupelens.vercel.app)
 ```
 
