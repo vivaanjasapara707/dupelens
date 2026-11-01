@@ -21,6 +21,7 @@
   :focus-visible { outline: 2px solid var(--accent-2); outline-offset: 2px; border-radius: 8px; }
   .num { font-variant-numeric: tabular-nums; }
   [hidden] { display: none !important; }
+  code { background: var(--bg); padding: 1px 6px; border-radius: 6px; color: var(--accent-2); font-size: 12.5px; }
 
   header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
   .brand { display: flex; align-items: center; gap: 12px; font-weight: 700; font-size: 20px; letter-spacing: -.02em; }
@@ -30,23 +31,32 @@
   .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
   .chip.live .dot { background: var(--good); } .chip.demo .dot { background: var(--warn); }
 
-  .hero { text-align: center; padding: 48px 0 26px; }
+  .hero { text-align: center; padding: 44px 0 22px; }
   .hero h1 { font-size: clamp(28px, 5vw, 46px); line-height: 1.1; margin: 0 0 12px; letter-spacing: -.03em; font-weight: 800; }
   .hero h1 em { font-style: normal; background: linear-gradient(90deg, var(--accent), var(--accent-2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
-  .hero p { color: var(--muted); max-width: 680px; margin: 0 auto 26px; font-size: 16px; }
-  form.search { display: flex; gap: 10px; max-width: 720px; margin: 0 auto; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 8px; box-shadow: 0 10px 40px rgba(0,0,0,.35); }
-  form.search input { flex: 1; min-width: 0; background: none; border: 0; color: var(--ink); font: inherit; font-size: 17px; padding: 10px 12px; }
-  form.search input:focus { outline: none; }
-  .btn { background: linear-gradient(135deg, var(--accent), #1b6fe0); color: #fff; border: 0; padding: 12px 22px; border-radius: 11px; font: inherit; font-weight: 600; cursor: pointer; white-space: nowrap; }
+  .hero p { color: var(--muted); max-width: 700px; margin: 0 auto 24px; font-size: 16px; }
+  form.search { max-width: 760px; margin: 0 auto; background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 8px; box-shadow: 0 10px 40px rgba(0,0,0,.35); transition: border-color .15s; }
+  form.search.over { border-color: var(--accent-2); }
+  .bar { display: flex; gap: 8px; align-items: center; }
+  .bar input { flex: 1; min-width: 0; background: none; border: 0; color: var(--ink); font: inherit; font-size: 17px; padding: 10px 12px; }
+  .bar input:focus { outline: none; }
+  .icon-btn { background: var(--raised); border: 1px solid var(--line); color: var(--ink); border-radius: 11px; padding: 10px 12px; font: inherit; font-size: 13.5px; cursor: pointer; white-space: nowrap; }
+  .icon-btn:hover { border-color: var(--accent); }
+  .btn { background: linear-gradient(135deg, var(--accent), #1b6fe0); color: #fff; border: 0; padding: 12px 20px; border-radius: 11px; font: inherit; font-weight: 600; cursor: pointer; white-space: nowrap; }
   .btn:disabled { opacity: .5; cursor: wait; }
+  .attached { display: flex; align-items: center; gap: 10px; padding: 8px 10px 4px; text-align: left; font-size: 13px; color: var(--muted); }
+  .attached img { width: 44px; height: 44px; object-fit: contain; background: #fff; border-radius: 8px; }
+  .attached button { background: none; border: 0; color: var(--bad); cursor: pointer; font: inherit; font-size: 13px; }
+  .hint { color: var(--muted); font-size: 12.5px; margin-top: 10px; }
+  @media (max-width: 560px) { .bar { flex-wrap: wrap; } .bar input { flex-basis: 100%; } .bar .btn { flex: 1; } }
   .examples { margin-top: 14px; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
   .examples span { color: var(--muted); font-size: 13px; align-self: center; }
   .ex { background: var(--raised); border: 1px solid var(--line); color: var(--ink); border-radius: 99px; padding: 6px 13px; font: inherit; font-size: 13px; cursor: pointer; }
   .ex:hover { border-color: var(--accent); }
-  .notice { max-width: 720px; margin: 14px auto 0; background: var(--raised); border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px; color: var(--muted); font-size: 13.5px; text-align: left; }
+  .notice { max-width: 760px; margin: 14px auto 0; background: var(--raised); border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px; color: var(--muted); font-size: 13.5px; text-align: left; }
   .err { border-color: rgba(248,113,113,.5); color: #fecaca; }
 
-  .steps { max-width: 720px; margin: 30px auto; display: grid; gap: 10px; }
+  .steps { max-width: 760px; margin: 26px auto; display: grid; gap: 10px; }
   .step { display: flex; align-items: center; gap: 12px; color: var(--muted); }
   .step.on { color: var(--ink); } .step.done { color: var(--good); }
   .spin { width: 18px; height: 18px; border: 3px solid var(--line); border-top-color: var(--accent-2); border-radius: 50%; animation: s .8s linear infinite; flex: none; }
@@ -56,48 +66,72 @@
 
   .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 20px; margin-top: 18px; }
   .card h2 { font-size: 17px; margin: 0 0 4px; } .card .sub { color: var(--muted); font-size: 13.5px; margin: 0 0 14px; }
-  .meta-line { color: var(--muted); font-size: 13px; margin-top: 22px; }
+  .understood { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; color: var(--muted); font-size: 14px; margin-top: 8px; }
+  .understood b { color: var(--ink); }
 
-  .best { display: grid; grid-template-columns: 170px 1fr auto; gap: 22px; align-items: center; background: linear-gradient(135deg, rgba(37,137,255,.14), rgba(34,211,238,.06)); border-color: rgba(34,211,238,.35); }
-  .best .ph { width: 170px; }
-  .best .label { color: var(--accent-2); font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: .06em; }
-  .best h2 { font-size: 19px; line-height: 1.35; margin: 4px 0 8px; }
-  .best .facts { display: flex; gap: 22px; flex-wrap: wrap; margin-top: 8px; }
-  .fact .v { font-size: 26px; font-weight: 800; letter-spacing: -.02em; } .fact .l { color: var(--muted); font-size: 12.5px; }
+  .top2 { display: grid; grid-template-columns: 1.6fr 1fr; gap: 18px; }
+  @media (max-width: 900px) { .top2 { grid-template-columns: 1fr; } }
+  .best { display: grid; grid-template-columns: 150px 1fr; gap: 20px; align-items: start; background: linear-gradient(135deg, rgba(52,211,153,.12), rgba(34,211,238,.05)); border-color: rgba(52,211,153,.45); margin-top: 0; }
+  .best .ph { width: 150px; }
+  .label { color: var(--good); font-weight: 700; font-size: 12.5px; text-transform: uppercase; letter-spacing: .07em; }
+  .best h2 { font-size: 18px; line-height: 1.35; margin: 4px 0 6px; }
+  .facts { display: flex; gap: 20px; flex-wrap: wrap; margin: 10px 0 14px; }
+  .fact .v { font-size: 24px; font-weight: 800; letter-spacing: -.02em; } .fact .l { color: var(--muted); font-size: 12.5px; }
   .fact .v.good { color: var(--good); }
-  .buy { display: inline-block; background: var(--good); color: #052e1c; font-weight: 700; padding: 13px 20px; border-radius: 12px; white-space: nowrap; }
+  .buy { display: inline-block; background: var(--good); color: #052e1c; font-weight: 700; padding: 12px 18px; border-radius: 12px; white-space: nowrap; }
   .buy:hover { text-decoration: none; filter: brightness(1.08); }
-  @media (max-width: 820px) { .best { grid-template-columns: 1fr; } .best .ph { width: 140px; } }
+  @media (max-width: 600px) { .best { grid-template-columns: 1fr; } .best .ph { width: 120px; } }
+  .side { margin-top: 0; display: flex; flex-direction: column; gap: 12px; }
+  .stat { background: var(--raised); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
+  .stat .v { font-size: 22px; font-weight: 800; } .stat .l { color: var(--muted); font-size: 12.5px; }
 
   .ph { width: 100%; aspect-ratio: 1; object-fit: contain; background: #fff; border-radius: 10px; display: block; }
   .rows { display: grid; gap: 8px; }
-  .row { display: grid; grid-template-columns: 64px 1fr auto auto; gap: 14px; align-items: center; background: var(--raised); border: 1px solid var(--line); border-radius: 12px; padding: 8px 12px 8px 8px; }
-  .row.top { border-color: rgba(52,211,153,.55); }
+  .row { display: grid; grid-template-columns: 30px 64px 1fr 150px auto auto; gap: 14px; align-items: center; background: var(--raised); border: 1px solid var(--line); border-radius: 12px; padding: 8px 12px 8px 10px; }
+  .row.top { border-color: rgba(52,211,153,.6); }
+  .row .rk { color: var(--muted); font-weight: 700; text-align: center; }
   .row .ph { width: 64px; }
   .row .store { font-weight: 600; }
   .row .t { color: var(--muted); font-size: 12.5px; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
   .row .price { font-weight: 700; font-size: 17px; text-align: right; }
-  .row .go { font-size: 13px; border: 1px solid var(--line); padding: 7px 12px; border-radius: 9px; white-space: nowrap; color: var(--ink); }
-  .row .go:hover { border-color: var(--accent); text-decoration: none; }
-  @media (max-width: 640px) { .row { grid-template-columns: 56px 1fr; } .row .ph { width: 56px; } .row .price { text-align: left; } }
+  .go { font-size: 13px; border: 1px solid var(--line); padding: 7px 12px; border-radius: 9px; white-space: nowrap; color: var(--ink); background: none; cursor: pointer; font-family: inherit; }
+  .go:hover { border-color: var(--accent); text-decoration: none; }
+  @media (max-width: 760px) { .row { grid-template-columns: 56px 1fr; } .row .rk { display: none; } .row .ph { width: 56px; } .row .price { text-align: left; } }
+  .score { font-size: 12px; color: var(--muted); }
+  .score .sbar { height: 7px; background: var(--bg); border-radius: 99px; overflow: hidden; margin: 4px 0 2px; }
+  .score .sbar i { display: block; height: 100%; background: linear-gradient(90deg, var(--accent), var(--good)); border-radius: 99px; }
+  .score b { color: var(--ink); font-size: 14px; }
   .pills { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
   .pill { font-size: 11.5px; padding: 2px 8px; border-radius: 99px; border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
-  .pill.best-p { color: #052e1c; background: var(--good); border-color: var(--good); font-weight: 600; }
+  .pill.g { color: #052e1c; background: var(--good); border-color: var(--good); font-weight: 600; }
+  .pill.c { color: #04101e; background: var(--accent-2); border-color: var(--accent-2); font-weight: 600; }
   .pill.up { color: var(--bad); border-color: rgba(248,113,113,.4); } .pill.down { color: var(--good); border-color: rgba(52,211,153,.4); }
+  .pill.warn { color: var(--warn); border-color: rgba(251,191,36,.45); }
   .pill.conf { color: var(--accent-2); border-color: rgba(34,211,238,.35); }
-  .linkbtn { background: none; border: 0; color: var(--accent-2); font: inherit; font-size: 12px; cursor: pointer; padding: 0; }
 
   .gridc { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; }
   .tile { background: var(--raised); border: 1px solid var(--line); border-radius: 14px; padding: 10px; display: flex; flex-direction: column; gap: 6px; text-align: left; color: var(--ink); font: inherit; cursor: pointer; }
   .tile:hover { border-color: var(--accent); }
   .tile .t { font-size: 12.5px; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; min-height: 50px; }
-  .tile .p { font-weight: 700; }
-  .tile .s { color: var(--muted); font-size: 12px; }
+  .tile .p { font-weight: 700; } .tile .s { color: var(--muted); font-size: 12px; }
 
-  .how { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
-  @media (max-width: 820px) { .how { grid-template-columns: 1fr 1fr; } } @media (max-width: 520px) { .how { grid-template-columns: 1fr; } }
+  .bts { display: grid; grid-template-columns: 1.2fr 1fr; gap: 18px; }
+  @media (max-width: 900px) { .bts { grid-template-columns: 1fr; } }
+  .panel { background: var(--raised); border: 1px solid var(--line); border-radius: 14px; padding: 14px; }
+  .panel h3 { font-size: 14px; margin: 0 0 4px; } .panel p { color: var(--muted); font-size: 12.5px; margin: 0 0 10px; }
+  svg text { fill: var(--muted); font-size: 11px; font-family: inherit; }
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--muted); margin-top: 6px; }
+  .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; vertical-align: -1px; }
+  .hbar { display: grid; grid-template-columns: 170px 1fr 54px; gap: 10px; align-items: center; font-size: 12.5px; margin: 7px 0; }
+  .hbar .track { height: 8px; background: var(--bg); border-radius: 99px; overflow: hidden; }
+  .hbar .track i { display: block; height: 100%; border-radius: 99px; background: var(--accent); }
+  .hbar .v { text-align: right; color: var(--ink); }
+  .tip { position: fixed; pointer-events: none; background: var(--raised-2); border: 1px solid var(--line); border-radius: 8px; padding: 6px 9px; font-size: 12px; z-index: 10; display: none; max-width: 280px; }
+
+  .how { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+  @media (max-width: 980px) { .how { grid-template-columns: 1fr 1fr; } } @media (max-width: 520px) { .how { grid-template-columns: 1fr; } }
   .how div { background: var(--raised); border: 1px solid var(--line); border-radius: 14px; padding: 14px; }
-  .how b { display: block; margin-bottom: 4px; } .how p { margin: 0; color: var(--muted); font-size: 13.5px; }
+  .how b { display: block; margin-bottom: 4px; } .how p { margin: 0; color: var(--muted); font-size: 13px; }
   .how .n { width: 26px; height: 26px; border-radius: 8px; background: var(--raised-2); color: var(--accent-2); display: grid; place-items: center; font-weight: 700; margin-bottom: 8px; }
   footer { margin-top: 28px; color: var(--muted); font-size: 12.5px; line-height: 1.6; }
 </style>
@@ -113,12 +147,18 @@
   </header>
 
   <section class="hero">
-    <h1>Same product, many sellers.<br><em>Find the real best price.</em></h1>
-    <p>Type any product. DupeLens collects offers from Indian online stores, uses a trained machine-learning model to keep only the listings that are <b>exactly the same item</b> (not a look-alike, a different colour or a different pack), and shows you the cheapest place to buy it.</p>
+    <h1>Same product, many sellers.<br><em>Know where to buy it.</em></h1>
+    <p>Type a product name, paste a store link, or drop a photo or screenshot. DupeLens finds every online store selling it, uses machine learning to keep only the listings that are <b>exactly the same item</b>, and tells you the fair price, the seller to trust and where to buy.</p>
     <form class="search" id="form">
-      <input id="q" type="search" placeholder="e.g. boAt Airdopes 141, Philips hair dryer BHD308, Milton bottle 1 litre" autocomplete="off" aria-label="Product to search">
-      <button class="btn" id="go" type="submit">Find best price</button>
+      <div class="bar">
+        <input id="q" type="text" placeholder="Product name, Amazon / Flipkart link, or photo address" autocomplete="off" aria-label="Product name, link or photo address">
+        <button class="icon-btn" id="pick" type="button" title="Add a photo or screenshot">📷 Photo</button>
+        <button class="btn" id="go" type="submit">Find best seller</button>
+      </div>
+      <div class="attached" id="attached" hidden><img id="att-img" alt=""><span id="att-name"></span><button type="button" id="att-x">Remove</button></div>
+      <input type="file" id="file" accept="image/*" hidden>
     </form>
+    <div class="hint">Tip: drag a photo onto the box, or press Ctrl+V to paste a screenshot.</div>
     <div class="examples" id="examples"></div>
     <div class="notice" id="note" hidden></div>
   </section>
@@ -126,96 +166,187 @@
   <section class="steps" id="steps" hidden></section>
 
   <section id="results" hidden>
-    <div class="card best" id="best"></div>
+    <div class="understood" id="understood"></div>
+    <div class="card" id="seen-card" hidden>
+      <h2>Google Lens recognised your photo</h2>
+      <p class="sub">Pages that show the same product. DupeLens searched stores for the name it found.</p>
+      <div class="gridc" id="seen"></div>
+    </div>
+
+    <div class="top2" style="margin-top:18px">
+      <div class="card best" id="best"></div>
+      <div class="card side" id="side"></div>
+    </div>
+
     <div class="card">
       <h2 id="same-h"></h2>
       <p class="sub" id="same-sub"></p>
       <div class="rows" id="same"></div>
     </div>
+
     <div class="card" id="var-card">
       <h2>Same product, different colour, size or pack</h2>
-      <p class="sub">The model says these are the same product line but not the identical item, so their prices are not used for the best price.</p>
+      <p class="sub">Same product line but not the identical item, so these prices are not used for the fair price.</p>
       <div class="gridc" id="variants"></div>
     </div>
+
     <div class="card" id="other-card">
       <h2>Look-alikes the model kept apart</h2>
-      <p class="sub">Other products the search also returned. A plain price-comparison site would mix these in. Click one to compare stores for that product instead.</p>
+      <p class="sub">The search also returned these. A normal price-comparison site would mix them in. Click one to compare sellers of that product instead.</p>
       <div class="gridc" id="others"></div>
     </div>
-    <div class="meta-line" id="meta"></div>
+
+    <div class="card">
+      <h2>Behind the scenes: the machine learning</h2>
+      <p class="sub" id="bts-sub"></p>
+      <div class="bts">
+        <div class="panel">
+          <h3>PCA map of every offer</h3>
+          <p>Each offer's photo (CLIP, 512 numbers) and title (MPNet, 768 numbers) were compressed with PCA to 32 + 32 numbers. A second PCA squeezes those 64 numbers to 2, so offers can be drawn: close dots look alike to the model.</p>
+          <svg id="pca" viewBox="0 0 460 300" width="100%" role="img" aria-label="PCA map of offers"></svg>
+          <div class="legend"><span><i style="background:var(--good)"></i>exact same item</span><span><i style="background:var(--warn)"></i>colour / pack variant</span><span><i style="background:#5b708a"></i>different product</span><span id="lg-ref" hidden><i style="background:#fff"></i>your photo</span></div>
+        </div>
+        <div class="panel">
+          <h3 id="why-h">Why the model matched the top seller</h3>
+          <p>Pair features compared with the first listing of the group (the logistic-regression model weighs these; price is never one of them).</p>
+          <div id="why"></div>
+          <h3 style="margin-top:16px">Time per step</h3>
+          <div id="timing"></div>
+        </div>
+      </div>
+    </div>
   </section>
 
   <section class="card">
     <h2>How it works</h2>
-    <p class="sub">Machine learning decides which listings are the same product; price is only compared afterwards.</p>
+    <p class="sub">Machine learning decides which listings are the same product; price and seller are compared only afterwards.</p>
     <div class="how">
-      <div><span class="n">1</span><b>Collect offers</b><p>Your search is sent to Google Shopping (India) through the Serper service. It returns up to 40 offers from stores like Amazon, Flipkart, Croma and Reliance Digital, with title, photo, price and link.</p></div>
-      <div><span class="n">2</span><b>Read title and photo</b><p>Three pretrained neural networks turn every photo and title into numbers: CLIP (what the photo shows), DINOv2 (which exact object), MPNet (what the title means), plus a colour profile and a photo fingerprint.</p></div>
-      <div><span class="n">3</span><b>Judge every pair</b><p>Our logistic-regression model, trained on 34,250 Shopee listings, scores each pair of offers: same item, same item in another colour/size/pack, or a different product. Price is never an input.</p></div>
-      <div><span class="n">4</span><b>Best price</b><p>Only the offers the model calls the exact same item are compared. You see the cheapest store, the typical (median) price and how much each store charges above it.</p></div>
+      <div><span class="n">1</span><b>Understand the input</b><p>A name is searched as is. A store link gives the product name. A photo or screenshot goes to Google Lens, which names the product.</p></div>
+      <div><span class="n">2</span><b>Collect offers</b><p>Up to 40 offers from Indian online stores (Amazon, Flipkart, JioMart, Croma, brand stores and small shops) through Google Shopping, with title, photo, price and rating.</p></div>
+      <div><span class="n">3</span><b>Read photos and titles</b><p>Three neural networks turn each listing into numbers: CLIP (what the photo shows), DINOv2 (which exact object), MPNet (what the title means). PCA compresses them to 32 numbers each.</p></div>
+      <div><span class="n">4</span><b>Judge every pair</b><p>A logistic-regression model trained on 34,250 Shopee listings scores each pair: same item, same item in another colour/pack, or different. A model-word check stops "Pro" or "Gen 2" being mixed in.</p></div>
+      <div><span class="n">5</span><b>Rank the sellers</b><p>Among the exact-same offers: the fair (median) price, the cheapest, and a seller score from match confidence, price fairness, rating, reviews and store reputation.</p></div>
     </div>
   </section>
 
-  <footer id="foot">
-    Prices and links come live from Google Shopping (India) at search time. Matching uses DupeLens's own model (Shopee validation F1 0.864). On a held-out Amazon India test, 33 of 40 "same product" verdicts were correct (labelled by Claude, an AI assistant, not humans). Details and limits: <a href="evidence.html">how we tested the model</a>.
+  <footer>
+    Prices, ratings and links come live from Google Shopping (India) at search time. Same-product matching uses DupeLens's own trained model (Shopee validation F1 0.864; on held-out Amazon India pairs 33 of 40 "same product" verdicts were correct, labelled by Claude, an AI assistant, not humans). The seller score is a fixed, transparent rule, not a trained model. Details and limits: <a href="evidence.html">how we tested the model</a>.
   </footer>
 </main>
+<div class="tip" id="tip"></div>
 
 <script>
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const inr = v => v == null ? "–" : "₹" + Math.round(v).toLocaleString("en-IN");
 const median = a => { const s = [...a].sort((x, y) => x - y), m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; };
-let LIVE = false, SEARCH = false, EXAMPLES = [], DATA = null;
+let LIVE = false, SEARCH = false, UPLOADS = false, EXAMPLES = [], DATA = null, PHOTO = null;
+
+// ---------- seller score: a fixed, transparent rule (not a trained model) ----------
+const BIG_STORES = ["amazon", "flipkart", "croma", "reliance", "jiomart", "tata cliq", "tatacliq", "vijay sales", "myntra", "nykaa",
+  "ajio", "bigbasket", "blinkit", "zepto", "instamart", "swiggy", "meesho", "snapdeal", "apple", "samsung", "decathlon", "pharmeasy",
+  "1mg", "netmeds", "pepperfry", "ikea", "lenskart", "firstcry", "purplle", "shoppers stop", "lifestyle", "boat", "noise", "mi.com", "oneplus"];
+function isKnown(o) {
+  const s = (o.store || "").toLowerCase();
+  if (BIG_STORES.some(b => s.includes(b))) return true;
+  const brand = (o.title || "").toLowerCase().split(/\s+/)[0];               // brand's own store: "boAt" selling "boAt Airdopes"
+  return brand.length > 2 && s.replace(/[^a-z0-9]/g, "").startsWith(brand.replace(/[^a-z0-9]/g, ""));
+}
+function sellerScore(o, prob, typical) {
+  const pct = typical && o.price_value ? o.price_value / typical - 1 : null;
+  const fair = pct == null ? 0.6 : pct < -0.4 ? 0.3 : pct <= 0.05 ? 1 : Math.max(0, 1 - pct / 0.5);
+  const r = parseFloat(o.rating), n = parseFloat(o.rating_count);
+  const parts = {
+    "Same item (model)": [35, prob],
+    "Fair price": [25, fair],
+    "Star rating": [15, isNaN(r) ? 0.4 : Math.min(1, Math.max(0, (r - 3) / 2))],
+    "Number of reviews": [10, isNaN(n) ? 0 : Math.min(1, Math.log10(n + 1) / 3)],
+    "Known store": [15, isKnown(o) ? 1 : 0.3],
+  };
+  const total = Object.values(parts).reduce((s, [w, v]) => s + w * v, 0);
+  return { total: Math.round(total), parts, pct, suspicious: pct != null && pct < -0.4 };
+}
 
 // ---------- grouping around one offer (same rule as src/live.py) ----------
 function groupAround(seed) {
-  const V = DATA.verdict, n = DATA.offers.length;
-  const members = [...Array(n).keys()].filter(j => j === seed || V[seed][j] === "S");
-  const variants = [...Array(n).keys()].filter(j => V[seed][j] === "V");
-  const priced = members.filter(j => DATA.offers[j].price_value != null);
-  const prices = priced.map(j => DATA.offers[j].price_value);
-  const best = priced.length ? priced[prices.indexOf(Math.min(...prices))] : null;
-  const typical = prices.length >= 3 ? median(prices) : null;
-  return { seed, members, variants, best, typical, min: prices.length ? Math.min(...prices) : null, max: prices.length ? Math.max(...prices) : null };
+  const V = DATA.verdict, O = DATA.offers, n = O.length;
+  const all = [...Array(n).keys()];
+  const members = all.filter(j => (j === seed || V[seed][j] === "S") && !O[j].is_ref);
+  const variants = all.filter(j => V[seed][j] === "V" && !O[j].is_ref);
+  const prices = members.map(j => O[j].price_value).filter(v => v != null);
+  const typical = prices.length >= 3 ? median(prices) : null;   // fair price needs at least 3 prices
+  const scored = members.map(j => ({ j, ...sellerScore(O[j], j === seed ? 1 : DATA.prob[seed][j], typical) }));
+  scored.sort((a, b) => b.total - a.total);
+  const cheapest = members.filter(j => O[j].price_value != null).sort((a, b) => O[a].price_value - O[b].price_value)[0];
+  return { seed, members, variants, scored, cheapest, typical, n_prices: prices.length,
+           min: prices.length ? Math.min(...prices) : null, max: prices.length ? Math.max(...prices) : null };
+}
+
+function storeSearch(o) {
+  const s = (o.store || "").toLowerCase(), q = encodeURIComponent(o.title);
+  if (s.includes("amazon")) return `https://www.amazon.in/s?k=${q}`;
+  if (s.includes("flipkart")) return `https://www.flipkart.com/search?q=${q}`;
+  return o.link || `https://www.google.com/search?q=${encodeURIComponent(o.title + " " + o.store)}`;
+}
+async function openStore(j, el) {
+  const o = DATA.offers[j]; let url = storeSearch(o);
+  if (SEARCH) { el.textContent = "Finding page…"; try { const r = await fetch(`/api/link?title=${encodeURIComponent(o.title)}&store=${encodeURIComponent(o.store)}`); if (r.ok) url = (await r.json()).url; } catch {} el.textContent = el.dataset.label; }
+  window.open(url, "_blank", "noopener");
 }
 
 function render(seed) {
-  const O = DATA.offers, g = groupAround(seed), P = DATA.prob;
-  const b = g.best != null ? O[g.best] : O[seed];
-  const stores = new Set(g.members.map(j => O[j].store)).size;
-  const save = g.max != null && g.min != null ? g.max - g.min : 0;
-  $("#best").innerHTML = `
-    <img class="ph" src="${esc(b.image)}" alt="" referrerpolicy="no-referrer">
-    <div>
-      <div class="label">Best place to buy</div>
-      <h2>${esc(b.title)}</h2>
-      <div class="facts">
-        <div class="fact"><div class="v num">${inr(b.price_value)}</div><div class="l">at ${esc(b.store)}</div></div>
-        ${g.typical ? `<div class="fact"><div class="v num">${inr(g.typical)}</div><div class="l">typical price (median)</div></div>` : ""}
-        ${save > 0 ? `<div class="fact"><div class="v good num">${inr(save)}</div><div class="l">saved vs the most expensive store</div></div>` : ""}
-        <div class="fact"><div class="v num">${g.members.length}</div><div class="l">offers of this exact item${stores > 1 ? ` · ${stores} stores` : ""}</div></div>
-      </div>
-    </div>
-    ${b.link ? `<a class="buy" href="${esc(b.link)}" target="_blank" rel="noopener">Buy at ${esc(b.store)} →</a>` : ""}`;
+  const O = DATA.offers, g = groupAround(seed);
+  const top = g.scored[0], b = top ? O[top.j] : O[seed];
+  const ref = O[seed].is_ref;
+  // what we understood
+  const how = { name: "Searched by name", link: "Read the product name from your link", photo: "Recognised your photo as" }[DATA.mode] || "Searched";
+  $("#understood").innerHTML = `${how}: <b>${esc(DATA.query)}</b> · ${DATA.found} offers found · ${O.filter(o => !o.is_ref).length} compared by the model in ${DATA.seconds} s` + (DATA.cached_at ? ` · saved example (${esc(DATA.cached_at)})` : "");
+  $("#seen-card").hidden = !(DATA.seen_on && DATA.seen_on.length);
+  $("#seen").innerHTML = (DATA.seen_on || []).slice(0, 6).map(s => `<a class="tile" href="${esc(s.link)}" target="_blank" rel="noopener">${s.image ? `<img class="ph" src="${esc(s.image)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : ""}<span class="t">${esc(s.title)}</span><span class="s">${esc(s.store)}</span></a>`).join("");
 
-  $("#same-h").textContent = g.members.length > 1 ? `All ${g.members.length} offers of this exact item, cheapest first` : "Only one store sells this exact item in the results";
-  $("#same-sub").textContent = g.members.length > 1 ? "The model judged each of these to be the same item as the one above (confidence shown). Click a store to open its page." : "The model found no other offer of the identical item. Try a more specific search, or look at the similar products below.";
-  const sorted = [...g.members].sort((x, y) => (O[x].price_value ?? 1e12) - (O[y].price_value ?? 1e12));
-  $("#same").innerHTML = sorted.map(j => {
-    const o = O[j], pct = g.typical && o.price_value ? Math.round(100 * (o.price_value / g.typical - 1)) : null;
-    const pills = [];
-    if (j === g.best) pills.push(`<span class="pill best-p">Best price</span>`);
-    if (pct != null && pct > 5) pills.push(`<span class="pill up">${pct}% above typical</span>`);
-    if (pct != null && pct < -5) pills.push(`<span class="pill down">${-pct}% below typical</span>`);
-    if (j !== seed) pills.push(`<span class="pill conf">match ${(100 * P[seed][j]).toFixed(0)}%</span>`);
+  if (!top) { $("#best").innerHTML = `<div style="grid-column:1/-1"><div class="label" style="color:var(--warn)">No exact match with a price</div><h2>The model did not find another store selling this exact item.</h2><p class="sub">Look at the similar products below, or try a more specific name.</p></div>`; $("#side").innerHTML = ""; }
+  else {
+    const save = g.max != null && b.price_value != null ? g.max - b.price_value : 0;
+    $("#best").innerHTML = `
+      <img class="ph" src="${esc(b.image)}" alt="" referrerpolicy="no-referrer">
+      <div>
+        <div class="label">Recommended seller · score ${top.total}/100</div>
+        <h2>${esc(b.title)}</h2>
+        <div class="facts">
+          <div class="fact"><div class="v num">${esc(b.price ?? "–")}</div><div class="l">at ${esc(b.store)}</div></div>
+          ${g.typical ? `<div class="fact"><div class="v num">${inr(g.typical)}</div><div class="l">fair price (median of ${g.n_prices})</div></div>` : ""}
+          ${save > 0 ? `<div class="fact"><div class="v good num">${inr(save)}</div><div class="l">less than the dearest seller</div></div>` : ""}
+        </div>
+        <div class="pills" style="margin-bottom:14px">${Object.entries(top.parts).map(([k, [w, v]]) => `<span class="pill">${k} ${Math.round(w * v)}/${w}</span>`).join("")}</div>
+        <button class="buy" data-j="${top.j}" data-label="Buy at ${esc(b.store)} →" type="button" style="border:0;cursor:pointer;font:inherit;font-weight:700">Buy at ${esc(b.store)} →</button>
+      </div>`;
+    const ch = g.cheapest != null ? O[g.cheapest] : null;
+    $("#side").innerHTML = `
+      <div class="stat"><div class="v num">${g.members.length}</div><div class="l">offers of this exact item${new Set(g.members.map(j => O[j].store)).size > 1 ? ` from ${new Set(g.members.map(j => O[j].store)).size} stores` : ""}</div></div>
+      ${ch ? `<div class="stat"><div class="v num">${esc(ch.price)}</div><div class="l">cheapest: ${esc(ch.store)}${g.cheapest !== top.j ? " (lower seller score, see list)" : " (also the recommended seller)"}</div></div>` : ""}
+      ${g.min != null && g.max != null && g.max > g.min ? `<div class="stat"><div class="v num">${inr(g.min)} – ${inr(g.max)}</div><div class="l">price range for the same item: ${Math.round(100 * (g.max / g.min - 1))}% difference</div></div>` : ""}
+      ${g.variants.length ? `<div class="stat"><div class="v num">${g.variants.length}</div><div class="l">colour / size / pack variants (listed below)</div></div>` : ""}`;
+  }
+
+  $("#same-h").textContent = g.members.length > 1 ? `All ${g.members.length} sellers of this exact item, best seller first` : "Sellers of this exact item";
+  $("#same-sub").textContent = "Seller score = how sure the model is it's the same item (35) + fair price (25) + star rating (15) + number of reviews (10) + well-known store (15). A price far below the fair price is a warning sign, not a bargain.";
+  $("#same").innerHTML = g.scored.map((s, k) => {
+    const o = O[s.j], pills = [];
+    if (k === 0) pills.push(`<span class="pill g">Recommended</span>`);
+    if (s.j === g.cheapest) pills.push(`<span class="pill c">Cheapest</span>`);
+    if (s.suspicious) pills.push(`<span class="pill warn">Suspiciously cheap</span>`);
+    else if (s.pct != null && s.pct > 0.05) pills.push(`<span class="pill up">${Math.round(100 * s.pct)}% above fair price</span>`);
+    else if (s.pct != null && s.pct < -0.05) pills.push(`<span class="pill down">${Math.round(-100 * s.pct)}% below fair price</span>`);
+    if (s.j !== seed) pills.push(`<span class="pill conf">same item ${(100 * DATA.prob[seed][s.j]).toFixed(0)}%</span>`);
     if (o.rating) pills.push(`<span class="pill">★ ${esc(o.rating)}${o.rating_count ? ` (${Number(o.rating_count).toLocaleString("en-IN")})` : ""}</span>`);
-    if (o.delivery) pills.push(`<span class="pill">${esc(o.delivery)}</span>`);
-    return `<div class="row ${j === g.best ? "top" : ""}">
+    if (isKnown(o)) pills.push(`<span class="pill">Known store</span>`);
+    return `<div class="row ${k === 0 ? "top" : ""}">
+      <div class="rk">${k + 1}</div>
       <img class="ph" src="${esc(o.image)}" alt="" loading="lazy" referrerpolicy="no-referrer">
       <div><div class="store">${esc(o.store)}</div><div class="t">${esc(o.title)}</div><div class="pills">${pills.join("")}</div></div>
+      <div class="score">Seller score <b>${s.total}</b><div class="sbar"><i style="width:${s.total}%"></i></div></div>
       <div class="price num">${esc(o.price ?? "–")}</div>
-      ${o.link ? `<a class="go" href="${esc(o.link)}" target="_blank" rel="noopener">Open store</a>` : "<span></span>"}
+      <button class="go" data-j="${s.j}" data-label="Open store" type="button">Open store</button>
     </div>`;
   }).join("");
 
@@ -224,57 +355,121 @@ function render(seed) {
       <span class="t">${esc(o.title)}</span><span class="p num">${esc(o.price ?? "–")}</span><span class="s">${esc(o.store)}${note ? " · " + note : ""}</span></button>`; };
   $("#var-card").hidden = !g.variants.length;
   $("#variants").innerHTML = g.variants.map(j => tile(j)).join("");
-  const shown = new Set([...g.members, ...g.variants]);
-  const others = (DATA.groups || []).map(x => x.seed).filter(s => !shown.has(s));
+  const shown = new Set([...g.members, ...g.variants, seed]);
+  const others = (DATA.groups || []).filter(x => !shown.has(x.seed) && !O[x.seed].is_ref);
   $("#other-card").hidden = !others.length;
-  $("#others").innerHTML = others.map(s => { const n = DATA.groups.find(x => x.seed === s).members.length; return tile(s, n > 1 ? `${n} offers` : ""); }).join("");
-  document.querySelectorAll(".tile").forEach(t => t.onclick = () => { render(+t.dataset.seed); $("#results").scrollIntoView({ behavior: "smooth" }); });
-  $("#meta").textContent = `Search "${DATA.query}": ${DATA.found} offers found, ${DATA.dropped_no_photo} skipped (no photo), ${O.length} compared by the model in ${DATA.seconds} s.` + (DATA.cached_at ? ` Saved example from ${DATA.cached_at}.` : "");
+  $("#others").innerHTML = others.map(x => tile(x.seed, x.members.length > 1 ? `${x.members.length} sellers` : "")).join("");
+  document.querySelectorAll(".tile[data-seed]").forEach(t => t.onclick = () => { render(+t.dataset.seed); $("#results").scrollIntoView({ behavior: "smooth" }); });
+  document.querySelectorAll("#best [data-j], #same [data-j]").forEach(el => el.onclick = () => openStore(+el.dataset.j, el));
+
+  renderBTS(seed, g, top);
   $("#results").hidden = false;
 }
 
+// ---------- behind the scenes ----------
+function renderBTS(seed, g, top) {
+  const O = DATA.offers, n = O.length, mem = new Set(g.members), vari = new Set(g.variants);
+  $("#bts-sub").textContent = `${n} listings × 3 neural networks, PCA to 32 + 32 numbers, then ${n * (n - 1) / 2} pairs scored by the logistic-regression model.`;
+  const xy = DATA.pca_xy || [], W = 460, H = 300, pad = 22;
+  if (xy.length) {
+    const xs = xy.map(p => p[0]), ys = xy.map(p => p[1]);
+    const sx = v => pad + (v - Math.min(...xs)) / ((Math.max(...xs) - Math.min(...xs)) || 1) * (W - 2 * pad);
+    const sy = v => H - pad - (v - Math.min(...ys)) / ((Math.max(...ys) - Math.min(...ys)) || 1) * (H - 2 * pad);
+    const share = DATA.pca_share || [0, 0];
+    const dots = xy.map((p, j) => {
+      const c = O[j].is_ref ? "#ffffff" : mem.has(j) || j === seed ? "var(--good)" : vari.has(j) ? "var(--warn)" : "#5b708a";
+      return `<circle cx="${sx(p[0]).toFixed(1)}" cy="${sy(p[1]).toFixed(1)}" r="${O[j].is_ref ? 8 : 6}" fill="${c}" stroke="#07111F" stroke-width="1.5" data-j="${j}" style="cursor:pointer"></circle>`;
+    });
+    $("#pca").innerHTML = `<rect x="0" y="0" width="${W}" height="${H}" rx="10" fill="#07111F"></rect>
+      <text x="${pad}" y="${H - 6}">PCA direction 1 (${Math.round(100 * share[0])}% of variation)</text>
+      <text x="${W - pad}" y="14" text-anchor="end">direction 2 (${Math.round(100 * share[1])}%)</text>` + dots.join("");
+    $("#lg-ref").hidden = !O.some(o => o.is_ref);
+    const tip = $("#tip");
+    $("#pca").querySelectorAll("circle").forEach(c => {
+      const o = O[+c.dataset.j];
+      c.onmousemove = e => { tip.style.display = "block"; tip.style.left = e.clientX + 12 + "px"; tip.style.top = e.clientY + 12 + "px"; tip.innerHTML = `<b>${esc(o.store)}</b> ${esc(o.price ?? "")}<br>${esc(o.title)}`; };
+      c.onmouseleave = () => tip.style.display = "none";
+      c.onclick = () => { if (!o.is_ref) render(+c.dataset.j); };
+    });
+  }
+  const other = top && top.j !== seed ? top.j : g.members.find(j => j !== seed);
+  const F = DATA.features;
+  if (F && other != null) {
+    $("#why-h").textContent = `Why "${O[other].store}" is the same item as "${O[seed].store}"`;
+    const rows = [["Title words (TF-IDF)", F.tfidf_cos[seed][other], false], ["Photo meaning (CLIP)", F.img_cos[seed][other], false],
+                  ["Exact object (DINOv2)", F.dino_cos[seed][other], false], ["Colour difference", F.colour_dist[seed][other], true],
+                  ["Model: same item", DATA.prob[seed][other], false]];
+    $("#why").innerHTML = rows.map(([k, v, inv]) => `<div class="hbar"><span>${k}</span><span class="track"><i style="width:${Math.max(2, Math.min(100, 100 * Math.max(0, v)))}%;background:${inv ? "var(--warn)" : k.startsWith("Model") ? "var(--good)" : "var(--accent)"}"></i></span><span class="v num">${(+v).toFixed(2)}</span></div>`).join("") +
+      `<p style="margin-top:8px">1 = identical, 0 = unrelated (colour difference: 0 = same colours).</p>`;
+  } else { $("#why-h").textContent = "Why the model matched"; $("#why").innerHTML = `<p>Only one seller of this exact item, so there is no pair to explain. Click another product to compare.</p>`; }
+  const T = DATA.timing || [], mx = Math.max(...T.map(t => t.seconds), 0.01);
+  $("#timing").innerHTML = T.map(t => `<div class="hbar"><span>${esc(t.step)}</span><span class="track"><i style="width:${100 * t.seconds / mx}%;background:var(--accent-2)"></i></span><span class="v num">${t.seconds.toFixed(1)} s</span></div>`).join("");
+}
+
+// ---------- input: text / link / photo ----------
+function attach(file) {
+  if (!file || !file.type.startsWith("image/")) return;
+  PHOTO = file; $("#att-img").src = URL.createObjectURL(file); $("#att-name").textContent = file.name || "Pasted screenshot";
+  $("#attached").hidden = false;
+  if (!UPLOADS && LIVE) note("Uploaded photos are recognised on the online version. On this laptop, paste the photo's address (right-click the photo → Copy image address) or type the name.", false);
+}
+$("#pick").onclick = () => $("#file").click();
+$("#file").onchange = e => attach(e.target.files[0]);
+$("#att-x").onclick = () => { PHOTO = null; $("#attached").hidden = true; $("#file").value = ""; note(""); };
+const form = $("#form");
+form.ondragover = e => { e.preventDefault(); form.classList.add("over"); };
+form.ondragleave = () => form.classList.remove("over");
+form.ondrop = e => { e.preventDefault(); form.classList.remove("over"); attach(e.dataTransfer.files[0]); };
+document.addEventListener("paste", e => { const f = [...(e.clipboardData?.files || [])].find(f => f.type.startsWith("image/")); if (f) { e.preventDefault(); attach(f); } });
+
 // ---------- search ----------
-const STEPS = ["Collecting offers from online stores", "Downloading product photos", "Reading every photo and title with neural networks", "Model judging every pair of offers"];
 let timer;
-function showSteps() {
+function showSteps(photo) {
+  const S = [photo ? "Google Lens is recognising your photo" : "Understanding your search", "Collecting offers from online stores", "Downloading product photos",
+             "Neural networks reading every photo and title", "Model judging every pair of offers", "Ranking sellers"];
   let i = 0; $("#steps").hidden = false;
-  const draw = () => $("#steps").innerHTML = STEPS.map((s, k) => `<div class="step ${k < i ? "done" : k === i ? "on" : ""}">${k < i ? '<span class="ic">✓</span>' : k === i ? '<span class="spin"></span>' : '<span class="ic">·</span>'}${s}</div>`).join("");
-  draw(); timer = setInterval(() => { if (i < STEPS.length - 1) { i++; draw(); } }, 1600);
+  const draw = () => $("#steps").innerHTML = S.map((s, k) => `<div class="step ${k < i ? "done" : k === i ? "on" : ""}">${k < i ? '<span class="ic">✓</span>' : k === i ? '<span class="spin"></span>' : '<span class="ic">·</span>'}${s}</div>`).join("");
+  draw(); timer = setInterval(() => { if (i < S.length - 1) { i++; draw(); } }, 1800);
 }
 function hideSteps() { clearInterval(timer); $("#steps").hidden = true; }
 function note(msg, isErr) { const n = $("#note"); n.hidden = !msg; n.innerHTML = msg || ""; n.classList.toggle("err", !!isErr); }
 
 async function run(q) {
-  q = q.trim(); if (!q) return;
-  $("#q").value = q; note(""); $("#results").hidden = true;
+  q = (q || "").trim();
+  if (!q && !PHOTO) { note("Type a product name, paste a link, or add a photo."); return; }
+  note(""); $("#results").hidden = true;
   const ex = EXAMPLES.find(e => e.q.toLowerCase() === q.toLowerCase());
-  if (!SEARCH && !ex) { note(`Live search runs in the DupeLens app (<code>python -m src.app</code>). On this page you can open the saved example searches above, which show real model output.`); return; }
-  $("#go").disabled = true; showSteps();
+  if (!SEARCH && !ex) { note("Live search needs the DupeLens server. On this page you can open the saved example searches above (real model output)."); return; }
+  $("#go").disabled = true; showSteps(!!PHOTO || /\.(jpe?g|png|webp)(\?|$)/i.test(q));
   try {
     let data;
     if (SEARCH) {
-      const r = await fetch("/api/search", { method: "POST", body: new URLSearchParams({ q }) });
+      const fd = new FormData(); if (q) fd.append("q", q); if (PHOTO) fd.append("image", PHOTO, PHOTO.name || "photo.png");
+      const r = await fetch("/api/search", { method: "POST", body: fd });
       data = await r.json(); if (!r.ok) throw new Error(data.detail || r.statusText);
     } else data = await (await fetch(`data/searches/${ex.file}`)).json();
     DATA = data; hideSteps();
-    if (data.offers.length < 2) { note(`Only ${data.offers.length} offer with a photo came back for "${esc(q)}". Try a more common product name.`); return; }
+    if (!data.offers.filter(o => !o.is_ref).length) { note(`No offers with photos came back for "${esc(data.query)}". Try a more common product name.`); return; }
     render(data.groups[0].seed);
-  } catch (e) { hideSteps(); note(`Search failed: ${esc(e.message)}`, true); }
+    $("#results").scrollIntoView({ behavior: "smooth" });
+  } catch (e) { hideSteps(); note(esc(e.message), true); }
   finally { $("#go").disabled = false; }
 }
-$("#form").onsubmit = e => { e.preventDefault(); run($("#q").value); };
+form.onsubmit = e => { e.preventDefault(); run($("#q").value); };
 
 // ---------- boot ----------
 Promise.all([fetch("/api/health").then(r => r.ok ? r.json() : null).catch(() => null),
              fetch("data/searches/index.json").then(r => r.ok ? r.json() : []).catch(() => [])])
 .then(([h, ex]) => {
-  LIVE = !!(h && h.live); SEARCH = !!(h && h.search); EXAMPLES = ex;
+  LIVE = !!(h && h.live); SEARCH = !!(h && h.search); UPLOADS = !!(h && h.uploads); EXAMPLES = ex;
   const st = $("#status"); st.classList.add(SEARCH ? "live" : "demo");
   st.lastElementChild.textContent = SEARCH ? "Live search connected" : LIVE ? "Model connected · no search key" : "Demo: saved example searches";
-  if (LIVE && !SEARCH) note("The model is running, but live search needs a free Serper key in the file <code>.env</code> (SERPER_API_KEY=...). Saved examples still work.", true);
-  const qs = (ex.length ? ex.map(e => e.q) : ["boAt Airdopes 141", "Philips hair dryer BHD308"]).slice(0, 6);
+  if (LIVE && !SEARCH) note("The model is running, but live search needs a free Serper key in the file <code>.env</code> (SERPER_API_KEY=...).", true);
+  const qs = (ex.length ? ex.map(e => e.q) : ["boAt Airdopes 141"]).slice(0, 6);
   $("#examples").innerHTML = `<span>Try:</span>` + qs.map(q => `<button class="ex" type="button">${esc(q)}</button>`).join("");
-  document.querySelectorAll(".ex").forEach(b => b.onclick = () => run(b.textContent));
+  document.querySelectorAll(".ex").forEach(b => b.onclick = () => { $("#q").value = b.textContent; run(b.textContent); });
+  const q0 = new URLSearchParams(location.search).get("q");   // shareable links: /?q=boat airdopes 141
+  if (q0) { $("#q").value = q0; run(q0); }
 });
 </script>
 </body>

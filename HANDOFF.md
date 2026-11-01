@@ -164,3 +164,14 @@ Affiliate API for a fresh Indian catalog once the user has an affiliate account.
   static mount of dashboard/. Offline check on 13 catalog listings: the 7 curler sellers grouped, 6 others apart.
   NOT yet run on real Serper results (needs SERPER_API_KEY in .env, free at serper.dev). Live-search accuracy
   not measured yet.
+- 2026-11-01: user's full goal: input = name, store link, photo/screenshot; any product; tell fair price, which
+  seller to trust, where to buy; deploy online LAST (Hugging Face Spaces). Serper key in .env (gitignored).
+  Built: src/live.py understand() (name / Amazon-Flipkart link slug / photo via Serper /lens, which returns
+  nothing when gl/hl are sent), user's photo is item 0 compared with every offer; model-word rule
+  verdict.model_conflict (Pro/Neo/ANC/Gen, model codes, "Airdopes 141" vs "Immortal 141"; designed on the
+  Airdopes search, so do not report accuracy on it); tests/test_verdict.py (30 tests pass); /api/link finds the
+  store's real product page (1 Serper credit; Shopping gives links for only 13/40 offers); seller score in
+  index.html (fixed rule: same item 35, fair price 25, rating 15, reviews 10, known store 15; >40% below median =
+  "suspiciously cheap"); "Behind the scenes" panel (PCA 2-D map, pair features, timing). Uploaded photos need a
+  public URL: works online via PUBLIC_URL + /uploads; locally the auto-mode classifier blocked third-party temp
+  hosts, so laptop users paste the photo address. Warm timings: name 3.5 s, link 2.2 s, photo 2.8 s.
