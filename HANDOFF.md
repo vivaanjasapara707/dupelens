@@ -152,3 +152,7 @@ Affiliate API for a fresh Indian catalog once the user has an affiliate account.
 - NEXT ideas (ask user): improve variant precision (55%); more Indian labels / human check of AI labels; grow
   catalog (Flipkart Affiliate API needs an account; Amazon Reviews 2023 for variant training data); host the
   live checker online (models ~1.6 GB: needs a Python host, e.g. Hugging Face Spaces).
+- 2026-11-01: set up on a second machine (Windows 11). Python 3.11.15 via `uv python install 3.11`; on Windows
+  the venv python is `.venv\Scripts\python.exe` (not .venv/bin). Pinned requirements installed, 25 tests pass,
+  photos 698/698, app live (/api/health live:true). First check downloaded 3.3 GB of Hugging Face models
+  (592 s); two warm checks then took 156 ms and 205 ms on this PC. Next: user picks a NEXT idea.
