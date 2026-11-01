@@ -215,3 +215,7 @@ details.table td.n, details.table th.n { text-align: right; font-variant-numeric
 .ph-store.big { width: 150px; font-size: 20px; }
 
 .sw { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; vertical-align: -1px; border: 1px solid rgba(255,255,255,.35); }
+
+.ai-filter { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0 0 10px; padding: 8px 12px; border-radius: 10px;
+  background: rgba(37, 137, 255, .12); border: 1px solid rgba(37, 137, 255, .4); color: var(--ink); }
+.msg.note { justify-self: center; background: none; border: 1px dashed rgba(37, 137, 255, .5); color: var(--muted); font-size: 13px; }

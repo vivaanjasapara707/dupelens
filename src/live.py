@@ -74,6 +74,10 @@ WELL_KNOWN = re.compile(r"\b(amazon|flipkart|shopsy|croma|reliance ?digital|jiom
                         r"pharmeasy|apollo|1mg|netmeds|firstcry|pepperfry|decathlon|lenskart|ikea|samsung|apple|"
                         r"oneplus|mi\.com|xiaomi)", re.IGNORECASE)
 NOT_BRAND = {"buy", "new", "original", "the", "combo", "set", "pack"}
+# Retailers that sell their own stock (not marketplaces where outside sellers list): a low price there is a real
+# deal, not a fake, so they are never called "suspiciously cheap". Amazon, Flipkart, Meesho, Snapdeal are marketplaces.
+FIRST_PARTY = re.compile(r"croma|reliance|jiomart|vijay ?sales|bigbasket|blinkit|zepto|instamart|swiggy|dmart|"
+                         r"tata ?cliq|nykaa|purplle|apollo|1mg|netmeds|pharmeasy|decathlon|ikea", re.IGNORECASE)
 
 
 def well_known(store, title):
@@ -90,7 +94,7 @@ def well_known(store, title):
 
 
 def attributes(title):
-    """Variant attributes written in a title: storage, RAM, colour, size and pack count (for the variant filter)."""
+    """Variant attributes written in a title: storage, RAM, colour, size and pack count (shown as pills, and used to match the details typed in a search)."""
     from src.verdict import SIZE, SIZE_UNIT, network_free
     t, out = title.lower(), {}
     storage = []
@@ -136,6 +140,8 @@ def match_search(query, title, store=None):
     for key in ("storage", "ram", "size", "pack"):
         if want.get(key) and have.get(key) and want[key] != have[key]:
             return "related"
+    if have.get("pack") and not want.get("pack") and have["pack"] != "Pack of 1":   # a 2-pack is not one item
+        return "related"
     if colours(query) and colours(title) and not colours(query) & colours(title):
         return "related"
     return m
@@ -153,6 +159,16 @@ REFURB_STORES = re.compile(r"cashify|ovantica|budli|grest|gudfast|control ?z|reb
 # International import stores: priced for importing (foreign price + shipping + duty), not the Indian market price.
 IMPORT_STORES = re.compile(r"ubuy|desertcart|microless|etsy|stockx|ebay|etoren|cremashop|halfprice|garmade|biblio|"
                            r"\.ae\b|\.eu\b|\.uk\b|amazon\.com\b", re.IGNORECASE)
+
+
+def sells_own_stock(store, title):
+    """A retailer selling its own stock (FIRST_PARTY), an authorised reseller, or the brand's own store named like
+    one ("boAt", "JBL India", "Wildcraft Official"; not "AirPods Guru")."""
+    store = store or ""
+    tier = store_tier(store, title)
+    words = store.lower().split()
+    official = tier == "brand" and (len(words) == 1 or words[1] in ("india", "official", "store", "online", "in"))
+    return bool(FIRST_PARTY.search(store)) or tier == "authorised" or official
 
 
 def store_tier(store, title):
@@ -484,7 +500,7 @@ def store_pages(query):
         seen.add(key)
         out.append(dict(title=title, store=site[0], price=f"₹{price:,.0f}" if price else None, price_value=price,
                         link=h["link"], image=None, rating=h.get("rating"), rating_count=None, delivery=None,
-                        known=True, tier=site[1], condition="new", accessory=False, attrs=attributes(title),
+                        known=True, tier=site[1], condition="new", first_party=True, accessory=False, attrs=attributes(title),
                         match="exact", source="store page",
                         price_note="from" if re.search(r"\bfrom\b|\bstart(?:s|ing)?\b", h.get("snippet", ""), re.IGNORECASE) else None))
     return out
@@ -524,6 +540,7 @@ def search(matcher, text=None, image_bytes=None, image_url=None, num=40, vectors
                    delivery=raw[i].get("delivery"), known=store_tier(raw[i].get("source"), raw[i]["title"]) != "other",
                    tier=store_tier(raw[i].get("source"), raw[i]["title"]),
                    imported=bool(IMPORT_STORES.search(raw[i].get("source") or "")),
+                   first_party=sells_own_stock(raw[i].get("source"), raw[i]["title"]),
                    condition=condition(raw[i]["title"], raw[i].get("source")),
                    accessory=is_accessory(raw[i]["title"]), attrs=attributes(raw[i]["title"]),
                    # what the user typed is the reference for name / link searches (not for photos: Lens only guesses)
@@ -590,6 +607,7 @@ def search(matcher, text=None, image_bytes=None, image_url=None, num=40, vectors
                 out["prob_cal"].append([-1] * (n + m))
         out["store_pages"] = m
         t["pages"] = time.time()
+    out["query_attrs"] = attributes(inp["query"]) if inp["mode"] != "photo" else {}
     names = {"offers": "Find offers", "photos": "Download photos", "encode": "Neural networks read photos + titles",
              "score": "Model scores every pair", "pages": "Big-store product pages"}
     keys = list(t)

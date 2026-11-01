@@ -59,7 +59,7 @@ GEN = re.compile(r"\b(\d+)(?:st|nd|rd|th|\.)\s*gen(?:eration)?\b|\bgen(?:eration
 
 def query_parts(query):
     """The words that identify the product in a search: brand / model words and model numbers. Sizes such as
-    128GB are preferences (pre-selected in the variant filter), not identity."""
+    128GB are variant details (checked by src/live.py match_search), not identity."""
     # "3s" / "6s" are model numbers (MX Master 3S, iPhone 6s), not sizes
     toks = [w for w in _tokens(query) if w not in GENERIC and (not SPEC.match(w) or re.fullmatch(r"\d+s", w))
             and w not in ("5g", "4g")]
@@ -108,7 +108,7 @@ def query_match(query, title):
     # the first word of the search (usually the brand) must be there: "Dssb Buds 3 Pro" is not "Samsung Galaxy Buds 3 Pro"
     lead = qt[0] if qt and qt[0] in words else None
     if not (have_nums and hits >= need and asked_variant <= ts and all(word_hit(a) for a in anchors)
-            and (lead is None or word_hit(lead))):
+            and (lead is None or (word_hit(lead) and lead_in_name(lead, title)))):
         return "related" if related else "other"
     extra_variant = (ts & VARIANT_WORDS) - set(words)
     suffixed = any(re.fullmatch(r"(\d+)[a-z]{1,2}", t) and re.fullmatch(r"(\d+)[a-z]{1,2}", t).group(1) in nums
@@ -129,6 +129,13 @@ def is_accessory(title):
 ACCESSORY_PHRASES = re.compile(r"\b(?:mobile|phone|back|vinyl|laptop)\s+skins?\b|\blcd\s+(?:screen|display)\b|"
                                r"\bdisplay\s+combo\b|\btempered\s+glass\b|\bscreen\s+(?:guard|protector)\b|"
                                r"केस|कवर|रिप्लेसमेंट|स्ट्रैप")
+
+
+def lead_in_name(lead, title):
+    """The brand word must be in the product name, before any "|": "Aashirvaad Iodised Salt | ... tata rock salt"
+    is keyword stuffing, not Tata Salt."""
+    name = "".join(_tokens(title.split("|")[0]))
+    return lead in name or lead[:6] in name
 
 
 def lead_word(query):

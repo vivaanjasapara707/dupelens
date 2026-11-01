@@ -182,3 +182,17 @@ def test_s_suffix_is_a_model_number():
     from src.live import match_search
     assert match_search("logitech mx master 3s", "Logitech MX Master 3S Wireless Mouse") == "exact"
     assert match_search("logitech mx master 3s", "Logitech MX Master 3 Wireless Mouse") == "related"
+
+
+def test_own_stock_sellers():
+    from src.live import sells_own_stock
+    assert sells_own_stock("Zepto", "Tata Salt 1kg") and sells_own_stock("JBL India", "JBL Flip 6")
+    assert sells_own_stock("Unicorn Store", "iPhone 16")                     # authorised reseller
+    assert not sells_own_stock("AirPods Guru", "AirPods Pro 2")              # named after the product, not the brand
+    assert not sells_own_stock("Flipkart", "Saibaba Airpuds Pro 2")          # marketplace: outside sellers
+
+
+def test_keyword_stuffed_titles_are_not_the_brand():
+    from src.live import match_search
+    assert match_search("tata salt 1kg", "Aashirvaad Iodised Salt | salt price per kg tata low sodium salt 1 kg") != "exact"
+    assert match_search("tata salt 1kg", "Tata Salt 1 kg | Iodised") == "exact"

@@ -297,3 +297,10 @@ Affiliate API for a fresh Indian catalog once the user has an affiliate account.
   stores' pages say the product costs >4x the shopping listings (AirPods Pro 2: mostly copies) their price is the
   typical price. Click test (Playwright, Edge): every button on all 4 pages works, no console errors; AI context
   trimmed (Groq 413 on big searches). 55 tests pass. Fresh blind round still needed before quoting accuracy.
+- 2026-11-02: AI chat changes the page: Groq replies JSON {answer, action}; the page applies the action (stores,
+  budget, words the title must have, big stores only, new only, sort incl. best rated, reset, new search) and
+  shows "List now: ..." so answer and list agree; any question answered (general knowledge marked "In general").
+  Free-tier limit (8k tokens/min): smaller context + fallback to gpt-oss-20b + wait on 429. Audit fixes: stores
+  selling their own stock (Zepto, Croma, brand stores...) may be up to 60% below typical without "suspiciously
+  cheap"; packs of 2+ are not the single item; brand word must be in the name before "|" (keyword stuffing);
+  removed the unused variants card; app detects its public address for photo upload; go_public.bat. 59 tests pass.

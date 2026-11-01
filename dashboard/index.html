@@ -59,23 +59,17 @@
 
     <div class="card xray" id="xray-card" hidden>
       <h2>Photo X-ray <span class="ai-badge">PCA on the product photos</span></h2>
-      <p class="sub">Like "eigenfaces" for products. Every listing photo of this model is cut out of its background and shrunk to 48×48 pixels (6,912 numbers). PCA finds the <b>average photo</b> and the <b>eigen-images</b>: the directions in which these photos differ most. Each photo is then rebuilt from the main directions of the <i>other</i> photos; what cannot be rebuilt is shown as a heatmap, and the odd-one-out score (the same idea on DINOv2 features) flags photos unlike the rest: possibly another item, a used or fake product, or an accessory.</p>
+      <p class="sub">Like "eigenfaces" for products. Every listing photo of this model is cut out of its background and shrunk to 48×48 pixels (6,912 numbers). PCA finds the <b>average photo</b> and the <b>eigen-images</b>: the directions in which these photos differ most. Each photo is then rebuilt from the main directions of the <i>other</i> photos; what cannot be rebuilt is shown as a heatmap, and the odd-one-out score (the same idea on DINOv2 features) flags photos unlike the rest: possibly another item, a used or fake product, or an accessory. Only less-known shops are warned about: an unusual photo at a big store is a photo choice, not a scam.</p>
       <div id="xray"></div>
       <p class="hint" style="margin:12px 0 0">Tested on 48 real listings (<code>results/json/photo_xray_test*.json</code>): a photo of a different product slipped in was ranked the most unusual 95.8% of the time (chance 12.4%); a look-alike from the same search (for example the Pro Max among Pro listings) only 31.2% of the time. So: good at catching a wrong product, weak at telling close versions apart.</p>
     </div>
 
     <div class="card" id="ask-card">
       <h2>Ask DupeLens AI <span class="ai-badge" id="ai-model">Groq</span></h2>
-      <p class="sub">Ask anything about this search, like "Is Amazon cheaper than Flipkart here?" or "Which one should I buy right now?". An AI answers from the data on this page only (store comparisons are calculated by DupeLens, not guessed). It can still be wrong: check the store page before you buy.</p>
+      <p class="sub">Ask anything, like "Is Amazon cheaper than Flipkart here?", "Show only 256 GB under ₹80,000" or "Is it good for gaming?". The AI can also change the list for you: filter stores, set a budget, pick a colour or storage, sort, or look up another product. Prices and stores come only from this page (store comparisons are calculated by DupeLens, not guessed); general answers are marked "In general". It can still be wrong: check the store page before you buy.</p>
       <div class="examples" id="ask-chips" style="justify-content:flex-start;margin:0 0 12px"></div>
       <div class="chat" id="chat"></div>
       <form class="ask" id="ask-form"><input id="ask-q" type="text" placeholder="Ask a question about this product…" autocomplete="off" aria-label="Question"><button class="btn" id="ask-go" type="submit">Ask</button></form>
-    </div>
-
-    <div class="card" id="var-card">
-      <h2>Same product, different colour, size or pack</h2>
-      <p class="sub">Same product line but not the identical item, so these prices are not used for the fair price.</p>
-      <div class="gridc" id="variants"></div>
     </div>
 
     <div class="card" id="other-card">
@@ -130,7 +124,7 @@ const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt
 const inr = v => v == null ? "–" : "₹" + Math.round(v).toLocaleString("en-IN");
 const median = a => { const s = [...a].sort((x, y) => x - y), m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; };
 let LIVE = false, SEARCH = false, UPLOADS = false, ASSISTANT = false, EXAMPLES = [], DATA = null, PHOTO = null;
-let CURRENT = null, HISTORY = [];   // the group on screen and the chat so far (both reset when the view changes)
+let CURRENT = null, HISTORY = [], CARRY = null;   // the group on screen and the chat so far (both reset when the view changes)
 
 // Probability that two offers are the same item: calibrated on Shopee validation when available.
 const sameProb = (a, b) => (DATA.prob_cal || DATA.prob)[a][b];
@@ -140,6 +134,33 @@ const sameProb = (a, b) => (DATA.prob_cal || DATA.prob)[a][b];
 const isKnown = o => !!o.known;
 let ONLY_KNOWN = false;  // optional filter; by default every store is shown, well-known stores first
 const visible = o => !o.is_ref && (!ONLY_KNOWN || isKnown(o));
+// Filters the AI chat set ("only Amazon and Flipkart", "under 70000", "256 GB black"): src/assistant.py action
+let CHAT_FILTER = null;
+const squash = t => String(t || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+function passesChat(o) {
+  const f = CHAT_FILTER; if (!f) return true;
+  const st = (o.store || "").toLowerCase(), has = names => names.some(n => st.includes(n.toLowerCase()) || platform(o.store).toLowerCase() === n.toLowerCase());
+  if (f.stores && !has(f.stores)) return false;
+  if (f.exclude_stores && has(f.exclude_stores)) return false;
+  if (f.max_price != null && !(o.price_value != null && o.price_value <= f.max_price)) return false;
+  if (f.min_price != null && !(o.price_value != null && o.price_value >= f.min_price)) return false;
+  if (f.must_include && !f.must_include.every(w => squash(o.title).includes(squash(w)))) return false;
+  if (f.big_stores_only && !isKnown(o)) return false;
+  if (f.new_only && (o.condition || "new") !== "new") return false;
+  return true;
+}
+function describeFilter(f) {
+  const parts = [];
+  if (f.stores) parts.push("only " + f.stores.join(", "));
+  if (f.exclude_stores) parts.push("not " + f.exclude_stores.join(", "));
+  if (f.min_price != null && f.max_price != null) parts.push(`${inr(f.min_price)} – ${inr(f.max_price)}`);
+  else if (f.max_price != null) parts.push("under " + inr(f.max_price));
+  else if (f.min_price != null) parts.push("over " + inr(f.min_price));
+  if (f.must_include) parts.push("title has " + f.must_include.map(w => `"${w}"`).join(" + "));
+  if (f.big_stores_only) parts.push("big stores only");
+  if (f.new_only) parts.push("new only");
+  return parts.join(" · ");
+}
 function sellerScore(o, prob, typical) {
   const pct = typical && o.price_value ? o.price_value / typical - 1 : null;
   const fair = pct == null ? 0.6 : pct < -0.4 ? 0.3 : pct <= 0.05 ? 1 : Math.max(0, 1 - pct / 0.5);
@@ -152,7 +173,10 @@ function sellerScore(o, prob, typical) {
     "Known store": [15, isKnown(o) ? 1 : 0.3],
   };
   const total = Object.values(parts).reduce((s, [w, v]) => s + w * v, 0);
-  return { total: Math.round(total), parts, pct, suspicious: pct != null && pct < -0.4 };
+  // a store selling its own stock (src/live.py sells_own_stock) may be up to 60% below the typical price (a real sale),
+  // unless the search names a size ("200g") and this listing does not state one (probably a smaller pack)
+  const sizeOk = !(DATA.query_attrs || {}).size || !!(o.attrs || {}).size;
+  return { total: Math.round(total), parts, pct, suspicious: pct != null && pct < -0.4 && !(o.first_party && sizeOk && pct >= -0.6) };
 }
 
 // The searched product: offers whose title names exactly what the user typed (src/verdict.py query_match).
@@ -192,7 +216,8 @@ function groupAround(seed) {
   const inModel = j => j === seed || V[seed][j] === "S" || V[seed][j] === "V";
   const model = exactMode() ? exactIds() : all.filter(j => inModel(j) && !O[j].is_ref);
   const hidden = model.filter(j => !visible(O[j])).length;
-  const listing = model.filter(j => visible(O[j]));
+  const listing = model.filter(j => visible(O[j]) && passesChat(O[j]));
+  const chatHidden = model.filter(j => visible(O[j]) && !passesChat(O[j])).length;
   const shown = listing;
   // typical price (median, needs 3 prices) of the new, non-accessory listings on screen; when 3+ trusted stores
   // (big store, authorised reseller, brand store) have a price, of theirs only, so a flood of cheap fakes cannot drag it down
@@ -218,12 +243,14 @@ function groupAround(seed) {
   const refurb = scored.filter(x => O[x.j].condition === "refurbished" && !x.suspicious && O[x.j].price_value != null && !O[x.j].accessory).sort(byPrice)[0] || null;
   // order: trusted new, then other new, then refurbished / used, then suspicious or accessories; cheapest first in each
   const rank = x => ok(x) ? (isKnown(O[x.j]) ? 0 : 1) : (O[x.j].condition === "refurbished" && !x.suspicious ? 2 : 3);
-  if (SORT === "price") scored.sort((a, b) => (rank(a) - rank(b)) || ((O[a.j].price_value ?? 1e12) - (O[b.j].price_value ?? 1e12)));
+  const stars = j => parseFloat(O[j].rating) || 0;
+  if (SORT === "rating") scored.sort((a, b) => (stars(b.j) - stars(a.j)) || ((O[a.j].price_value ?? 1e12) - (O[b.j].price_value ?? 1e12)));
+  else if (SORT === "price") scored.sort((a, b) => (rank(a) - rank(b)) || ((O[a.j].price_value ?? 1e12) - (O[b.j].price_value ?? 1e12)));
   else scored.sort((a, b) => b.total - a.total);
   const members = scored.filter(x => x.same).map(x => x.j), variants = scored.filter(x => !x.same).map(x => x.j);
   const okPrices = scored.filter(ok).map(x => O[x.j].price_value);
   const cheapest = scored.filter(ok).sort(byPrice).map(x => x.j)[0];
-  return { seed, members, variants, listing, shown, scored, top, riskyNew, refurb, cheapest, typical, n_prices: prices.length, fromPages, exactTypical, hidden,
+  return { seed, members, variants, listing, shown, scored, top, riskyNew, refurb, cheapest, typical, n_prices: prices.length, fromPages, exactTypical, hidden, chatHidden,
            min: okPrices.length ? Math.min(...okPrices) : null, max: okPrices.length ? Math.max(...okPrices) : null };
 }
 
@@ -269,7 +296,14 @@ function render(seed) {
   $("#seen").innerHTML = (DATA.seen_on || []).slice(0, 6).map(s => `<a class="tile" href="${esc(s.link)}" target="_blank" rel="noopener">${s.image ? `<img class="ph" src="${esc(s.image)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : ""}<span class="t">${esc(s.title)}</span><span class="s">${esc(s.store)}</span></a>`).join("");
 
   const notFound = FOCUS === null && DATA.mode !== "photo" && O.some(o => o.match) && exactIds().length === 0;
-  if (notFound) {
+  if (CHAT_FILTER && !g.listing.length) {
+    $("#best").innerHTML = `<div style="grid-column:1/-1"><div class="label" style="color:var(--warn)">No listing matches the AI filter</div>
+      <h2>None of the listings is ${esc(describeFilter(CHAT_FILTER))}.</h2>
+      <p class="sub">Ask the AI for something else, or show every listing again.</p>
+      <button class="go" type="button" data-clear-filter>Show all listings</button></div>`;
+    $("#side").innerHTML = `<div class="stat"><div class="v num">${g.chatHidden}</div><div class="l">listings hidden by the filter</div></div>`;
+  }
+  else if (notFound) {
     const q = encodeURIComponent(DATA.query);
     $("#best").innerHTML = `<div style="grid-column:1/-1">
       <div class="label" style="color:var(--warn)">Not found: no listing of exactly "${esc(DATA.query)}"</div>
@@ -328,13 +362,16 @@ function render(seed) {
   $("#same-h").textContent = notFound ? `Recommendation: closest product found (${O[seed].title}), not what you searched`
     : exactMode() ? `Where to buy ${DATA.query}: ${g.shown.length} listing${g.shown.length === 1 ? "" : "s"}`
                                           : `Where to buy: ${g.shown.length} listing${g.shown.length === 1 ? "" : "s"} of this model`;
-  $("#same-sub").innerHTML = `<div class="seg" style="margin:0 0 8px"><span class="hint" style="margin:0 6px 0 0;align-self:center">Order:</span>
+  $("#same-sub").innerHTML = (CHAT_FILTER ? `<div class="ai-filter"><span class="ai-badge">AI filter</span> ${esc(describeFilter(CHAT_FILTER))} · ${g.chatHidden} listing${g.chatHidden === 1 ? "" : "s"} hidden <button class="linkbtn" type="button" data-clear-filter>Clear filter</button></div>` : "") +
+    `<div class="seg" style="margin:0 0 8px"><span class="hint" style="margin:0 6px 0 0;align-self:center">Order:</span>
       <button type="button" data-sort="price" aria-pressed="${SORT === "price"}">Cheapest first (big stores before small)</button>
-      <button type="button" data-sort="score" aria-pressed="${SORT === "score"}">Sort-order score</button></div>` +
+      <button type="button" data-sort="score" aria-pressed="${SORT === "score"}">Sort-order score</button>
+      <button type="button" data-sort="rating" aria-pressed="${SORT === "rating"}">Best rated first</button></div>` +
     "Best price = the cheapest new listing from a big store; never one priced more than 40% below the typical price, a refurbished or bulk listing, or one whose photo does not match the product (PCA bait-listing check: in tests it caught a wrong product's photo 95.8% of the time). Sort-order score = how sure the model is it's the same item (35) + fair price (25) + star rating (15) + number of reviews (10) + well-known store (15)." +
     (g.hidden > 0 ? ` <b>${g.hidden} listing${g.hidden > 1 ? "s" : ""} from less-known stores hidden.</b> <button class="linkbtn" id="show-all" type="button">Show them</button>` : "");
   if (g.hidden > 0) $("#show-all").onclick = () => { ONLY_KNOWN = false; render(seed); };
   document.querySelectorAll("[data-sort]").forEach(b => b.onclick = () => { SORT = b.dataset.sort; render(seed); });
+  document.querySelectorAll("[data-clear-filter]").forEach(b => b.onclick = () => { CHAT_FILTER = null; render(seed); });
   $("#same").innerHTML = g.scored.map((s, k) => {
     const o = O[s.j], pills = [];
     if (top && s.j === top.j) pills.push(`<span class="pill g">Best price</span>`);
@@ -366,7 +403,6 @@ function render(seed) {
   const tile = (j, note) => { const o = O[j]; return `<button class="tile" data-seed="${j}" type="button">
       <img class="ph" src="${esc(o.image)}" alt="" loading="lazy" referrerpolicy="no-referrer">
       <span class="t">${esc(o.title)}</span><span class="p num">${esc(o.price ?? "–")}</span><span class="s">${esc(o.store)}${note ? " · " + note : ""}</span></button>`; };
-  $("#var-card").hidden = true;   // variants are now in the main list, marked "other variant"
   const shown = new Set([...g.listing, seed]);
   // in exact mode only RELATED products (other models of the same brand / line) are recommended; accessories never
   const keep = j => visible(O[j]) && !O[j].accessory && O[j].match !== "accessory" && (!exactMode() || O[j].match === "related");
@@ -379,11 +415,11 @@ function render(seed) {
     : "The search also returned these. A normal price-comparison site would mix them in. Click one to compare sellers of that product instead.";
   $("#other-card").hidden = !others.length;
   $("#others").innerHTML = others.map(x => tile(x.first, x.n > 1 ? `${x.n} sellers` : "")).join("");
-  document.querySelectorAll(".tile[data-seed]").forEach(t => t.onclick = () => { FOCUS = +t.dataset.seed; render(FOCUS); $("#results").scrollIntoView({ behavior: "smooth" }); });
+  document.querySelectorAll(".tile[data-seed]").forEach(t => t.onclick = () => { FOCUS = +t.dataset.seed; CHAT_FILTER = null; resetChat(); render(FOCUS); $("#results").scrollIntoView({ behavior: "smooth" }); });
   document.querySelectorAll("#best [data-j], #same [data-j]").forEach(el => el.onclick = () => openStore(+el.dataset.j, el));
 
   renderBTS(seed, g, top);
-  CURRENT = g; HISTORY = []; renderAsk(); runXray(g);
+  CURRENT = g; renderAsk(); runXray(g);
   if ($("#track-btn")) {
     $("#track-btn").onclick = () => { $("#track-box").hidden = false; $("#track-btn").hidden = true; };
     $("#track-save").onclick = () => trackItem(g, top);
@@ -505,8 +541,8 @@ function cheapestByStore(ids) {
 // Everything the AI may use, computed here so it never has to do arithmetic or guess.
 function askContext() {
   const O = DATA.offers, g = CURRENT;
-  const offer = j => ({ store: O[j].store, store_type: O[j].tier || null, condition: O[j].condition || "new", title: O[j].title, price: O[j].price, rating: O[j].rating ?? null, reviews: O[j].rating_count ?? null,
-                        well_known_store: !!O[j].known, delivery: O[j].delivery ?? null });
+  const offer = j => ({ store: O[j].store, store_type: O[j].tier || null, condition: O[j].condition || "new", title: String(O[j].title).slice(0, 90), price: O[j].price, rating: O[j].rating ?? null, reviews: O[j].rating_count ?? null,
+                        delivery: O[j].delivery ?? null });
   const stores = cheapestByStore(g.members), comparisons = [];
   for (let a = 0; a < stores.length; a++) for (let b = a + 1; b < stores.length && comparisons.length < 10; b++) {
     const [x, px] = stores[a], [y, py] = stores[b], d = py - px;
@@ -516,8 +552,11 @@ function askContext() {
   return {
     query: DATA.query, input_type: DATA.mode, data_source: "Google Shopping India via Serper, prices as shown at search time" + (DATA.cached_at ? ` (saved on ${DATA.cached_at})` : ""),
     showing: ONLY_KNOWN ? "well-known stores only" : "all stores", hidden_likely_same_item_sellers_from_less_known_stores: g.hidden,
-    listings_of_this_model: g.scored.slice(0, 15).map((s, k) => ({ rank_in_list: k + 1, same_item_as_top_pick: !!s.same, ...offer(s.j), attributes: DATA.offers[s.j].attrs || {}, sort_order: s.total,
-      score_parts: Object.fromEntries(Object.entries(s.parts).map(([n, [w, v]]) => [n, `${Math.round(w * v)}/${w}`])),
+    active_filters: CHAT_FILTER, listings_hidden_by_filters: g.chatHidden, sort: SORT,
+    colours_available: Object.entries(g.listing.reduce((m, j) => { const c = (O[j].attrs || {}).colour; if (c) m[c] = (m[c] || 0) + 1; return m; }, {})).map(([c, n]) => `${c} (${n} listing${n > 1 ? "s" : ""})`),
+    storage_available: [...new Set(g.listing.map(j => (O[j].attrs || {}).storage).filter(Boolean))],
+    all_stores_in_search: [...new Set(O.filter(o => !o.is_ref).map(o => platform(o.store)))].slice(0, 40),
+    listings_of_this_model: g.scored.slice(0, 12).map((s, k) => ({ rank_in_list: k + 1, same_item_as_top_pick: !!s.same, ...offer(s.j), attributes: DATA.offers[s.j].attrs || {}, sort_order: s.total,
       same_item_probability_pct: s.j === g.seed ? 100 : Math.round(100 * sameProb(g.seed, s.j)), probability_is_calibrated: !!DATA.prob_cal,
       vs_fair_price_pct: s.pct == null ? null : Math.round(100 * s.pct), suspiciously_cheap: s.suspicious })),
     fair_price_median: g.typical, price_range: g.min != null ? [g.min, g.max] : null,
@@ -536,25 +575,48 @@ function renderAsk() {
   if (!ASSISTANT) return;
   const stores = cheapestByStore(CURRENT.members).map(([n]) => n);
   const qs = [stores.includes("Amazon") && stores.includes("Flipkart") ? "How much cheaper is Amazon than Flipkart here?" : "Which store is cheapest for this item?",
-              "Which one should I buy right now?", "Why is the top seller first in the list?", "Is the cheapest offer safe to buy?",
-              CURRENT.variants.length ? "What other colours or packs are there, and do they cost less?" : "Are there similar products that cost less?"];
+              "Which one should I buy right now?",
+              stores.includes("Amazon") && stores.includes("Flipkart") ? "Show only Amazon and Flipkart" : "Show only big stores, best rated first",
+              "Is the cheapest offer safe to buy?", "Is this a good product in general? What should I check?"];
   $("#ask-chips").innerHTML = qs.map(q => `<button class="ex" type="button">${esc(q)}</button>`).join("");
   document.querySelectorAll("#ask-chips .ex").forEach(b => b.onclick = () => ask(b.textContent));
-  $("#chat").innerHTML = "";
+}
+function resetChat() { HISTORY = []; $("#chat").innerHTML = ""; }
+function chatMsg(cls, text) {
+  const chat = $("#chat"), d = document.createElement("div");
+  d.className = "msg " + cls; d.textContent = text; chat.appendChild(d); chat.scrollTop = chat.scrollHeight; return d;
+}
+
+// Apply what the AI decided to show: filters (replace the old ones), sort order, clear, or a new search.
+function applyAction(a) {
+  if (!a) return;
+  if (a.new_search) { $("#q").value = a.new_search; run(a.new_search, true); return; }
+  if (a.sort) SORT = a.sort;
+  const keys = ["stores", "exclude_stores", "max_price", "min_price", "must_include", "big_stores_only", "new_only"];
+  if (a.reset) CHAT_FILTER = null;
+  else if (keys.some(k => a[k] != null)) CHAT_FILTER = Object.fromEntries(keys.filter(k => a[k] != null && a[k] !== false && !(Array.isArray(a[k]) && !a[k].length)).map(k => [k, a[k]]));
+  if (CHAT_FILTER && !Object.keys(CHAT_FILTER).length) CHAT_FILTER = null;
+  render(CURRENT.seed);
+  $("#same-h").scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 async function ask(question) {
   question = (question || "").trim(); if (!question || !CURRENT) return;
-  const chat = $("#chat"), add = (cls, text) => { const d = document.createElement("div"); d.className = "msg " + cls; d.textContent = text; chat.appendChild(d); chat.scrollTop = chat.scrollHeight; return d; };
-  add("user", question); $("#ask-q").value = ""; $("#ask-go").disabled = true;
-  const wait = add("ai", "Thinking…");
+  chatMsg("user", question); $("#ask-q").value = ""; $("#ask-go").disabled = true;
+  const wait = chatMsg("ai", "Thinking…");
   try {
     const r = await fetch("/api/ask", { method: "POST", headers: { "Content-Type": "application/json" },
                                         body: JSON.stringify({ question, context: askContext(), history: HISTORY }) });
     const data = await r.json(); if (!r.ok) throw new Error(data.detail || r.statusText);
     wait.textContent = data.answer.replace(/\*\*(.+?)\*\*/g, "$1");   // plain text: drop markdown bold
     $("#ai-model").textContent = "Groq · " + data.model;
-    HISTORY.push({ role: "user", content: question }, { role: "assistant", content: data.answer });
+    HISTORY.push({ role: "user", content: question }, { role: "assistant", content: JSON.stringify({ answer: data.answer, action: data.action }) });
+    if (data.action) {
+      if (data.action.new_search) CARRY = [question, wait.textContent];   // shown again after the new search loads
+      applyAction(data.action);
+      // say what the page actually applied, so the answer and the list can never disagree
+      if (!data.action.new_search) chatMsg("note", `List now: ${CHAT_FILTER ? describeFilter(CHAT_FILTER) : "all listings"} · ${{ price: "cheapest first", score: "sort-order score", rating: "best rated first" }[SORT]} · ${CURRENT.shown.length} listing${CURRENT.shown.length === 1 ? "" : "s"}`);
+    }
   } catch (e) { wait.textContent = e.message; wait.classList.add("err"); }
   finally { $("#ask-go").disabled = false; }
 }
@@ -588,7 +650,7 @@ function showSteps(photo) {
 function hideSteps() { clearInterval(timer); $("#steps").hidden = true; }
 function note(msg, isErr) { const n = $("#note"); n.hidden = !msg; n.innerHTML = msg || ""; n.classList.toggle("err", !!isErr); }
 
-async function run(q) {
+async function run(q, fromChat) {
   q = (q || "").trim();
   if (!q && !PHOTO) { note("Type a product name, paste a link, or add a photo."); return; }
   note(""); $("#results").hidden = true;
@@ -602,10 +664,11 @@ async function run(q) {
       const r = await fetch("/api/search", { method: "POST", body: fd });
       data = await r.json(); if (!r.ok) throw new Error(data.detail || r.statusText);
     } else data = await (await fetch(`data/searches/${ex.file}`)).json();
-    DATA = data; FOCUS = null; hideSteps();
+    DATA = data; FOCUS = null; CHAT_FILTER = null; resetChat(); hideSteps();
     if (!data.offers.filter(o => !o.is_ref).length) { note(`No offers with photos came back for "${esc(data.query)}". Try a more common product name.`); return; }
     render(bestSeed());
-    $("#results").scrollIntoView({ behavior: "smooth" });
+    if (CARRY) { chatMsg("user", CARRY[0]); chatMsg("ai", CARRY[1]); CARRY = null; }
+    if (!fromChat) $("#results").scrollIntoView({ behavior: "smooth" });
   } catch (e) { hideSteps(); note(esc(e.message), true); }
   finally { $("#go").disabled = false; }
 }
