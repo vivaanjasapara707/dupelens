@@ -244,15 +244,10 @@ const median = a => { const s = [...a].sort((x, y) => x - y), m = s.length >> 1;
 let LIVE = false, SEARCH = false, UPLOADS = false, EXAMPLES = [], DATA = null, PHOTO = null;
 
 // ---------- seller score: a fixed, transparent rule (not a trained model) ----------
-const BIG_STORES = ["amazon", "flipkart", "croma", "reliance", "jiomart", "tata cliq", "tatacliq", "vijay sales", "myntra", "nykaa",
-  "ajio", "bigbasket", "blinkit", "zepto", "instamart", "swiggy", "meesho", "snapdeal", "apple", "samsung", "decathlon", "pharmeasy",
-  "1mg", "netmeds", "pepperfry", "ikea", "lenskart", "firstcry", "purplle", "shoppers stop", "lifestyle", "boat", "noise", "mi.com", "oneplus"];
-function isKnown(o) {
-  const s = (o.store || "").toLowerCase();
-  if (BIG_STORES.some(b => s.includes(b))) return true;
-  const brand = (o.title || "").toLowerCase().split(/\s+/)[0];               // brand's own store: "boAt" selling "boAt Airdopes"
-  return brand.length > 2 && s.replace(/[^a-z0-9]/g, "").startsWith(brand.replace(/[^a-z0-9]/g, ""));
-}
+// "known" is set by the server (src/live.py well_known): big Indian retailers, quick-commerce apps, pharmacies, brand's own store.
+const isKnown = o => !!o.known;
+let ONLY_KNOWN = true;   // show and recommend only well-known stores (the model still compares every offer)
+const visible = o => !o.is_ref && (!ONLY_KNOWN || isKnown(o));
 function sellerScore(o, prob, typical) {
   const pct = typical && o.price_value ? o.price_value / typical - 1 : null;
   const fair = pct == null ? 0.6 : pct < -0.4 ? 0.3 : pct <= 0.05 ? 1 : Math.max(0, 1 - pct / 0.5);
@@ -268,18 +263,31 @@ function sellerScore(o, prob, typical) {
   return { total: Math.round(total), parts, pct, suspicious: pct != null && pct < -0.4 };
 }
 
+// Which product to show first: the user's photo if given; else, among groups that are not accessories
+// (cases, covers) and have a visible seller, the one most sellers agree on (server order breaks ties).
+function bestSeed() {
+  const O = DATA.offers, G = DATA.groups || [];
+  if (G.length && O[G[0].seed].is_ref) return G[0].seed;
+  const ok = G.filter(g => !O[g.seed].accessory && g.members.some(j => visible(O[j])));
+  const pool = ok.length ? ok : G.filter(g => g.members.some(j => visible(O[j])));
+  if (!pool.length) return G.length ? G[0].seed : 0;
+  const best = pool.reduce((a, b) => b.members.length > a.members.length ? b : a);
+  return best.members.find(j => visible(O[j]));
+}
+
 // ---------- grouping around one offer (same rule as src/live.py) ----------
 function groupAround(seed) {
   const V = DATA.verdict, O = DATA.offers, n = O.length;
   const all = [...Array(n).keys()];
-  const members = all.filter(j => (j === seed || V[seed][j] === "S") && !O[j].is_ref);
-  const variants = all.filter(j => V[seed][j] === "V" && !O[j].is_ref);
+  const members = all.filter(j => (j === seed || V[seed][j] === "S") && visible(O[j]));
+  const hidden = all.filter(j => (j === seed || V[seed][j] === "S") && !O[j].is_ref).length - members.length;
+  const variants = all.filter(j => V[seed][j] === "V" && visible(O[j]));
   const prices = members.map(j => O[j].price_value).filter(v => v != null);
   const typical = prices.length >= 3 ? median(prices) : null;   // fair price needs at least 3 prices
   const scored = members.map(j => ({ j, ...sellerScore(O[j], j === seed ? 1 : DATA.prob[seed][j], typical) }));
   scored.sort((a, b) => b.total - a.total);
   const cheapest = members.filter(j => O[j].price_value != null).sort((a, b) => O[a].price_value - O[b].price_value)[0];
-  return { seed, members, variants, scored, cheapest, typical, n_prices: prices.length,
+  return { seed, members, variants, scored, cheapest, typical, n_prices: prices.length, hidden,
            min: prices.length ? Math.min(...prices) : null, max: prices.length ? Math.max(...prices) : null };
 }
 
@@ -301,7 +309,10 @@ function render(seed) {
   const ref = O[seed].is_ref;
   // what we understood
   const how = { name: "Searched by name", link: "Read the product name from your link", photo: "Recognised your photo as" }[DATA.mode] || "Searched";
-  $("#understood").innerHTML = `${how}: <b>${esc(DATA.query)}</b> · ${DATA.found} offers found · ${O.filter(o => !o.is_ref).length} compared by the model in ${DATA.seconds} s` + (DATA.cached_at ? ` · saved example (${esc(DATA.cached_at)})` : "");
+  const nOffers = O.filter(o => !o.is_ref).length, nKnown = O.filter(o => !o.is_ref && isKnown(o)).length;
+  $("#understood").innerHTML = `${how}: <b>${esc(DATA.query)}</b> · ${nOffers} offers compared by the model in ${DATA.seconds} s · ${nKnown} from well-known stores` + (DATA.cached_at ? ` · saved example (${esc(DATA.cached_at)})` : "") +
+    ` <label class="chip" style="cursor:pointer;margin-left:6px"><input type="checkbox" id="only-known" ${ONLY_KNOWN ? "checked" : ""} style="margin:0 4px 0 0">Well-known stores only</label>`;
+  $("#only-known").onchange = e => { ONLY_KNOWN = e.target.checked; render(bestSeed()); };
   $("#seen-card").hidden = !(DATA.seen_on && DATA.seen_on.length);
   $("#seen").innerHTML = (DATA.seen_on || []).slice(0, 6).map(s => `<a class="tile" href="${esc(s.link)}" target="_blank" rel="noopener">${s.image ? `<img class="ph" src="${esc(s.image)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : ""}<span class="t">${esc(s.title)}</span><span class="s">${esc(s.store)}</span></a>`).join("");
 
@@ -330,7 +341,9 @@ function render(seed) {
   }
 
   $("#same-h").textContent = g.members.length > 1 ? `All ${g.members.length} sellers of this exact item, best seller first` : "Sellers of this exact item";
-  $("#same-sub").textContent = "Seller score = how sure the model is it's the same item (35) + fair price (25) + star rating (15) + number of reviews (10) + well-known store (15). A price far below the fair price is a warning sign, not a bargain.";
+  $("#same-sub").innerHTML = "Seller score = how sure the model is it's the same item (35) + fair price (25) + star rating (15) + number of reviews (10) + well-known store (15). A price far below the fair price is a warning sign, not a bargain." +
+    (g.hidden > 0 ? ` <b>${g.hidden} more seller${g.hidden > 1 ? "s" : ""} of this exact item from less-known stores hidden.</b> <button class="linkbtn" id="show-all" type="button">Show them</button>` : "");
+  if (g.hidden > 0) $("#show-all").onclick = () => { ONLY_KNOWN = false; render(seed); };
   $("#same").innerHTML = g.scored.map((s, k) => {
     const o = O[s.j], pills = [];
     if (k === 0) pills.push(`<span class="pill g">Recommended</span>`);
@@ -357,9 +370,11 @@ function render(seed) {
   $("#var-card").hidden = !g.variants.length;
   $("#variants").innerHTML = g.variants.map(j => tile(j)).join("");
   const shown = new Set([...g.members, ...g.variants, seed]);
-  const others = (DATA.groups || []).filter(x => !shown.has(x.seed) && !O[x.seed].is_ref);
+  const others = (DATA.groups || []).filter(x => !shown.has(x.seed))
+    .map(x => ({ first: x.members.find(j => visible(O[j])), n: x.members.filter(j => visible(O[j])).length }))
+    .filter(x => x.first != null && !shown.has(x.first));
   $("#other-card").hidden = !others.length;
-  $("#others").innerHTML = others.map(x => tile(x.seed, x.members.length > 1 ? `${x.members.length} sellers` : "")).join("");
+  $("#others").innerHTML = others.map(x => tile(x.first, x.n > 1 ? `${x.n} sellers` : "")).join("");
   document.querySelectorAll(".tile[data-seed]").forEach(t => t.onclick = () => { render(+t.dataset.seed); $("#results").scrollIntoView({ behavior: "smooth" }); });
   document.querySelectorAll("#best [data-j], #same [data-j]").forEach(el => el.onclick = () => openStore(+el.dataset.j, el));
 
@@ -451,7 +466,7 @@ async function run(q) {
     } else data = await (await fetch(`data/searches/${ex.file}`)).json();
     DATA = data; hideSteps();
     if (!data.offers.filter(o => !o.is_ref).length) { note(`No offers with photos came back for "${esc(data.query)}". Try a more common product name.`); return; }
-    render(data.groups[0].seed);
+    render(bestSeed());
     $("#results").scrollIntoView({ behavior: "smooth" });
   } catch (e) { hideSteps(); note(esc(e.message), true); }
   finally { $("#go").disabled = false; }

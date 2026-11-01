@@ -33,7 +33,7 @@ import requests
 from src import config
 from src.extra import colour_dist
 from src.numtokens import compare, extract
-from src.verdict import classify, combo_mismatch, model_conflict, name_conflicts, size_conflict
+from src.verdict import classify, combo_mismatch, is_accessory, model_conflict, name_conflicts, size_conflict
 
 SERPER = "https://google.serper.dev/"
 LIVE_CACHE = config.CACHE_DIR / "live"
@@ -67,6 +67,28 @@ def serper(endpoint, payload):
     data = r.json()
     path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
     return data
+
+
+# Well-known Indian stores: big retailers and marketplaces, quick-commerce apps, pharmacies.
+# Matched at the start of a word in the store name ("Amazon.in", "JioMart Grocery", "Apollo247").
+WELL_KNOWN = re.compile(r"\b(amazon|flipkart|shopsy|croma|reliance ?digital|jiomart|tata ?cliq|vijay ?sales|myntra|ajio|"
+                        r"nykaa|purplle|tira\b|bigbasket|blinkit|zepto|instamart|swiggy|dmart|meesho|snapdeal|"
+                        r"pharmeasy|apollo|1mg|netmeds|firstcry|pepperfry|decathlon|lenskart|ikea|samsung|apple|"
+                        r"oneplus|mi\.com|xiaomi)", re.IGNORECASE)
+NOT_BRAND = {"buy", "new", "original", "the", "combo", "set", "pack"}
+
+
+def well_known(store, title):
+    """True for a well-known store, or the brand's own store ("boAt" or "Wildcraft Official" selling that brand)."""
+    store = store or ""
+    if WELL_KNOWN.search(store):
+        return True
+    words = [w for w in re.findall(r"[a-z0-9]+", (title or "").lower()) if w not in NOT_BRAND]
+    brand = words[0] if words else ""
+    if len(brand) > 2 and brand in re.sub(r"[^a-z0-9]", "", store.lower()):
+        return True
+    first = store.lower().split()[0] if store.split() else ""  # "Wildcraft Official" selling "Cargo Pack ... Wildcraft"
+    return "official" in store.lower() and len(first) > 2 and first in words
 
 
 def parse_price(text):
@@ -265,6 +287,8 @@ def search(matcher, text=None, image_bytes=None, image_url=None, num=40):
     """Full live search -> JSON-ready dict for the website."""
     t = {"start": time.time()}
     inp = understand(text, image_bytes, image_url)
+    # One result page (40 offers). A second page was tried: it doubled cost and time and mostly added
+    # accessories (cases, covers), not more sellers of the product.
     raw = serper("shopping", {"q": inp["query"], "gl": "in", "hl": "en", "num": num}).get("shopping", [])
     raw = [o for o in raw if o.get("title") and o.get("imageUrl")]
     t["offers"] = time.time()
@@ -274,7 +298,8 @@ def search(matcher, text=None, image_bytes=None, image_url=None, num=40):
     offers = [dict(title=raw[i]["title"], store=raw[i].get("source", ""), price=raw[i].get("price"),
                    price_value=parse_price(raw[i].get("price")), link=raw[i].get("link"),
                    image=raw[i]["imageUrl"], rating=raw[i].get("rating"), rating_count=raw[i].get("ratingCount"),
-                   delivery=raw[i].get("delivery"))
+                   delivery=raw[i].get("delivery"), known=well_known(raw[i].get("source"), raw[i]["title"]),
+                   accessory=is_accessory(raw[i]["title"]))
               for i in keep]
     photos = [photos[i] for i in keep]
     if inp["ref_photo"]:  # the user's own photo is item 0, compared with every offer like a listing

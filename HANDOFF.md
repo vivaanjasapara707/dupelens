@@ -188,6 +188,12 @@ Affiliate API for a fresh Indian catalog once the user has an affiliate account.
   "same" links (display only). 6 example searches saved in dashboard/data/searches/. 35 tests pass.
 - 2026-11-01: README top rewritten for live search (measured numbers only); PRESENTATION.md = pitch, demo script,
   plain-words explanation, numbers, limits, Q&A for the user's presentation. evidence.html notes the 2 known
-  wrong price-gap rows. NEXT (user said: deploy LAST): Hugging Face Spaces (needs user's HF account + write
+  wrong price-gap rows.
+- 2026-11-01: user asked for well-known stores only. Measured: 28 saved searches = 932 offers from 247 stores;
+  live.well_known (big retailers/marketplaces, quick commerce, pharmacies, brand's own store) marks 511 (55%).
+  The model still scores ALL offers (same pipeline as measured); the page shows/recommends only well-known
+  stores by default (toggle; "N more sellers hidden - show them"). Tried Serper page 2: +2 credits, ~2x time,
+  mostly added accessories (cases) -> reverted. Offers flagged accessory (verdict.is_accessory) are never the
+  default product. 36 tests pass. NEXT (user said: deploy LAST): Hugging Face Spaces (needs user's HF account + write
   token; set SERPER_API_KEY as a Space secret and PUBLIC_URL for photo upload), update Vercel static site, push to
   GitHub (ask first).

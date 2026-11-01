@@ -37,6 +37,11 @@ def combo_mismatch(title_a, title_b):
     return bool(COMBO.search(title_a)) != bool(COMBO.search(title_b))
 
 
+def is_accessory(title):
+    """True when the listing is an accessory or spare part (case, cover, replacement ...), not the product."""
+    return bool(set(re.findall(r"[a-z]+", title.lower())) & ACCESSORY_WORDS)
+
+
 def _model_parts(title):
     t = title.lower()
     words = re.findall(r"[a-z0-9]+", t)

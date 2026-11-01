@@ -58,3 +58,14 @@ def test_glued_codes_jars_and_name_words():
     names = name_conflicts(titles)
     assert names(0, 1)                      # Matchless vs Xeno: different name words
     assert not name_conflicts(titles[:2])(0, 1)  # too few offers to know which words are rare
+
+
+def test_accessories_and_well_known_stores():
+    from src.live import well_known
+    from src.verdict import is_accessory
+    assert is_accessory("Sounce Compatible with Boat Airdopes 141 Soft Silicone Skin Case Cover")
+    assert not is_accessory("boAt Airdopes 141 True Wireless Earbuds")
+    assert well_known("Amazon.in", "boAt Airdopes 141") and well_known("JioMart Grocery", "Dettol Handwash")
+    assert well_known("boAt", "boAt Airdopes 141 Gen 2")                       # the brand's own store
+    assert well_known("Wildcraft Official", "Cargo Pack 35 Exp Wildcraft Black")
+    assert not well_known("addmecart", "boAt Airdopes 141") and not well_known("Tradeindia.com", "Pigeon Kettle")
