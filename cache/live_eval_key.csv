@@ -1,0 +1,101 @@
+pair_id,stratum,verdict,tfidf,query
+L000,S,S,0.452,Nivea Soft light moisturising cream 200 ml
+L001,S,S,0.389,Nivea Soft light moisturising cream 200 ml
+L002,H,D,0.579,Prestige PIC 20 induction cooktop
+L003,S,S,0.725,Milton Thermosteel Flip Lid 1000 ml
+L004,R,D,0.477,Milton Thermosteel Flip Lid 1000 ml
+L005,S,S,0.672,Nivea Soft light moisturising cream 200 ml
+L006,R,D,0.783,JBL Tune 510BT headphones
+L007,H,D,0.539,Logitech M235 wireless mouse
+L008,R,D,0.491,Milton Thermosteel Flip Lid 1000 ml
+L009,R,D,0.332,Nivea Soft light moisturising cream 200 ml
+L010,R,D,0.434,JBL Tune 510BT headphones
+L011,S,S,0.53,Nivea Soft light moisturising cream 200 ml
+L012,H,D,0.544,Nivea Soft light moisturising cream 200 ml
+L013,S,S,0.729,Nivea Soft light moisturising cream 200 ml
+L014,S,S,0.674,Prestige PIC 20 induction cooktop
+L015,S,S,0.623,Logitech M235 wireless mouse
+L016,S,S,0.621,Logitech M235 wireless mouse
+L017,S,S,0.697,Prestige PIC 20 induction cooktop
+L018,S,S,0.736,Philips BHD308 hair dryer
+L019,R,S,0.616,Prestige PIC 20 induction cooktop
+L020,H,V,0.944,Logitech M235 wireless mouse
+L021,S,S,0.621,Logitech M235 wireless mouse
+L022,H,V,0.74,Pigeon electric kettle 1.5 litre
+L023,H,V,0.608,Pigeon electric kettle 1.5 litre
+L024,H,V,0.577,Pigeon electric kettle 1.5 litre
+L025,R,D,0.537,Nivea Soft light moisturising cream 200 ml
+L026,S,S,0.702,Nivea Soft light moisturising cream 200 ml
+L027,H,D,0.524,Pigeon electric kettle 1.5 litre
+L028,H,D,0.527,Milton Thermosteel Flip Lid 1000 ml
+L029,S,S,0.466,JBL Tune 510BT headphones
+L030,R,V,0.66,Prestige PIC 20 induction cooktop
+L031,R,D,0.602,Philips BHD308 hair dryer
+L032,S,S,0.541,Pigeon electric kettle 1.5 litre
+L033,H,V,0.731,Nivea Soft light moisturising cream 200 ml
+L034,R,D,0.593,Logitech M235 wireless mouse
+L035,H,D,0.5,JBL Tune 510BT headphones
+L036,S,S,0.608,Nivea Soft light moisturising cream 200 ml
+L037,H,V,0.664,Milton Thermosteel Flip Lid 1000 ml
+L038,S,S,0.753,JBL Tune 510BT headphones
+L039,S,S,0.527,Nivea Soft light moisturising cream 200 ml
+L040,S,S,0.969,Philips BHD308 hair dryer
+L041,H,D,0.718,Pigeon electric kettle 1.5 litre
+L042,S,S,0.566,Prestige PIC 20 induction cooktop
+L043,R,S,0.42,Nivea Soft light moisturising cream 200 ml
+L044,S,S,0.882,Nivea Soft light moisturising cream 200 ml
+L045,H,D,0.565,Milton Thermosteel Flip Lid 1000 ml
+L046,S,S,0.794,Nivea Soft light moisturising cream 200 ml
+L047,S,S,0.575,Nivea Soft light moisturising cream 200 ml
+L048,H,V,0.889,Prestige PIC 20 induction cooktop
+L049,S,S,0.786,Philips BHD308 hair dryer
+L050,H,V,0.646,Pigeon electric kettle 1.5 litre
+L051,R,D,0.411,Pigeon electric kettle 1.5 litre
+L052,S,S,0.705,Prestige PIC 20 induction cooktop
+L053,R,V,0.994,Nivea Soft light moisturising cream 200 ml
+L054,S,S,0.699,Pigeon electric kettle 1.5 litre
+L055,S,S,0.665,Prestige PIC 20 induction cooktop
+L056,S,S,0.426,Nivea Soft light moisturising cream 200 ml
+L057,R,D,0.335,JBL Tune 510BT headphones
+L058,H,D,0.721,Logitech M235 wireless mouse
+L059,H,D,0.653,Pigeon electric kettle 1.5 litre
+L060,S,S,0.803,Milton Thermosteel Flip Lid 1000 ml
+L061,R,S,0.652,Prestige PIC 20 induction cooktop
+L062,R,D,0.457,Prestige PIC 20 induction cooktop
+L063,S,S,0.753,Nivea Soft light moisturising cream 200 ml
+L064,R,D,0.757,Pigeon electric kettle 1.5 litre
+L065,R,V,0.853,Milton Thermosteel Flip Lid 1000 ml
+L066,R,S,0.494,Nivea Soft light moisturising cream 200 ml
+L067,S,S,0.412,Nivea Soft light moisturising cream 200 ml
+L068,H,V,0.547,Nivea Soft light moisturising cream 200 ml
+L069,H,D,0.704,Prestige PIC 20 induction cooktop
+L070,R,D,0.402,Milton Thermosteel Flip Lid 1000 ml
+L071,S,S,0.865,Prestige PIC 20 induction cooktop
+L072,S,S,0.543,Nivea Soft light moisturising cream 200 ml
+L073,H,D,0.731,Prestige PIC 20 induction cooktop
+L074,R,D,0.463,Prestige PIC 20 induction cooktop
+L075,R,S,0.826,Prestige PIC 20 induction cooktop
+L076,H,D,0.548,Nivea Soft light moisturising cream 200 ml
+L077,H,D,0.674,Milton Thermosteel Flip Lid 1000 ml
+L078,H,V,0.794,Nivea Soft light moisturising cream 200 ml
+L079,S,S,0.459,Nivea Soft light moisturising cream 200 ml
+L080,H,D,0.658,Prestige PIC 20 induction cooktop
+L081,S,S,0.368,Prestige PIC 20 induction cooktop
+L082,S,S,0.405,Nivea Soft light moisturising cream 200 ml
+L083,R,D,0.553,Prestige PIC 20 induction cooktop
+L084,S,S,0.802,Prestige PIC 20 induction cooktop
+L085,R,D,0.79,Milton Thermosteel Flip Lid 1000 ml
+L086,H,D,0.513,JBL Tune 510BT headphones
+L087,S,S,0.755,Milton Thermosteel Flip Lid 1000 ml
+L088,R,D,0.313,Philips BHD308 hair dryer
+L089,H,D,0.774,Milton Thermosteel Flip Lid 1000 ml
+L090,H,V,0.758,Nivea Soft light moisturising cream 200 ml
+L091,R,D,0.45,Prestige PIC 20 induction cooktop
+L092,S,S,0.898,Pigeon electric kettle 1.5 litre
+L093,R,D,0.545,Samsung Galaxy M35 5G 128GB
+L094,H,V,0.903,Prestige PIC 20 induction cooktop
+L095,H,D,0.63,Prestige PIC 20 induction cooktop
+L096,S,S,0.898,Prestige PIC 20 induction cooktop
+L097,R,V,0.445,JBL Tune 510BT headphones
+L098,R,V,0.809,Prestige PIC 20 induction cooktop
+L099,R,D,0.394,Milton Thermosteel Flip Lid 1000 ml

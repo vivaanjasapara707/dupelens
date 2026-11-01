@@ -1,0 +1,101 @@
+pair_id,stratum,verdict,tfidf,query
+L000,S,S,0.558,Lakme 9 to 5 primer matte lipstick
+L001,S,S,0.495,Butterfly mixer grinder 750 W
+L002,H,D,0.641,Wildcraft 35 L backpack
+L003,S,S,0.721,Butterfly mixer grinder 750 W
+L004,R,S,0.724,Dettol original liquid handwash 200 ml
+L005,S,S,0.67,Bajaj DX 6 dry iron
+L006,R,D,0.383,Redmi 13C 5G 128GB
+L007,H,V,0.596,Butterfly mixer grinder 750 W
+L008,R,D,0.133,Usha table fan 400 mm
+L009,R,V,0.869,Dettol original liquid handwash 200 ml
+L010,R,S,0.476,Lakme 9 to 5 primer matte lipstick
+L011,S,S,0.672,Butterfly mixer grinder 750 W
+L012,H,D,0.505,Wildcraft 35 L backpack
+L013,S,S,0.831,Lakme 9 to 5 primer matte lipstick
+L014,S,S,0.448,Lakme 9 to 5 primer matte lipstick
+L015,S,S,0.749,Butterfly mixer grinder 750 W
+L016,S,S,0.773,Butterfly mixer grinder 750 W
+L017,S,S,0.559,Lakme 9 to 5 primer matte lipstick
+L018,S,S,0.344,Lakme 9 to 5 primer matte lipstick
+L019,R,V,0.714,Butterfly mixer grinder 750 W
+L020,H,D,0.733,Wildcraft 35 L backpack
+L021,S,S,0.4,Lakme 9 to 5 primer matte lipstick
+L022,H,D,0.774,Wildcraft 35 L backpack
+L023,H,V,0.859,Lakme 9 to 5 primer matte lipstick
+L024,H,D,0.626,Usha table fan 400 mm
+L025,R,V,0.543,Bajaj DX 6 dry iron
+L026,S,S,0.43,Lakme 9 to 5 primer matte lipstick
+L027,H,D,0.652,Dettol original liquid handwash 200 ml
+L028,H,D,0.555,Wildcraft 35 L backpack
+L029,S,S,0.866,Lakme 9 to 5 primer matte lipstick
+L030,R,D,0.261,Dettol original liquid handwash 200 ml
+L031,R,D,0.281,Dettol original liquid handwash 200 ml
+L032,S,S,0.588,Butterfly mixer grinder 750 W
+L033,H,V,0.601,Bajaj DX 6 dry iron
+L034,R,D,0.668,Butterfly mixer grinder 750 W
+L035,H,D,0.533,Butterfly mixer grinder 750 W
+L036,S,S,0.816,Bajaj DX 6 dry iron
+L037,H,D,0.638,Bajaj DX 6 dry iron
+L038,S,S,0.635,Dettol original liquid handwash 200 ml
+L039,S,S,0.91,boAt Rockerz 450 headphones
+L040,S,S,0.472,Dettol original liquid handwash 200 ml
+L041,H,V,0.582,Lakme 9 to 5 primer matte lipstick
+L042,S,S,0.814,Lakme 9 to 5 primer matte lipstick
+L043,R,D,0.517,Usha table fan 400 mm
+L044,S,S,0.458,Redmi 13C 5G 128GB
+L045,H,V,0.688,Wildcraft 35 L backpack
+L046,S,S,0.469,Lakme 9 to 5 primer matte lipstick
+L047,S,S,0.423,Butterfly mixer grinder 750 W
+L048,H,D,0.612,Dettol original liquid handwash 200 ml
+L049,S,S,0.581,Butterfly mixer grinder 750 W
+L050,H,D,0.597,Butterfly mixer grinder 750 W
+L051,R,D,0.508,Redmi 13C 5G 128GB
+L052,S,S,0.582,Lakme 9 to 5 primer matte lipstick
+L053,R,D,0.31,Dettol original liquid handwash 200 ml
+L054,S,S,0.532,Lakme 9 to 5 primer matte lipstick
+L055,S,S,0.8,Lakme 9 to 5 primer matte lipstick
+L056,S,S,0.725,Bajaj DX 6 dry iron
+L057,R,D,0.475,Usha table fan 400 mm
+L058,H,D,0.727,Dettol original liquid handwash 200 ml
+L059,H,V,0.734,Dettol original liquid handwash 200 ml
+L060,S,S,0.515,Usha table fan 400 mm
+L061,R,D,0.295,Redmi 13C 5G 128GB
+L062,R,D,0.462,Usha table fan 400 mm
+L063,S,S,0.677,Usha table fan 400 mm
+L064,R,D,0.532,Butterfly mixer grinder 750 W
+L065,R,D,0.489,boAt Rockerz 450 headphones
+L066,R,D,0.807,Dettol original liquid handwash 200 ml
+L067,S,S,0.383,boAt Rockerz 450 headphones
+L068,H,D,0.571,Dettol original liquid handwash 200 ml
+L069,H,D,0.524,Usha table fan 400 mm
+L070,R,D,0.486,Butterfly mixer grinder 750 W
+L071,S,S,0.701,Dettol original liquid handwash 200 ml
+L072,S,S,0.574,Butterfly mixer grinder 750 W
+L073,H,V,0.63,Dettol original liquid handwash 200 ml
+L074,R,V,0.51,Dettol original liquid handwash 200 ml
+L075,R,V,0.833,Redmi 13C 5G 128GB
+L076,H,D,0.648,Bajaj DX 6 dry iron
+L077,H,V,0.734,Dettol original liquid handwash 200 ml
+L078,H,D,0.53,Lakme 9 to 5 primer matte lipstick
+L079,S,S,0.487,Redmi 13C 5G 128GB
+L080,H,D,0.505,Butterfly mixer grinder 750 W
+L081,S,S,0.608,Dettol original liquid handwash 200 ml
+L082,S,S,0.67,Redmi 13C 5G 128GB
+L083,R,D,0.386,Redmi 13C 5G 128GB
+L084,S,S,0.511,Lakme 9 to 5 primer matte lipstick
+L085,R,D,0.552,Dettol original liquid handwash 200 ml
+L086,H,V,0.725,Lakme 9 to 5 primer matte lipstick
+L087,S,S,0.497,Lakme 9 to 5 primer matte lipstick
+L088,R,D,0.594,Dettol original liquid handwash 200 ml
+L089,H,V,0.649,Dettol original liquid handwash 200 ml
+L090,H,V,0.813,Dettol original liquid handwash 200 ml
+L091,R,D,0.615,Bajaj DX 6 dry iron
+L092,S,S,0.795,Usha table fan 400 mm
+L093,R,S,0.573,Butterfly mixer grinder 750 W
+L094,H,V,0.604,Usha table fan 400 mm
+L095,H,D,0.628,Bajaj DX 6 dry iron
+L096,S,S,0.692,Lakme 9 to 5 primer matte lipstick
+L097,R,D,0.754,Wildcraft 35 L backpack
+L098,R,D,0.411,Butterfly mixer grinder 750 W
+L099,R,D,0.358,Wildcraft 35 L backpack

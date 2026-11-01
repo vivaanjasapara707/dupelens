@@ -1,0 +1,101 @@
+pair_id,stratum,verdict,tfidf,query
+L000,S,S,0.415,Mi Power Bank 3i 20000 mAh
+L001,S,S,0.957,Prestige Popular pressure cooker 3 litre
+L002,H,D,0.612,Prestige Popular pressure cooker 3 litre
+L003,S,S,0.435,Wipro 9W LED bulb
+L004,R,D,0.435,Mi Power Bank 3i 20000 mAh
+L005,S,S,0.649,Mi Power Bank 3i 20000 mAh
+L006,R,D,0.838,Casio FX-991ES Plus calculator
+L007,H,D,0.617,Boroplus antiseptic cream 80 ml
+L008,R,D,0.483,Philips BT3221 beard trimmer
+L009,R,D,0.38,Vaseline intensive care deep restore body lotion 400 ml
+L010,R,S,0.939,Philips BT3221 beard trimmer
+L011,S,S,0.857,Philips BT3221 beard trimmer
+L012,H,D,0.703,Wipro 9W LED bulb
+L013,S,S,0.647,Mi Power Bank 3i 20000 mAh
+L014,S,S,0.59,Mi Power Bank 3i 20000 mAh
+L015,S,S,0.692,Vaseline intensive care deep restore body lotion 400 ml
+L016,S,S,0.468,Sony WH-1000XM5 headphones
+L017,S,S,0.487,Sony WH-1000XM5 headphones
+L018,S,S,0.259,Boroplus antiseptic cream 80 ml
+L019,R,D,0.427,Mi Power Bank 3i 20000 mAh
+L020,H,D,0.629,Casio FX-991ES Plus calculator
+L021,S,S,0.891,Mi Power Bank 3i 20000 mAh
+L022,H,D,0.676,Prestige Popular pressure cooker 3 litre
+L023,H,D,0.611,Vaseline intensive care deep restore body lotion 400 ml
+L024,H,D,0.511,Casio FX-991ES Plus calculator
+L025,R,D,0.605,Mi Power Bank 3i 20000 mAh
+L026,S,S,0.834,Vaseline intensive care deep restore body lotion 400 ml
+L027,H,D,0.538,Prestige Popular pressure cooker 3 litre
+L028,H,D,0.545,Wipro 9W LED bulb
+L029,S,S,0.82,Philips BT3221 beard trimmer
+L030,R,D,0.716,Sony WH-1000XM5 headphones
+L031,R,D,0.291,Prestige Popular pressure cooker 3 litre
+L032,S,S,0.531,Philips BT3221 beard trimmer
+L033,H,D,0.548,Boroplus antiseptic cream 80 ml
+L034,R,D,0.271,Wipro 9W LED bulb
+L035,H,D,0.549,Wipro 9W LED bulb
+L036,S,S,0.836,Boroplus antiseptic cream 80 ml
+L037,H,D,0.535,Boroplus antiseptic cream 80 ml
+L038,S,S,0.802,Prestige Popular pressure cooker 3 litre
+L039,S,S,0.247,Mi Power Bank 3i 20000 mAh
+L040,S,S,0.555,Sony WH-1000XM5 headphones
+L041,H,D,0.789,Vaseline intensive care deep restore body lotion 400 ml
+L042,S,S,0.96,Prestige Popular pressure cooker 3 litre
+L043,R,D,0.528,Sony WH-1000XM5 headphones
+L044,S,S,0.819,Boroplus antiseptic cream 80 ml
+L045,H,D,0.636,Boroplus antiseptic cream 80 ml
+L046,S,S,0.759,Boroplus antiseptic cream 80 ml
+L047,S,S,0.838,Sony WH-1000XM5 headphones
+L048,H,D,0.527,Sony WH-1000XM5 headphones
+L049,S,S,0.723,Boroplus antiseptic cream 80 ml
+L050,H,D,0.639,Mi Power Bank 3i 20000 mAh
+L051,R,D,0.292,Sony WH-1000XM5 headphones
+L052,S,S,0.803,Philips BT3221 beard trimmer
+L053,R,D,0.491,Wipro 9W LED bulb
+L054,S,S,0.967,Vaseline intensive care deep restore body lotion 400 ml
+L055,S,S,1.0,Boroplus antiseptic cream 80 ml
+L056,S,S,0.845,Wipro 9W LED bulb
+L057,R,D,0.461,Mi Power Bank 3i 20000 mAh
+L058,H,D,0.712,Casio FX-991ES Plus calculator
+L059,H,D,0.794,Prestige Popular pressure cooker 3 litre
+L060,S,S,0.923,Prestige Popular pressure cooker 3 litre
+L061,R,D,0.285,Casio FX-991ES Plus calculator
+L062,R,D,0.642,Prestige Popular pressure cooker 3 litre
+L063,S,S,0.727,Prestige Popular pressure cooker 3 litre
+L064,R,D,0.404,Casio FX-991ES Plus calculator
+L065,R,D,0.448,Philips BT3221 beard trimmer
+L066,R,D,0.469,Sony WH-1000XM5 headphones
+L067,S,S,0.498,Vaseline intensive care deep restore body lotion 400 ml
+L068,H,D,0.596,Vaseline intensive care deep restore body lotion 400 ml
+L069,H,D,0.656,Mi Power Bank 3i 20000 mAh
+L070,R,D,0.353,Sony WH-1000XM5 headphones
+L071,S,S,0.615,Casio FX-991ES Plus calculator
+L072,S,S,0.776,Boroplus antiseptic cream 80 ml
+L073,H,D,0.529,Philips BT3221 beard trimmer
+L074,R,D,0.433,Prestige Popular pressure cooker 3 litre
+L075,R,V,0.976,Sony WH-1000XM5 headphones
+L076,H,D,0.746,Prestige Popular pressure cooker 3 litre
+L077,H,D,0.788,Vaseline intensive care deep restore body lotion 400 ml
+L078,H,D,0.827,Casio FX-991ES Plus calculator
+L079,S,S,0.65,Boroplus antiseptic cream 80 ml
+L080,H,D,0.601,Prestige Popular pressure cooker 3 litre
+L081,S,S,1.0,Boroplus antiseptic cream 80 ml
+L082,S,S,0.759,Boroplus antiseptic cream 80 ml
+L083,R,D,0.203,Mi Power Bank 3i 20000 mAh
+L084,S,S,0.467,Sony WH-1000XM5 headphones
+L085,R,D,0.36,Philips BT3221 beard trimmer
+L086,H,D,0.619,Prestige Popular pressure cooker 3 litre
+L087,S,S,0.912,Boroplus antiseptic cream 80 ml
+L088,R,D,0.684,Prestige Popular pressure cooker 3 litre
+L089,H,D,0.632,Prestige Popular pressure cooker 3 litre
+L090,H,D,0.549,Sony WH-1000XM5 headphones
+L091,R,D,0.69,Prestige Popular pressure cooker 3 litre
+L092,S,S,0.589,Sony WH-1000XM5 headphones
+L093,R,D,0.68,Vaseline intensive care deep restore body lotion 400 ml
+L094,H,D,0.555,Prestige Popular pressure cooker 3 litre
+L095,H,V,0.96,Prestige Popular pressure cooker 3 litre
+L096,S,S,0.929,Sony WH-1000XM5 headphones
+L097,R,D,0.4,Philips BT3221 beard trimmer
+L098,R,D,0.216,Wipro 9W LED bulb
+L099,R,D,0.66,Philips BT3221 beard trimmer

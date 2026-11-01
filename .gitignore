@@ -19,6 +19,9 @@ cache/*
 !cache/labelling_key.csv
 !cache/holdout_key.csv
 !cache/v2_key.csv
+!cache/live_eval_key.csv
+!cache/live_test_key.csv
+!cache/live_final_key.csv
 .venv/
 __pycache__/
 .pytest_cache/
