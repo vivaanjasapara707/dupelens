@@ -14,7 +14,7 @@ import os
 import threading
 
 import uvicorn
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from starlette.concurrency import run_in_threadpool
@@ -32,8 +32,17 @@ matcher = Matcher()
 threading.Thread(target=matcher.encoders, daemon=True).start()
 
 
+def note_public_address(request):
+    """Behind a tunnel or host (anything but localhost), the address the visitor used is public: uploaded photos
+    are saved under it so Google Lens can fetch them. Set once; PUBLIC_URL from the environment wins."""
+    host = request.headers.get("x-forwarded-host") or request.headers.get("host") or ""
+    if not os.environ.get("PUBLIC_URL") and host and not host.split(":")[0] in ("127.0.0.1", "localhost", "0.0.0.0"):
+        os.environ["PUBLIC_URL"] = f"https://{host}"
+
+
 @app.get("/api/health")
-def health():
+def health(request: Request):
+    note_public_address(request)
     try:
         live.api_key()
         search_ready = True
@@ -121,9 +130,10 @@ async def ask(q: Question):
 
 
 @app.post("/api/search")
-async def search(q: str | None = Form(None), image_url: str | None = Form(None),
+async def search(request: Request, q: str | None = Form(None), image_url: str | None = Form(None),
                  image: UploadFile | None = File(None)):
     """Name, store link, photo address or uploaded photo -> grouped offers (see src/live.py)."""
+    note_public_address(request)
     data = await image.read() if image is not None and image.filename else None
     try:
         # run in a worker thread so a slow search does not freeze the page for other visitors
