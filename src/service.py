@@ -59,15 +59,22 @@ class Matcher:
         """Same as candidates.retrieval_vectors: concatenated, scaled to unit length."""
         return (np.hstack([img, txt]) / np.sqrt(2)).astype(np.float32)
 
-    def encode(self, title, image_bytes):
-        """All signals for a brand-new listing: CLIP, MPNet, phash, DINOv2, colour (models load once)."""
-        from src.embed import IMAGE_MODEL, TEXT_MODEL, encode, get_device, load_image  # torch only here
-        from src.extra import Dino, colour_hist
+    def encoders(self):
+        """CLIP, MPNet and DINOv2, loaded on first use (torch is imported only here)."""
         if self._encoders is None:
             from sentence_transformers import SentenceTransformer
+            from src.embed import IMAGE_MODEL, TEXT_MODEL, get_device
+            from src.extra import Dino
             device = get_device()
             self._encoders = (SentenceTransformer(IMAGE_MODEL, device=device),
                               SentenceTransformer(TEXT_MODEL, device=device), Dino(device))
+        return self._encoders
+
+    def encode(self, title, image_bytes):
+        """All signals for a brand-new listing: CLIP, MPNet, phash, DINOv2, colour (models load once)."""
+        from src.embed import encode, load_image
+        from src.extra import colour_hist
+        self.encoders()
         im, ph = load_image(io.BytesIO(image_bytes))
         return dict(img=encode(self._encoders[0], [im], batch_size=1)[0],
                     txt=encode(self._encoders[1], [title], batch_size=1)[0],

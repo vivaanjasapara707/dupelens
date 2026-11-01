@@ -156,3 +156,11 @@ Affiliate API for a fresh Indian catalog once the user has an affiliate account.
   the venv python is `.venv\Scripts\python.exe` (not .venv/bin). Pinned requirements installed, 25 tests pass,
   photos 698/698, app live (/api/health live:true). First check downloaded 3.3 GB of Hugging Face models
   (592 s); two warm checks then took 156 ms and 205 ms on this PC. Next: user picks a NEXT idea.
+- 2026-11-01: user approved a new scope for tomorrow's presentation: "search ANY product, compare stores, best
+  place to buy". Built src/live.py (Serper Google Shopping India -> photos -> same signals -> M1_v2 scores every
+  pair of offers -> greedy groups around the top offer -> cheapest store, median typical price; responses cached
+  in cache/live/; `--save` writes example searches to dashboard/data/searches/ for the static site). New
+  dashboard/index.html = live search; old page moved to dashboard/evidence.html. app.py: POST /api/search,
+  static mount of dashboard/. Offline check on 13 catalog listings: the 7 curler sellers grouped, 6 others apart.
+  NOT yet run on real Serper results (needs SERPER_API_KEY in .env, free at serper.dev). Live-search accuracy
+  not measured yet.

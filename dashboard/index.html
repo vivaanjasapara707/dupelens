@@ -5,349 +5,277 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>DupeLens</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg: #07111F; --surface: #0D1B2A; --raised: #12243A; --raised-2: #173050;
     --accent: #2589FF; --accent-2: #22D3EE; --ink: #F3F7FC; --muted: #9AAFC4;
     --line: rgba(148, 173, 199, 0.16); --good: #34D399; --warn: #FBBF24; --bad: #F87171;
-    --r: 16px; --gap: 16px;
+    --r: 16px;
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 Inter, system-ui, -apple-system, sans-serif; }
-  body { background: radial-gradient(1200px 500px at 10% -10%, rgba(37,137,255,.12), transparent 60%), var(--bg); min-height: 100vh; }
-  main { max-width: 1240px; margin: 0 auto; padding: 28px 16px 56px; }
+  body { background: radial-gradient(1200px 520px at 15% -10%, rgba(37,137,255,.16), transparent 60%), radial-gradient(900px 400px at 100% 0%, rgba(34,211,238,.08), transparent 60%), var(--bg); min-height: 100vh; }
+  main { max-width: 1180px; margin: 0 auto; padding: 24px 16px 56px; }
   a { color: var(--accent-2); text-decoration: none; } a:hover { text-decoration: underline; }
   :focus-visible { outline: 2px solid var(--accent-2); outline-offset: 2px; border-radius: 8px; }
   .num { font-variant-numeric: tabular-nums; }
+  [hidden] { display: none !important; }
 
-  header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 22px; }
-  .brand { display: flex; align-items: center; gap: 12px; }
-  .logo { width: 40px; height: 40px; border-radius: 12px; background: linear-gradient(135deg, var(--accent), var(--accent-2)); display: grid; place-items: center; font-weight: 700; color: #04101e; }
-  h1 { font-size: 24px; margin: 0; letter-spacing: -.02em; }
-  .tag { color: var(--muted); font-size: 14px; }
-  .chips { display: flex; gap: 8px; flex-wrap: wrap; }
+  header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+  .brand { display: flex; align-items: center; gap: 12px; font-weight: 700; font-size: 20px; letter-spacing: -.02em; }
+  .logo { width: 38px; height: 38px; border-radius: 11px; background: linear-gradient(135deg, var(--accent), var(--accent-2)); display: grid; place-items: center; font-weight: 800; color: #04101e; font-size: 15px; }
+  nav { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
   .chip { border: 1px solid var(--line); background: var(--surface); color: var(--muted); padding: 5px 11px; border-radius: 99px; font-size: 12.5px; display: inline-flex; align-items: center; gap: 6px; }
   .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
   .chip.live .dot { background: var(--good); } .chip.demo .dot { background: var(--warn); }
 
-  .grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: var(--gap); }
-  .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 20px; min-width: 0; }
-  .card h2 { font-size: 16px; margin: 0 0 4px; } .card .sub { color: var(--muted); font-size: 13px; margin: 0 0 14px; }
-  .span-8 { grid-column: span 8; } .span-4 { grid-column: span 4; } .span-12 { grid-column: span 12; } .span-6 { grid-column: span 6; } .span-7 { grid-column: span 7; } .span-5 { grid-column: span 5; }
-  @media (max-width: 980px) { .span-8, .span-4, .span-6, .span-7, .span-5 { grid-column: span 12; } }
+  .hero { text-align: center; padding: 48px 0 26px; }
+  .hero h1 { font-size: clamp(28px, 5vw, 46px); line-height: 1.1; margin: 0 0 12px; letter-spacing: -.03em; font-weight: 800; }
+  .hero h1 em { font-style: normal; background: linear-gradient(90deg, var(--accent), var(--accent-2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .hero p { color: var(--muted); max-width: 680px; margin: 0 auto 26px; font-size: 16px; }
+  form.search { display: flex; gap: 10px; max-width: 720px; margin: 0 auto; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 8px; box-shadow: 0 10px 40px rgba(0,0,0,.35); }
+  form.search input { flex: 1; min-width: 0; background: none; border: 0; color: var(--ink); font: inherit; font-size: 17px; padding: 10px 12px; }
+  form.search input:focus { outline: none; }
+  .btn { background: linear-gradient(135deg, var(--accent), #1b6fe0); color: #fff; border: 0; padding: 12px 22px; border-radius: 11px; font: inherit; font-weight: 600; cursor: pointer; white-space: nowrap; }
+  .btn:disabled { opacity: .5; cursor: wait; }
+  .examples { margin-top: 14px; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+  .examples span { color: var(--muted); font-size: 13px; align-self: center; }
+  .ex { background: var(--raised); border: 1px solid var(--line); color: var(--ink); border-radius: 99px; padding: 6px 13px; font: inherit; font-size: 13px; cursor: pointer; }
+  .ex:hover { border-color: var(--accent); }
+  .notice { max-width: 720px; margin: 14px auto 0; background: var(--raised); border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px; color: var(--muted); font-size: 13.5px; text-align: left; }
+  .err { border-color: rgba(248,113,113,.5); color: #fecaca; }
 
-  .seg { display: inline-flex; background: var(--bg); border: 1px solid var(--line); border-radius: 12px; padding: 4px; margin-bottom: 16px; }
-  .seg button { background: none; border: 0; color: var(--muted); padding: 8px 14px; border-radius: 9px; font: inherit; font-size: 14px; cursor: pointer; }
-  .seg button[aria-selected="true"] { background: var(--raised-2); color: var(--ink); }
-  label { display: block; font-size: 12.5px; color: var(--muted); margin: 10px 0 6px; }
-  input[type=text], input[type=url], input[type=number], input[type=search], textarea {
-    width: 100%; background: var(--bg); border: 1px solid var(--line); color: var(--ink); border-radius: 10px; padding: 10px 12px; font: inherit; }
-  textarea { resize: vertical; min-height: 64px; }
-  .row2 { display: grid; grid-template-columns: 1fr 160px; gap: 12px; } @media (max-width: 600px) { .row2 { grid-template-columns: 1fr; } }
-  .drop { border: 1.5px dashed var(--line); border-radius: 12px; padding: 14px; display: flex; align-items: center; gap: 14px; cursor: pointer; background: var(--bg); }
-  .drop:hover, .drop.over { border-color: var(--accent); }
-  .drop img { width: 64px; height: 64px; object-fit: contain; border-radius: 8px; background: #fff; display: none; }
-  .btn { background: linear-gradient(135deg, var(--accent), #1b6fe0); color: #fff; border: 0; padding: 11px 18px; border-radius: 10px; font: inherit; font-weight: 600; cursor: pointer; margin-top: 14px; }
-  .btn:disabled { opacity: .45; cursor: not-allowed; }
-  .ghost { background: none; border: 1px solid var(--line); color: var(--ink); }
-  .notice { background: var(--raised); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; color: var(--muted); font-size: 13.5px; }
-  code { background: var(--bg); padding: 2px 6px; border-radius: 6px; color: var(--accent-2); font-size: 12.5px; word-break: break-all; }
-
-  .picker { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 10px; max-height: 360px; overflow-y: auto; margin-top: 12px; padding-right: 4px; }
-  .pick { background: var(--raised); border: 1px solid var(--line); border-radius: 12px; padding: 8px; cursor: pointer; text-align: left; color: var(--ink); font: inherit; transition: transform .15s, border-color .15s; }
-  .pick:hover { transform: translateY(-2px); border-color: var(--accent); }
-  .pick .t { font-size: 12px; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-top: 6px; }
-  .pick .p { font-size: 12px; color: var(--accent-2); }
-  .ph { width: 100%; aspect-ratio: 1; object-fit: contain; background: #fff; border-radius: 8px; display: block; }
-
-  .kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  .kpi { background: var(--raised); border: 1px solid var(--line); border-radius: 14px; padding: 14px; }
-  .kpi .v { font-size: 28px; font-weight: 700; letter-spacing: -.02em; }
-  .kpi .v.accent { color: var(--accent-2); }
-  .kpi .l { color: var(--muted); font-size: 12.5px; line-height: 1.35; }
-
-  #result[hidden] { display: none; }
-  .verdict { display: flex; gap: 14px; align-items: center; padding: 16px; border-radius: 14px; margin-bottom: 16px; border: 1px solid var(--line); background: var(--raised); }
-  .verdict .ic { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; font-size: 22px; font-weight: 700; flex: none; }
-  .v-already .ic { background: rgba(37,137,255,.18); color: var(--accent-2); }
-  .v-variant .ic { background: rgba(251,191,36,.15); color: var(--warn); }
-  .v-new .ic { background: rgba(52,211,153,.15); color: var(--good); }
-  .verdict h3 { margin: 0; font-size: 19px; } .verdict p { margin: 2px 0 0; color: var(--muted); font-size: 13.5px; }
-  .query { display: grid; grid-template-columns: 120px 1fr; gap: 16px; align-items: center; margin-bottom: 18px; }
-  .query .ph { width: 120px; }
-  .gauge { position: relative; height: 10px; background: var(--bg); border-radius: 99px; margin: 26px 0 30px; border: 1px solid var(--line); }
-  .gauge .band { position: absolute; top: 0; bottom: 0; background: linear-gradient(90deg, rgba(37,137,255,.35), rgba(34,211,238,.35)); border-radius: 99px; }
-  .gauge .mk { position: absolute; top: -7px; width: 3px; height: 22px; border-radius: 2px; transform: translateX(-50%); }
-  .gauge .mk span { position: absolute; top: 24px; left: 50%; transform: translateX(-50%); white-space: nowrap; font-size: 11.5px; color: var(--muted); }
-  .gauge .mk.top span { top: -20px; }
-  .matches { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; }
-  .m { background: var(--raised); border: 1px solid var(--line); border-radius: 14px; padding: 10px; display: flex; flex-direction: column; gap: 6px; }
-  .m .t { font-size: 12.5px; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; min-height: 50px; }
-  .m .meta { display: flex; justify-content: space-between; align-items: center; gap: 6px; flex-wrap: wrap; }
-  .price { font-weight: 700; font-size: 16px; }
-  .pill { font-size: 11.5px; padding: 2px 8px; border-radius: 99px; border: 1px solid var(--line); color: var(--muted); }
-  .pill.same { color: var(--accent-2); border-color: rgba(34,211,238,.4); }
-  .pill.sim { color: var(--warn); border-color: rgba(251,191,36,.4); }
-  .pill.up { color: var(--bad); } .pill.down { color: var(--good); }
-  .spin { width: 22px; height: 22px; border: 3px solid var(--line); border-top-color: var(--accent-2); border-radius: 50%; animation: s 0.8s linear infinite; display: inline-block; vertical-align: middle; }
+  .steps { max-width: 720px; margin: 30px auto; display: grid; gap: 10px; }
+  .step { display: flex; align-items: center; gap: 12px; color: var(--muted); }
+  .step.on { color: var(--ink); } .step.done { color: var(--good); }
+  .spin { width: 18px; height: 18px; border: 3px solid var(--line); border-top-color: var(--accent-2); border-radius: 50%; animation: s .8s linear infinite; flex: none; }
+  .step .ic { width: 18px; text-align: center; flex: none; }
   @keyframes s { to { transform: rotate(360deg); } }
-  @media (prefers-reduced-motion: reduce) { .spin { animation: none; } .pick { transition: none; } }
+  @media (prefers-reduced-motion: reduce) { .spin { animation: none; } }
 
-  .gaps { display: grid; gap: 10px; }
-  .gap-row { display: grid; grid-template-columns: 52px 1fr auto; gap: 12px; align-items: center; background: var(--raised); border: 1px solid var(--line); border-radius: 12px; padding: 8px 10px; cursor: pointer; color: var(--ink); font: inherit; text-align: left; width: 100%; }
-  .gap-row:hover { border-color: var(--accent); }
-  .gap-row .ph { width: 52px; }
-  .gap-row .t { font-size: 13px; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-  .bar { height: 6px; background: var(--bg); border-radius: 99px; margin-top: 6px; overflow: hidden; } .bar i { display: block; height: 100%; background: var(--bad); border-radius: 99px; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 20px; margin-top: 18px; }
+  .card h2 { font-size: 17px; margin: 0 0 4px; } .card .sub { color: var(--muted); font-size: 13.5px; margin: 0 0 14px; }
+  .meta-line { color: var(--muted); font-size: 13px; margin-top: 22px; }
 
-  svg text { fill: var(--muted); font-size: 11px; font-family: inherit; }
-  .tip { position: fixed; pointer-events: none; background: var(--raised-2); border: 1px solid var(--line); border-radius: 8px; padding: 6px 9px; font-size: 12px; z-index: 10; display: none; }
+  .best { display: grid; grid-template-columns: 170px 1fr auto; gap: 22px; align-items: center; background: linear-gradient(135deg, rgba(37,137,255,.14), rgba(34,211,238,.06)); border-color: rgba(34,211,238,.35); }
+  .best .ph { width: 170px; }
+  .best .label { color: var(--accent-2); font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: .06em; }
+  .best h2 { font-size: 19px; line-height: 1.35; margin: 4px 0 8px; }
+  .best .facts { display: flex; gap: 22px; flex-wrap: wrap; margin-top: 8px; }
+  .fact .v { font-size: 26px; font-weight: 800; letter-spacing: -.02em; } .fact .l { color: var(--muted); font-size: 12.5px; }
+  .fact .v.good { color: var(--good); }
+  .buy { display: inline-block; background: var(--good); color: #052e1c; font-weight: 700; padding: 13px 20px; border-radius: 12px; white-space: nowrap; }
+  .buy:hover { text-decoration: none; filter: brightness(1.08); }
+  @media (max-width: 820px) { .best { grid-template-columns: 1fr; } .best .ph { width: 140px; } }
+
+  .ph { width: 100%; aspect-ratio: 1; object-fit: contain; background: #fff; border-radius: 10px; display: block; }
+  .rows { display: grid; gap: 8px; }
+  .row { display: grid; grid-template-columns: 64px 1fr auto auto; gap: 14px; align-items: center; background: var(--raised); border: 1px solid var(--line); border-radius: 12px; padding: 8px 12px 8px 8px; }
+  .row.top { border-color: rgba(52,211,153,.55); }
+  .row .ph { width: 64px; }
+  .row .store { font-weight: 600; }
+  .row .t { color: var(--muted); font-size: 12.5px; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .row .price { font-weight: 700; font-size: 17px; text-align: right; }
+  .row .go { font-size: 13px; border: 1px solid var(--line); padding: 7px 12px; border-radius: 9px; white-space: nowrap; color: var(--ink); }
+  .row .go:hover { border-color: var(--accent); text-decoration: none; }
+  @media (max-width: 640px) { .row { grid-template-columns: 56px 1fr; } .row .ph { width: 56px; } .row .price { text-align: left; } }
+  .pills { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+  .pill { font-size: 11.5px; padding: 2px 8px; border-radius: 99px; border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
+  .pill.best-p { color: #052e1c; background: var(--good); border-color: var(--good); font-weight: 600; }
+  .pill.up { color: var(--bad); border-color: rgba(248,113,113,.4); } .pill.down { color: var(--good); border-color: rgba(52,211,153,.4); }
+  .pill.conf { color: var(--accent-2); border-color: rgba(34,211,238,.35); }
+  .linkbtn { background: none; border: 0; color: var(--accent-2); font: inherit; font-size: 12px; cursor: pointer; padding: 0; }
+
+  .gridc { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; }
+  .tile { background: var(--raised); border: 1px solid var(--line); border-radius: 14px; padding: 10px; display: flex; flex-direction: column; gap: 6px; text-align: left; color: var(--ink); font: inherit; cursor: pointer; }
+  .tile:hover { border-color: var(--accent); }
+  .tile .t { font-size: 12.5px; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; min-height: 50px; }
+  .tile .p { font-weight: 700; }
+  .tile .s { color: var(--muted); font-size: 12px; }
+
+  .how { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  @media (max-width: 820px) { .how { grid-template-columns: 1fr 1fr; } } @media (max-width: 520px) { .how { grid-template-columns: 1fr; } }
+  .how div { background: var(--raised); border: 1px solid var(--line); border-radius: 14px; padding: 14px; }
+  .how b { display: block; margin-bottom: 4px; } .how p { margin: 0; color: var(--muted); font-size: 13.5px; }
+  .how .n { width: 26px; height: 26px; border-radius: 8px; background: var(--raised-2); color: var(--accent-2); display: grid; place-items: center; font-weight: 700; margin-bottom: 8px; }
   footer { margin-top: 28px; color: var(--muted); font-size: 12.5px; line-height: 1.6; }
 </style>
 </head>
 <body>
 <main>
   <header>
-    <div class="brand">
-      <div class="logo" aria-hidden="true">DL</div>
-      <div><h1>DupeLens</h1><div class="tag">Is this product already listed by other sellers, and is the price fair?</div></div>
-    </div>
-    <div class="chips">
-      <span class="chip" id="status"><span class="dot"></span><span>Checking model…</span></span>
-      <span class="chip">Amazon India · Personal care appliances · 2023 snapshot</span>
-    </div>
+    <div class="brand"><div class="logo" aria-hidden="true">DL</div>DupeLens</div>
+    <nav>
+      <span class="chip" id="status"><span class="dot"></span><span>Connecting…</span></span>
+      <a class="chip" href="evidence.html">How we tested the model →</a>
+    </nav>
   </header>
 
-  <section class="grid" aria-label="Check a listing">
-    <div class="card span-8">
-      <h2>Check a listing</h2>
-      <p class="sub">Give DupeLens a product's title and photo. It finds the same product listed by other sellers and compares the price.</p>
-      <div class="seg" role="tablist">
-        <button role="tab" aria-selected="true" data-tab="catalog">Pick a catalog listing</button>
-        <button role="tab" aria-selected="false" data-tab="new">Check a new listing</button>
-      </div>
+  <section class="hero">
+    <h1>Same product, many sellers.<br><em>Find the real best price.</em></h1>
+    <p>Type any product. DupeLens collects offers from Indian online stores, uses a trained machine-learning model to keep only the listings that are <b>exactly the same item</b> (not a look-alike, a different colour or a different pack), and shows you the cheapest place to buy it.</p>
+    <form class="search" id="form">
+      <input id="q" type="search" placeholder="e.g. boAt Airdopes 141, Philips hair dryer BHD308, Milton bottle 1 litre" autocomplete="off" aria-label="Product to search">
+      <button class="btn" id="go" type="submit">Find best price</button>
+    </form>
+    <div class="examples" id="examples"></div>
+    <div class="notice" id="note" hidden></div>
+  </section>
 
-      <div id="tab-catalog">
-        <input type="search" id="q" placeholder="Search 698 listings: hair dryer, straightener comb, curler…" aria-label="Search catalog">
-        <div class="picker" id="picker"></div>
-        <p class="sub" style="margin:10px 0 0">The picked listing is hidden from the catalog and checked as if it were brand new.</p>
-      </div>
+  <section class="steps" id="steps" hidden></section>
 
-      <form id="tab-new" hidden>
-        <div id="demo-note" class="notice" hidden>Checking brand-new listings runs the AI models on your computer. Start the app locally and open it there:<br><code>cd "/Volumes/T7 Shield/dupelens" && .venv/bin/python -m src.app</code> then visit <code>http://127.0.0.1:8000</code></div>
-        <label for="title">Listing title</label>
-        <textarea id="title" required placeholder="e.g. Hair Straightener Comb for Women & Men, Hair Styler, PTC Heating Electric Straightener Brush"></textarea>
-        <div class="row2">
-          <div>
-            <label for="imgurl">Photo: image URL (right-click the product photo on Amazon → Copy image address) or drop a file</label>
-            <input type="url" id="imgurl" placeholder="https://m.media-amazon.com/images/I/….jpg">
-          </div>
-          <div>
-            <label for="price">Your price (₹, optional)</label>
-            <input type="number" id="price" min="1" step="1" placeholder="499">
-          </div>
-        </div>
-        <label>Or upload the photo</label>
-        <div class="drop" id="drop" tabindex="0" role="button" aria-label="Upload a product photo">
-          <img id="preview" alt="">
-          <span id="drop-text">Drop an image here or click to choose</span>
-          <input type="file" id="file" accept="image/*" hidden>
-        </div>
-        <button class="btn" id="go" type="submit">Check listing</button>
-      </form>
+  <section id="results" hidden>
+    <div class="card best" id="best"></div>
+    <div class="card">
+      <h2 id="same-h"></h2>
+      <p class="sub" id="same-sub"></p>
+      <div class="rows" id="same"></div>
     </div>
+    <div class="card" id="var-card">
+      <h2>Same product, different colour, size or pack</h2>
+      <p class="sub">The model says these are the same product line but not the identical item, so their prices are not used for the best price.</p>
+      <div class="gridc" id="variants"></div>
+    </div>
+    <div class="card" id="other-card">
+      <h2>Look-alikes the model kept apart</h2>
+      <p class="sub">Other products the search also returned. A plain price-comparison site would mix these in. Click one to compare stores for that product instead.</p>
+      <div class="gridc" id="others"></div>
+    </div>
+    <div class="meta-line" id="meta"></div>
+  </section>
 
-    <div class="card span-4">
-      <h2>At a glance</h2>
-      <p class="sub">Measured on held-out data; see the model section below.</p>
-      <div class="kpis" id="kpis"></div>
+  <section class="card">
+    <h2>How it works</h2>
+    <p class="sub">Machine learning decides which listings are the same product; price is only compared afterwards.</p>
+    <div class="how">
+      <div><span class="n">1</span><b>Collect offers</b><p>Your search is sent to Google Shopping (India) through the Serper service. It returns up to 40 offers from stores like Amazon, Flipkart, Croma and Reliance Digital, with title, photo, price and link.</p></div>
+      <div><span class="n">2</span><b>Read title and photo</b><p>Three pretrained neural networks turn every photo and title into numbers: CLIP (what the photo shows), DINOv2 (which exact object), MPNet (what the title means), plus a colour profile and a photo fingerprint.</p></div>
+      <div><span class="n">3</span><b>Judge every pair</b><p>Our logistic-regression model, trained on 34,250 Shopee listings, scores each pair of offers: same item, same item in another colour/size/pack, or a different product. Price is never an input.</p></div>
+      <div><span class="n">4</span><b>Best price</b><p>Only the offers the model calls the exact same item are compared. You see the cheapest store, the typical (median) price and how much each store charges above it.</p></div>
     </div>
   </section>
 
-  <section class="card span-12" id="result" hidden aria-live="polite" style="margin-top:16px"></section>
-
-  <section class="grid" style="margin-top:16px">
-    <div class="card span-7">
-      <h2>Biggest price gaps</h2>
-      <p class="sub">Listings priced furthest above the typical price of the same product (median across sellers). Click one to see its matches.</p>
-      <div class="gaps" id="gaps"></div>
-    </div>
-    <div class="card span-5">
-      <h2>How good is the model?</h2>
-      <p class="sub">F1 on Shopee test products the model never saw (0 = useless, 1 = perfect). Bars show 95% confidence intervals.</p>
-      <svg id="ladder" viewBox="0 0 420 260" role="img" aria-label="Test F1 by model"></svg>
-      <p class="sub" id="india-acc" style="margin-top:10px"></p>
-    </div>
-  </section>
-
-  <footer>
-    How it works: CLIP reads the photo, a multilingual language model reads the title, both are compressed to 32 numbers each (PCA whitening), and a logistic-regression model trained on 34,250 Shopee listings scores each look-alike using photo, title, size/pack-number and neighbour clues. Price is never used to decide a match.<br>
-    "Same product" = same model (probability ≥ 0.90) with matching colour, size and pack; "other colour/pack" = same model but a different colour, size, pack or combo. Prices are 2023 Kaggle snapshots of Amazon India, not live. Photos load from Amazon's image servers. Indian match quality was checked on 60 fresh held-out pairs labelled by Claude (an AI assistant), not by human annotators.
+  <footer id="foot">
+    Prices and links come live from Google Shopping (India) at search time. Matching uses DupeLens's own model (Shopee validation F1 0.864). On a held-out Amazon India test, 33 of 40 "same product" verdicts were correct (labelled by Claude, an AI assistant, not humans). Details and limits: <a href="evidence.html">how we tested the model</a>.
   </footer>
 </main>
-<div class="tip" id="tip"></div>
+
 <script>
 const $ = s => document.querySelector(s);
-const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
-const rupee = x => x == null ? "–" : "₹" + Math.round(x).toLocaleString("en-IN");
-const img = (src, cls = "ph") => `<img class="${cls}" src="${esc(src)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.visibility='hidden'">`;
-let CAT = null, LIVE = false;
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const inr = v => v == null ? "–" : "₹" + Math.round(v).toLocaleString("en-IN");
+const median = a => { const s = [...a].sort((x, y) => x - y), m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; };
+let LIVE = false, SEARCH = false, EXAMPLES = [], DATA = null;
 
-function setTab(name) {
-  document.querySelectorAll(".seg button").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === name));
-  $("#tab-catalog").hidden = name !== "catalog"; $("#tab-new").hidden = name !== "new";
+// ---------- grouping around one offer (same rule as src/live.py) ----------
+function groupAround(seed) {
+  const V = DATA.verdict, n = DATA.offers.length;
+  const members = [...Array(n).keys()].filter(j => j === seed || V[seed][j] === "S");
+  const variants = [...Array(n).keys()].filter(j => V[seed][j] === "V");
+  const priced = members.filter(j => DATA.offers[j].price_value != null);
+  const prices = priced.map(j => DATA.offers[j].price_value);
+  const best = priced.length ? priced[prices.indexOf(Math.min(...prices))] : null;
+  const typical = prices.length >= 3 ? median(prices) : null;
+  return { seed, members, variants, best, typical, min: prices.length ? Math.min(...prices) : null, max: prices.length ? Math.max(...prices) : null };
 }
-document.querySelectorAll(".seg button").forEach(b => b.addEventListener("click", () => setTab(b.dataset.tab)));
 
-// ---------- result rendering (shared by catalog replay and live checks) ----------
-function render(r) {
-  const box = $("#result"); box.hidden = false;
-  const V = { already_listed: ["v-already", "=", r.same === 1 ? "Already listed by 1 other seller" : `Already listed by ${r.same} other sellers`,
-                               "The model is very confident these are the same product (probability ≥ 0.99)."],
-              variant_listed: ["v-variant", "≈", `Same model listed in ${r.variants} other colour/pack version${r.variants === 1 ? "" : "s"}`,
-                               "Not an exact duplicate: the model sees the same product in another colour, size, pack or combo."],
-              looks_new: ["v-new", "+", "Looks like a new listing", "No listing in the catalog is close enough to be the same product."] }[r.verdict];
-  let gauge = "";
-  if (r.typical != null) {
-    const lo = Math.min(r.min, r.query.price ?? r.min), hi = Math.max(r.max, r.query.price ?? r.max), span = Math.max(hi - lo, 1);
-    const x = v => 4 + 92 * (v - lo) / span;
-    gauge = `<div class="gauge" aria-label="Price range of the same product">
-      <div class="band" style="left:${x(r.min)}%;width:${Math.max(x(r.max) - x(r.min), 1)}%"></div>
-      <div class="mk" style="left:${x(r.typical)}%;background:var(--accent-2)"><span>typical ${rupee(r.typical)}</span></div>
-      ${r.query.price ? `<div class="mk top" style="left:${x(r.query.price)}%;background:#fff"><span>this listing ${rupee(r.query.price)}</span></div>` : ""}
+function render(seed) {
+  const O = DATA.offers, g = groupAround(seed), P = DATA.prob;
+  const b = g.best != null ? O[g.best] : O[seed];
+  const stores = new Set(g.members.map(j => O[j].store)).size;
+  const save = g.max != null && g.min != null ? g.max - g.min : 0;
+  $("#best").innerHTML = `
+    <img class="ph" src="${esc(b.image)}" alt="" referrerpolicy="no-referrer">
+    <div>
+      <div class="label">Best place to buy</div>
+      <h2>${esc(b.title)}</h2>
+      <div class="facts">
+        <div class="fact"><div class="v num">${inr(b.price_value)}</div><div class="l">at ${esc(b.store)}</div></div>
+        ${g.typical ? `<div class="fact"><div class="v num">${inr(g.typical)}</div><div class="l">typical price (median)</div></div>` : ""}
+        ${save > 0 ? `<div class="fact"><div class="v good num">${inr(save)}</div><div class="l">saved vs the most expensive store</div></div>` : ""}
+        <div class="fact"><div class="v num">${g.members.length}</div><div class="l">offers of this exact item${stores > 1 ? ` · ${stores} stores` : ""}</div></div>
+      </div>
+    </div>
+    ${b.link ? `<a class="buy" href="${esc(b.link)}" target="_blank" rel="noopener">Buy at ${esc(b.store)} →</a>` : ""}`;
+
+  $("#same-h").textContent = g.members.length > 1 ? `All ${g.members.length} offers of this exact item, cheapest first` : "Only one store sells this exact item in the results";
+  $("#same-sub").textContent = g.members.length > 1 ? "The model judged each of these to be the same item as the one above (confidence shown). Click a store to open its page." : "The model found no other offer of the identical item. Try a more specific search, or look at the similar products below.";
+  const sorted = [...g.members].sort((x, y) => (O[x].price_value ?? 1e12) - (O[y].price_value ?? 1e12));
+  $("#same").innerHTML = sorted.map(j => {
+    const o = O[j], pct = g.typical && o.price_value ? Math.round(100 * (o.price_value / g.typical - 1)) : null;
+    const pills = [];
+    if (j === g.best) pills.push(`<span class="pill best-p">Best price</span>`);
+    if (pct != null && pct > 5) pills.push(`<span class="pill up">${pct}% above typical</span>`);
+    if (pct != null && pct < -5) pills.push(`<span class="pill down">${-pct}% below typical</span>`);
+    if (j !== seed) pills.push(`<span class="pill conf">match ${(100 * P[seed][j]).toFixed(0)}%</span>`);
+    if (o.rating) pills.push(`<span class="pill">★ ${esc(o.rating)}${o.rating_count ? ` (${Number(o.rating_count).toLocaleString("en-IN")})` : ""}</span>`);
+    if (o.delivery) pills.push(`<span class="pill">${esc(o.delivery)}</span>`);
+    return `<div class="row ${j === g.best ? "top" : ""}">
+      <img class="ph" src="${esc(o.image)}" alt="" loading="lazy" referrerpolicy="no-referrer">
+      <div><div class="store">${esc(o.store)}</div><div class="t">${esc(o.title)}</div><div class="pills">${pills.join("")}</div></div>
+      <div class="price num">${esc(o.price ?? "–")}</div>
+      ${o.link ? `<a class="go" href="${esc(o.link)}" target="_blank" rel="noopener">Open store</a>` : "<span></span>"}
     </div>`;
-  }
-  const pct = r.pct;
-  const priceLine = r.typical == null ? "" : `<p class="sub" style="margin:0">Same product sells for ${rupee(r.min)}–${rupee(r.max)}; typical ${rupee(r.typical)}.
-    ${pct != null ? `This listing is <b class="num">${Math.abs(pct)}% ${pct >= 0 ? "above" : "below"}</b> typical: ${pct > 20 ? "overpriced." : pct < -10 ? "a good deal." : "a fair price."}` : ""}</p>`;
-  const variantLine = r.variants && r.cheapestVariant ? `<p class="sub" style="margin:4px 0 0">Also sold in ${r.variants} other colour/pack version${r.variants === 1 ? "" : "s"}, from ${rupee(r.cheapestVariant)}.</p>` : "";
-  box.innerHTML = `
-    <div class="verdict ${V[0]}"><div class="ic" aria-hidden="true">${V[1]}</div><div><h3>${V[2]}</h3><p>${V[3]}</p></div></div>
-    <div class="query">${r.query.image ? img(r.query.image) : `<div class="ph"></div>`}
-      <div><div style="font-weight:600">${esc(r.query.title.slice(0, 160))}</div>
-      <div class="price num" style="margin:4px 0">${r.query.price ? rupee(r.query.price) : "No price given"}</div>${priceLine}${variantLine}</div></div>
-    ${gauge}
-    ${r.matches.length ? `<h2 style="margin:0 0 10px">Matching listings</h2><div class="matches">${r.matches.map(m => `
-      <div class="m">${img(m.image)}
-        <div class="t">${esc(m.title)}</div>
-        <div class="meta"><span class="price num">${rupee(m.price)}</span>
-          ${m.pct != null ? `<span class="pill ${m.pct > 20 ? "up" : m.pct < -10 ? "down" : ""} num">${m.pct > 0 ? "+" : ""}${m.pct}% vs typical</span>` : ""}</div>
-        <div class="meta"><span class="pill ${m.kind === "same" ? "same" : "sim"}">${m.kind === "same" ? "Same product" : "Other colour/pack"} · ${(m.prob * 100).toFixed(m.prob > 0.999 ? 2 : 1)}%</span>
-          ${m.url ? `<a href="${esc(m.url)}" target="_blank" rel="noopener">Amazon ↗</a>` : ""}</div>
-      </div>`).join("")}</div>` : ""}`;
-  box.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
+  }).join("");
+
+  const tile = (j, note) => { const o = O[j]; return `<button class="tile" data-seed="${j}" type="button">
+      <img class="ph" src="${esc(o.image)}" alt="" loading="lazy" referrerpolicy="no-referrer">
+      <span class="t">${esc(o.title)}</span><span class="p num">${esc(o.price ?? "–")}</span><span class="s">${esc(o.store)}${note ? " · " + note : ""}</span></button>`; };
+  $("#var-card").hidden = !g.variants.length;
+  $("#variants").innerHTML = g.variants.map(j => tile(j)).join("");
+  const shown = new Set([...g.members, ...g.variants]);
+  const others = (DATA.groups || []).map(x => x.seed).filter(s => !shown.has(s));
+  $("#other-card").hidden = !others.length;
+  $("#others").innerHTML = others.map(s => { const n = DATA.groups.find(x => x.seed === s).members.length; return tile(s, n > 1 ? `${n} offers` : ""); }).join("");
+  document.querySelectorAll(".tile").forEach(t => t.onclick = () => { render(+t.dataset.seed); $("#results").scrollIntoView({ behavior: "smooth" }); });
+  $("#meta").textContent = `Search "${DATA.query}": ${DATA.found} offers found, ${DATA.dropped_no_photo} skipped (no photo), ${O.length} compared by the model in ${DATA.seconds} s.` + (DATA.cached_at ? ` Saved example from ${DATA.cached_at}.` : "");
+  $("#results").hidden = false;
 }
 
-function replay(i) {
-  const L = CAT.listings, R = CAT.results[i], me = L[i];
-  const matches = R.matches.map(([j, p, k]) => ({ ...L[j], prob: p, kind: k }));
-  const samePrices = matches.filter(m => m.kind === "same").map(m => m.price);
-  render({ verdict: R.verdict, same: R.same, variants: R.variants, cheapestVariant: R.cheapest_variant, typical: R.typical, pct: R.pct,
-           min: samePrices.length ? Math.min(...samePrices) : null, max: samePrices.length ? Math.max(...samePrices) : null,
-           query: { title: me.title, price: me.price, image: me.image },
-           matches: matches.map(m => ({ ...m, pct: R.typical ? Math.round(1000 * (m.price / R.typical - 1)) / 10 : null })) });
+// ---------- search ----------
+const STEPS = ["Collecting offers from online stores", "Downloading product photos", "Reading every photo and title with neural networks", "Model judging every pair of offers"];
+let timer;
+function showSteps() {
+  let i = 0; $("#steps").hidden = false;
+  const draw = () => $("#steps").innerHTML = STEPS.map((s, k) => `<div class="step ${k < i ? "done" : k === i ? "on" : ""}">${k < i ? '<span class="ic">✓</span>' : k === i ? '<span class="spin"></span>' : '<span class="ic">·</span>'}${s}</div>`).join("");
+  draw(); timer = setInterval(() => { if (i < STEPS.length - 1) { i++; draw(); } }, 1600);
 }
+function hideSteps() { clearInterval(timer); $("#steps").hidden = true; }
+function note(msg, isErr) { const n = $("#note"); n.hidden = !msg; n.innerHTML = msg || ""; n.classList.toggle("err", !!isErr); }
 
-// ---------- catalog picker ----------
-function drawPicker() {
-  const words = $("#q").value.toLowerCase().split(/\s+/).filter(Boolean);
-  const idx = CAT.listings.map((l, i) => i).filter(i => words.every(w => CAT.listings[i].title.toLowerCase().includes(w)));
-  idx.sort((a, b) => (CAT.results[b].same > 0) - (CAT.results[a].same > 0));
-  $("#picker").innerHTML = idx.slice(0, 60).map(i => { const l = CAT.listings[i];
-    return `<button class="pick" data-i="${i}" title="${esc(l.title)}">${img(l.image)}<div class="t">${esc(l.title)}</div><div class="p num">${rupee(l.price)}</div></button>`; }).join("")
-    || `<p class="sub">No listings match “${esc($("#q").value)}”.</p>`;
-}
-$("#picker").addEventListener("click", e => { const b = e.target.closest(".pick"); if (b) replay(+b.dataset.i); });
-$("#q").addEventListener("input", drawPicker);
-
-// ---------- live check form ----------
-let FILE = null;
-const drop = $("#drop"), fileIn = $("#file");
-const setFile = f => { if (!f) return; FILE = f; const u = URL.createObjectURL(f); $("#preview").src = u; $("#preview").style.display = "block"; $("#drop-text").textContent = f.name; };
-drop.addEventListener("click", () => fileIn.click());
-drop.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); fileIn.click(); } });
-fileIn.addEventListener("change", () => setFile(fileIn.files[0]));
-["dragover", "dragenter"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add("over"); }));
-["dragleave", "drop"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove("over"); }));
-drop.addEventListener("drop", e => setFile(e.dataTransfer.files[0]));
-
-$("#tab-new").addEventListener("submit", async e => {
-  e.preventDefault();
-  if (!LIVE) return;
-  const title = $("#title").value.trim(), url = $("#imgurl").value.trim(), price = parseFloat($("#price").value) || null;
-  if (!title || (!FILE && !url)) { alert("Add a title and a photo (URL or file)."); return; }
-  const fd = new FormData(); fd.append("title", title); if (price) fd.append("price", price);
-  if (FILE) fd.append("image", FILE); else fd.append("image_url", url);
-  const go = $("#go"); go.disabled = true; go.innerHTML = `<span class="spin"></span> Checking…`;
+async function run(q) {
+  q = q.trim(); if (!q) return;
+  $("#q").value = q; note(""); $("#results").hidden = true;
+  const ex = EXAMPLES.find(e => e.q.toLowerCase() === q.toLowerCase());
+  if (!SEARCH && !ex) { note(`Live search runs in the DupeLens app (<code>python -m src.app</code>). On this page you can open the saved example searches above, which show real model output.`); return; }
+  $("#go").disabled = true; showSteps();
   try {
-    const res = await fetch("/api/check", { method: "POST", body: fd });
-    const r = await res.json();
-    if (!res.ok) throw new Error(r.detail || "Check failed");
-    render({ verdict: r.verdict, same: r.same, variants: r.variants, cheapestVariant: r.cheapest_variant, typical: r.typical_price, pct: r.your_price_vs_typical_pct ?? null,
-             min: r.min_price, max: r.max_price, query: { title, price, image: FILE ? $("#preview").src : url },
-             matches: r.matches.map(m => ({ title: m.title, price: m.price, url: m.url, image: m.image_url, prob: m.prob,
-                                            kind: m.verdict, pct: m.pct_vs_typical })) });
-  } catch (err) {
-    const box = $("#result"); box.hidden = false;
-    box.innerHTML = `<div class="verdict"><div class="ic" style="color:var(--bad)">!</div><div><h3>Could not check this listing</h3><p>${esc(err.message)}</p></div></div>`;
-  } finally { go.disabled = false; go.textContent = "Check listing"; }
-});
-
-// ---------- ladder chart ----------
-function ladder(rows) {
-  const names = { B0: "Do nothing (self only)", B1: "Exact photo hash", B2: "Title words only", ablation: "Without size/pack clues",
-                  M1: "DupeLens model", M2: "Neural net (MLP)", M1_components: "Model + grouping" };
-  const order = ["B0", "B1", "B2", "ablation", "M2", "M1"], data = order.map(s => rows.find(r => r.step === s)).filter(Boolean);
-  const W = 420, L = 150, R = 50, rowH = 38, x = v => L + v * (W - L - R);
-  let s = "";
-  [0, 0.25, 0.5, 0.75, 1].forEach(t => s += `<line x1="${x(t)}" x2="${x(t)}" y1="4" y2="${data.length * rowH + 4}" stroke="rgba(148,173,199,.12)"/><text x="${x(t)}" y="${data.length * rowH + 20}" text-anchor="middle">${t}</text>`);
-  data.forEach((r, i) => {
-    const y = 10 + i * rowH, best = r.step === "M1";
-    s += `<text x="${L - 10}" y="${y + 15}" text-anchor="end" style="fill:${best ? "var(--ink)" : "var(--muted)"};font-weight:${best ? 600 : 400}">${names[r.step]}</text>
-      <rect x="${L}" y="${y + 3}" width="${x(r.f1) - L}" height="18" rx="5" fill="${best ? "url(#g)" : "#1d3a5e"}" data-tip="${names[r.step]}: F1 ${r.f1.toFixed(3)} (95% CI ${r.f1_ci_low.toFixed(3)}–${r.f1_ci_high.toFixed(3)})"/>
-      <line x1="${x(r.f1_ci_low)}" x2="${x(r.f1_ci_high)}" y1="${y + 12}" y2="${y + 12}" stroke="#F3F7FC" stroke-width="1.5" opacity=".7"/>
-      <text x="${x(r.f1) + 6}" y="${y + 16}" class="num" style="fill:var(--ink)">${r.f1.toFixed(3)}</text>`;
-  });
-  $("#ladder").setAttribute("viewBox", `0 0 ${W} ${data.length * rowH + 28}`);
-  $("#ladder").innerHTML = `<defs><linearGradient id="g" x1="0" x2="1"><stop offset="0" stop-color="#2589FF"/><stop offset="1" stop-color="#22D3EE"/></linearGradient></defs>` + s;
-  const tip = $("#tip");
-  $("#ladder").addEventListener("mousemove", e => { const t = e.target.dataset?.tip; if (!t) { tip.style.display = "none"; return; }
-    tip.textContent = t; tip.style.display = "block"; tip.style.left = e.clientX + 12 + "px"; tip.style.top = e.clientY + 12 + "px"; });
-  $("#ladder").addEventListener("mouseleave", () => tip.style.display = "none");
+    let data;
+    if (SEARCH) {
+      const r = await fetch("/api/search", { method: "POST", body: new URLSearchParams({ q }) });
+      data = await r.json(); if (!r.ok) throw new Error(data.detail || r.statusText);
+    } else data = await (await fetch(`data/searches/${ex.file}`)).json();
+    DATA = data; hideSteps();
+    if (data.offers.length < 2) { note(`Only ${data.offers.length} offer with a photo came back for "${esc(q)}". Try a more common product name.`); return; }
+    render(data.groups[0].seed);
+  } catch (e) { hideSteps(); note(`Search failed: ${esc(e.message)}`, true); }
+  finally { $("#go").disabled = false; }
 }
+$("#form").onsubmit = e => { e.preventDefault(); run($("#q").value); };
 
 // ---------- boot ----------
-Promise.all([fetch("data/catalog.json").then(r => r.json()), fetch("data/ladder.json").then(r => r.json()),
-             fetch("data/india_summary.json").then(r => r.json()), fetch("data/model_v2.json").then(r => r.json()),
-             fetch("/api/health").then(r => r.ok ? r.json() : null).catch(() => null)])
-.then(([cat, lad, summ, v2, health]) => {
-  CAT = cat; LIVE = !!(health && health.live);
-  const st = $("#status"); st.classList.add(LIVE ? "live" : "demo");
-  st.lastElementChild.textContent = LIVE ? "Live model connected" : "Demo mode: catalog checks only";
-  $("#demo-note").hidden = LIVE; $("#go").disabled = !LIVE;
-  if (LIVE) setTab("new");
-
-  const n = cat.listings.length, dup = cat.results.filter(r => r.verdict === "already_listed").length;
-  const over = cat.results.filter(r => r.pct != null && r.pct > 20).length, m1 = lad.find(r => r.step === "M1"), ho = summ.v2.same;
-  $("#kpis").innerHTML = [
-    [n.toLocaleString("en-IN"), "listings in the catalog"],
-    [Math.round(100 * dup / n) + "%", `already listed by another seller (${dup} of ${n})`, true],
-    [over, "listings priced >20% above the typical price"],
-    [m1.f1.toFixed(2), `model F1 on unseen Shopee products (CI ${m1.f1_ci_low.toFixed(2)}–${m1.f1_ci_high.toFixed(2)})`, true],
-  ].map(([v, l, a]) => `<div class="kpi"><div class="v num ${a ? "accent" : ""}">${v}</div><div class="l">${l}</div></div>`).join("");
-  const nv = v2.M1_v2, ov = v2.M1;
-  $("#india-acc").innerHTML = `Upgraded model (adds DINOv2 exact-item photo matching and a colour check): Shopee validation F1 <b>${nv.f1.toFixed(3)}</b> vs ${ov.f1.toFixed(3)} before.<br>
-    On fresh Amazon India pairs, <b>${Math.round(ho.correct * 100)}%</b> of "same product" verdicts were exactly the same item, same colour and pack (95% CI ${Math.round(ho.ci[0] * 100)}–${Math.round(ho.ci[1] * 100)}%, ${ho.n} pairs; ${Math.round(summ.v2.same_verdict_same_model_any_variant * 100)}% were at least the same model). The earlier model scored ${Math.round(summ.holdout.precision * 100)}%.`;
-
-  const gaps = cat.results.map((r, i) => ({ i, ...r })).filter(r => r.pct != null && r.same >= 2).sort((a, b) => b.pct - a.pct).slice(0, 7);
-  const maxPct = Math.max(...gaps.map(g => g.pct), 1);
-  $("#gaps").innerHTML = gaps.map(g => { const l = cat.listings[g.i];
-    return `<button class="gap-row" data-i="${g.i}">${img(l.image)}<div><div class="t">${esc(l.title)}</div><div class="bar"><i style="width:${100 * g.pct / maxPct}%"></i></div></div>
-      <div style="text-align:right"><div class="price num">${rupee(l.price)}</div><div class="pill up num">+${g.pct}% · typical ${rupee(g.typical)}</div></div></button>`; }).join("");
-  $("#gaps").addEventListener("click", e => { const b = e.target.closest(".gap-row"); if (b) replay(+b.dataset.i); });
-  ladder(lad); drawPicker();
-}).catch(err => { $("#status").lastElementChild.textContent = "Could not load data"; console.error(err); });
+Promise.all([fetch("/api/health").then(r => r.ok ? r.json() : null).catch(() => null),
+             fetch("data/searches/index.json").then(r => r.ok ? r.json() : []).catch(() => [])])
+.then(([h, ex]) => {
+  LIVE = !!(h && h.live); SEARCH = !!(h && h.search); EXAMPLES = ex;
+  const st = $("#status"); st.classList.add(SEARCH ? "live" : "demo");
+  st.lastElementChild.textContent = SEARCH ? "Live search connected" : LIVE ? "Model connected · no search key" : "Demo: saved example searches";
+  if (LIVE && !SEARCH) note("The model is running, but live search needs a free Serper key in the file <code>.env</code> (SERPER_API_KEY=...). Saved examples still work.", true);
+  const qs = (ex.length ? ex.map(e => e.q) : ["boAt Airdopes 141", "Philips hair dryer BHD308"]).slice(0, 6);
+  $("#examples").innerHTML = `<span>Try:</span>` + qs.map(q => `<button class="ex" type="button">${esc(q)}</button>`).join("");
+  document.querySelectorAll(".ex").forEach(b => b.onclick = () => run(b.textContent));
+});
 </script>
 </body>
 </html>

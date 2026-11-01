@@ -1,36 +1,49 @@
-"""Local web app: paste or upload a new listing, get "already listed?" + price check.
+"""Local web app: search any product across Indian online stores, or check one listing.
 
-Serves the same dashboard as the hosted site, plus a live /api/check endpoint
-that runs the trained models on the listing you give it.
+Serves the dashboard (index.html = live search, evidence.html = how the model was tested)
+plus two endpoints that run the trained models:
+  POST /api/search  search words -> offers from many stores, grouped into "same item" by the model
+  POST /api/check   one listing (title + photo) -> is it already in the 698-listing catalog?
 Run: python -m src.app   then open http://127.0.0.1:8000
 """
 import threading
 
 import uvicorn
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
-from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from src import config
+from src import config, live
 from src.service import Matcher
 
 DASHBOARD = config.ROOT / "dashboard"
 app = FastAPI(title="DupeLens")
 matcher = Matcher()
-# Load the two encoders in the background so the first check does not wait ~10 s.
-_warm = config.INDIA_IMAGES / f"{matcher.catalog['listing_id'][0]}.jpg"
-if _warm.exists():  # photos are downloaded by `python -m src.india --photos` on a fresh machine
-    threading.Thread(target=lambda: matcher.encode("warm up", _warm.read_bytes()), daemon=True).start()
-
-
-@app.get("/")
-def index():
-    return FileResponse(DASHBOARD / "index.html")
+# Load the three encoders in the background so the first search does not wait for them.
+threading.Thread(target=matcher.encoders, daemon=True).start()
 
 
 @app.get("/api/health")
 def health():
-    return {"live": True, "catalog": len(matcher.catalog), "category": config.INDIA_CATEGORY["amazon"]}
+    try:
+        live.api_key()
+        search_ready = True
+    except RuntimeError:
+        search_ready = False
+    return {"live": True, "search": search_ready, "catalog": len(matcher.catalog),
+            "category": config.INDIA_CATEGORY["amazon"]}
+
+
+@app.post("/api/search")
+def search(q: str = Form(...)):
+    """Any product name -> offers from many stores, grouped by the model, cheapest store first."""
+    if len(q.strip()) < 2:
+        raise HTTPException(400, "Type a product name.")
+    try:
+        return live.search(matcher, q.strip())
+    except RuntimeError as err:  # no Serper key
+        raise HTTPException(503, str(err))
+    except Exception as err:  # network or Serper error
+        raise HTTPException(502, f"Search failed: {err}")
 
 
 @app.post("/api/check")
@@ -46,7 +59,8 @@ async def check(title: str = Form(...), price: float | None = Form(None),
         raise HTTPException(422, f"Could not read that photo: {err}")
 
 
-app.mount("/data", StaticFiles(directory=DASHBOARD / "data"), name="data")
+# Everything else (index.html, evidence.html, data/*.json) is plain files.
+app.mount("/", StaticFiles(directory=DASHBOARD, html=True), name="site")
 
 if __name__ == "__main__":
     uvicorn.run(app, host="127.0.0.1", port=8000)
