@@ -285,3 +285,15 @@ Affiliate API for a fresh Indian catalog once the user has an affiliate account.
   NEXT (user said: deploy LAST): Hugging Face Spaces (needs user's HF account + write
   token; set SERPER_API_KEY as a Space secret and PUBLIC_URL for photo upload), update Vercel static site, push to
   GitHub (ask first).
+- 2026-11-02: user: variant / colour chips "dead", PCA must not flag big stores, check many categories. Removed the
+  variant and photo-colour chips (details typed in the search now decide the variant: "iphone 17 pro 256gb orange"
+  makes 512 GB or Silver listings "related", src/live.py match_search). Bait-listing check and Photo X-ray only
+  warn about less-known shops. Category sweep (55 searches, 11 categories, checked by Claude, an AI assistant, not
+  humans; results/json/category_sweep.json) found and fixed: "2nd Gen"/"Gen 2" = model 2, Levi's = Levis,
+  PlayStation 5 = PS5, "Analogue-Digital" / "slim fit" are not model words, "3S" is a model number, first search
+  word (brand) must be in the title or the store name, phone skins / spare screens / Hindi accessory titles are
+  accessories, "with ... case" is in the box, copies ("first copy", "replica") never best price, MRP amounts not
+  read as prices, international import stores (ubuy, desertcart) not counted in the typical price, and when big
+  stores' pages say the product costs >4x the shopping listings (AirPods Pro 2: mostly copies) their price is the
+  typical price. Click test (Playwright, Edge): every button on all 4 pages works, no console errors; AI context
+  trimmed (Groq 413 on big searches). 55 tests pass. Fresh blind round still needed before quoting accuracy.

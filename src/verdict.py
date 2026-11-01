@@ -15,8 +15,8 @@ VARIANT_WORDS = {"pro", "max", "plus", "lite", "mini", "ultra", "neo", "elite", 
                  "nano", "edge", "fold", "flip", "xl", "slim", "turbo", "gen", "nxt", "neckband", "uv", "spf",
                  "digital", "refurbished", "renewed", "unboxed", "used", "preowned"}
 # A listing for an accessory or spare part is never the product itself.
-ACCESSORY_WORDS = {"cover", "case", "replacement", "compatible", "refill", "spare", "protector", "skin",
-                   "strap", "pouch", "sticker", "stopper", "cap"}
+ACCESSORY_WORDS = {"cover", "covers", "case", "cases", "replacement", "compatible", "refill", "spare", "protector",
+                   "skins", "decal", "decals", "strap", "straps", "pouch", "sticker", "stickers", "stopper", "cap"}
 UNIT = r"(?:mah|ah|gb|tb|mb|kw|w|watts?|v|hrs?|hours?|db|ml|ltrs?|litres?|liters?|l|g|gms?|grams?|kg|mm|cm|m|ft|inch|in|hz|mp|pcs|pc|x)"
 # Number + unit tokens are sizes or specs, not model codes (42hr, 32db, 5000mah, 128gb, 2nd).
 SPEC = re.compile(rf"^\d+(\.\d+)?({UNIT}|k|st|nd|rd|th|s|min|mins|yrs|yr|d)$")
@@ -43,16 +43,26 @@ GENERIC = {"price", "buy", "online", "new", "latest", "best", "india", "in", "wi
 
 def _tokens(text):
     """Lower-case word tokens; '128 GB' -> '128gb' so sizes are one token."""
-    t = re.sub(r"(\d)\s+(gb|tb|ml|litres?|liters?|ltrs?|l|gms?|g|kg|watts?|w|mah|mm|cm|inch)\b", r"\1\2", text.lower())
+    t = re.sub(r"['’]", "", text.lower())                    # Levi's -> levis
+    t = re.sub(r"\bplay\s?station\s?(\d)\b", r"ps\1", t)     # PlayStation 5 -> ps5
+    t = re.sub(r"\bslim[\s-]fit\b", "slimfit", t)             # a jeans cut, not the model word "Slim"
+    t = re.sub(r"\banalog(?:ue)?[\s-]digital\b", "anadigi", t)  # a watch type, not the model word "Digital"
+    t = re.sub(r"(\d)\s+(gb|tb|ml|litres?|liters?|ltrs?|l|gms?|g|kg|watts?|w|mah|mm|cm|inch)\b", r"\1\2", t)
     t = re.sub(r"\b([a-z]+)-(\d[a-z0-9]*)\b", r"\1\2", t)   # a hyphenated model code is one token: WH-1000XM5
     t = re.sub(r"/\d+\b", "", t)                             # region suffix: BT3221/15 -> BT3221
     return re.findall(r"\d+(?:\.\d+)?[a-z]*|[a-z]+[a-z0-9]*", t)   # keeps 1.5litre and 18e together
 
 
+# "2nd Gen" / "2. Gen" / "Gen 2" (a bare "141 Gen 2" is Gen 2, not Gen 141)
+GEN = re.compile(r"\b(\d+)(?:st|nd|rd|th|\.)\s*gen(?:eration)?\b|\bgen(?:eration)?[.\s]*(\d+)\b")
+
+
 def query_parts(query):
     """The words that identify the product in a search: brand / model words and model numbers. Sizes such as
     128GB are preferences (pre-selected in the variant filter), not identity."""
-    toks = [w for w in _tokens(query) if w not in GENERIC and not SPEC.match(w) and w not in ("5g", "4g")]
+    # "3s" / "6s" are model numbers (MX Master 3S, iPhone 6s), not sizes
+    toks = [w for w in _tokens(query) if w not in GENERIC and (not SPEC.match(w) or re.fullmatch(r"\d+s", w))
+            and w not in ("5g", "4g")]
     return [w for w in toks if any(c.isdigit() for c in w)], [w for w in toks if w.isalpha()]
 
 
@@ -70,6 +80,12 @@ def query_match(query, title):
     ts = set(tt)
     if not nums and not words:
         return "other"
+    gens = {a or b for a, b in GEN.findall(title.lower())}
+    if gens:
+        if not gens & set(nums) and "gen" not in words:
+            return "related"
+        ts |= gens
+        ts.discard("gen")
     compact = "".join(tt)
     # moisturising ~ moisturizing; "beard" inside "Beardtrimmer"
     word_hit = lambda w: w in ts or (len(w) >= 4 and w in compact) or any(len(w) >= 5 and t[:6] == w[:6] for t in ts)
@@ -89,7 +105,10 @@ def query_match(query, title):
     # the name in front of each model number must be there too: "Airdopes 141" is not "Immortal 141"
     qt = [w for w in _tokens(query) if w not in GENERIC]
     anchors = {qt[i - 1] for i, w in enumerate(qt) if w in nums and i > 0 and qt[i - 1].isalpha()}
-    if not (have_nums and hits >= need and asked_variant <= ts and all(word_hit(a) for a in anchors)):
+    # the first word of the search (usually the brand) must be there: "Dssb Buds 3 Pro" is not "Samsung Galaxy Buds 3 Pro"
+    lead = qt[0] if qt and qt[0] in words else None
+    if not (have_nums and hits >= need and asked_variant <= ts and all(word_hit(a) for a in anchors)
+            and (lead is None or word_hit(lead))):
         return "related" if related else "other"
     extra_variant = (ts & VARIANT_WORDS) - set(words)
     suffixed = any(re.fullmatch(r"(\d+)[a-z]{1,2}", t) and re.fullmatch(r"(\d+)[a-z]{1,2}", t).group(1) in nums
@@ -101,7 +120,22 @@ def query_match(query, title):
 
 def is_accessory(title):
     """True when the listing is an accessory or spare part (case, cover, replacement ...), not the product."""
-    return bool(set(re.findall(r"[a-z]+", title.lower())) & ACCESSORY_WORDS)
+    # words after "with" describe what comes in the box: "AirPods Pro with MagSafe Case" is the earbuds
+    head = re.split(r"\bwith\b", title.lower())[0]
+    return bool(set(re.findall(r"[a-z]+", head)) & ACCESSORY_WORDS) or bool(ACCESSORY_PHRASES.search(head))
+
+
+# phone skins and spare screens written as phrases, and the same words in Hindi titles (case, cover, replacement, strap)
+ACCESSORY_PHRASES = re.compile(r"\b(?:mobile|phone|back|vinyl|laptop)\s+skins?\b|\blcd\s+(?:screen|display)\b|"
+                               r"\bdisplay\s+combo\b|\btempered\s+glass\b|\bscreen\s+(?:guard|protector)\b|"
+                               r"केस|कवर|रिप्लेसमेंट|स्ट्रैप")
+
+
+def lead_word(query):
+    """The first word of a search when it is a name word (usually the brand): 'samsung' in 'samsung galaxy buds 3'."""
+    qt = [w for w in _tokens(query) if w not in GENERIC]
+    nums, words = query_parts(query)
+    return qt[0] if qt and qt[0] in words else None
 
 
 def _model_parts(title):

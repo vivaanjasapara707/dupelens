@@ -26,7 +26,7 @@ short_description: Same product, many sellers - find where to buy it
 ---
 DupeLens: search any product sold online in India; a trained matcher keeps only listings of the same item
 and shows the fair price, the sort order of sellers and where to buy. Code and evaluation:
-https://github.com/figureitoutwithkrish/dupelens
+https://github.com/vivaanjasapara707/dupelens
 """
 
 

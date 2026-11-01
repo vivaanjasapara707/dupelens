@@ -35,7 +35,7 @@ from src import config
 from src.extra import colour_dist
 from src.numtokens import compare, extract
 from src.verdict import (classify, colour_conflict, colours, combo_mismatch, is_accessory, model_conflict,
-                         name_levels, pack_mismatch, query_match, size_conflict, storage_unconfirmed)
+                         lead_word, name_levels, pack_mismatch, query_match, size_conflict, storage_unconfirmed)
 
 SERPER = "https://google.serper.dev/"
 LIVE_CACHE = config.CACHE_DIR / "live"
@@ -122,6 +122,25 @@ def attributes(title):
     return out
 
 
+def match_search(query, title, store=None):
+    """query_match (src/verdict.py), plus the details the user typed: "iphone 17 pro 256gb orange" makes a
+    512 GB or Silver listing "related" (another variant), not "exact". A listing that does not state the detail
+    stays exact (titles often leave out colour or storage)."""
+    m = query_match(query, title)
+    lead = lead_word(query)
+    if m == "related" and lead and lead in (store or "").lower():   # the brand's own store leaves out the brand
+        m = query_match(query, f"{lead} {title}")
+    if m != "exact":
+        return m
+    want, have = attributes(query), attributes(title)
+    for key in ("storage", "ram", "size", "pack"):
+        if want.get(key) and have.get(key) and want[key] != have[key]:
+            return "related"
+    if colours(query) and colours(title) and not colours(query) & colours(title):
+        return "related"
+    return m
+
+
 # Authorised resellers (store names that say so, and well-known Apple Premium Resellers in India).
 AUTHORISED = re.compile(r"authori[sz]ed|premium reseller|\bofficial\b|\bunicorn\b|\bimagine\b|icrescent|maple store|"
                         r"aptronix|iplanet|\bample\b", re.IGNORECASE)
@@ -131,6 +150,9 @@ REFURB_WORDS = re.compile(r"\b(refurbished|renewed|pre-?owned|pre-?loved|second[
                           r"like new|certified refurbished|wholesale)\b|/\s*(?:excellent|good|fair|superb)\b", re.IGNORECASE)
 REFURB_STORES = re.compile(r"cashify|ovantica|budli|grest|gudfast|control ?z|rebuysell|yaantra|togofogo|easyphones|"
                            r"tetro|refit|befach|eazypc|fonezone", re.IGNORECASE)
+# International import stores: priced for importing (foreign price + shipping + duty), not the Indian market price.
+IMPORT_STORES = re.compile(r"ubuy|desertcart|microless|etsy|stockx|ebay|etoren|cremashop|halfprice|garmade|biblio|"
+                           r"\.ae\b|\.eu\b|\.uk\b|amazon\.com\b", re.IGNORECASE)
 
 
 def store_tier(store, title):
@@ -144,9 +166,16 @@ def store_tier(store, title):
     return "brand" if well_known(store, title) else "other"
 
 
+COPY_WORDS = re.compile(r"\b(?:first|1st|master|mirror|7a|aaa)\s*copy\b|\breplica\b|\bclone\b|\bdupe\b|"
+                        r"\bcopy\s+(?:smart|product|earbuds?|headphones?|watch|shoes?|sneakers?)\b", re.IGNORECASE)
+
+
 def condition(title, store):
     """'refurbished' when the title says refurbished / used / renewed / graded, or the seller deals in them;
-    'bulk' for wholesale lots ("1000 Pieces iPhone 16 Pro", "MOQ 10"); else 'new'."""
+    'bulk' for wholesale lots ("1000 Pieces iPhone 16 Pro", "MOQ 10"); 'copy' when the title admits it is a copy
+    ("first copy", "replica", "clone"); else 'new'."""
+    if COPY_WORDS.search(title or ""):
+        return "copy"
     if REFURB_WORDS.search(title or "") or REFURB_STORES.search(store or ""):
         return "refurbished"
     if re.search(r"\b(?:\d{2,}\s?(?:pieces|pcs|units)|moq|bulk|lot of \d+)\b", (title or "").lower()):
@@ -386,15 +415,17 @@ STORE_DOMAINS = {"amazon.in": ("Amazon", "big"), "flipkart.com": ("Flipkart", "b
                  "unicornstore.in": ("Unicorn (Apple Premium Reseller)", "authorised")}
 SNIPPET_PRICE = re.compile(r"(?:₹|rs\.?|inr)\s?([\d,]+(?:\.\d+)?)(\s*(?:/|per)\s*(?:mo|month)\w*)?", re.IGNORECASE)
 NOT_A_PRICE = re.compile(r"emi|/mo|month|off\b|discount|cashback|exchange|bonus|save|saving|coupon|upto|up to", re.IGNORECASE)
+MRP = re.compile(r"\bm\.?r\.?p\b|regular price|list price|maximum retail", re.IGNORECASE)
 NOT_A_PRODUCT_PAGE = re.compile(r"blog|news|article|resource-center|unboxed|review|compare|specification|/specs|"
                                 r"price-in-india|/c/|/stories/|/guide", re.IGNORECASE)
 
 
 def snippet_price(snippet):
-    """First rupee amount in a Google snippet that is not an EMI, discount, cashback or exchange amount."""
+    """First rupee amount in a Google snippet that is not an EMI, discount, cashback or exchange amount, and not the
+    MRP (the printed maximum price, often 2-4x what the product sells for in India)."""
     for m in SNIPPET_PRICE.finditer(snippet or ""):
         before, after = snippet[max(0, m.start() - 20):m.start()], snippet[m.end():m.end() + 12]
-        if m.group(2) or NOT_A_PRICE.search(before) or re.match(r"\s*(?:off|cashback|discount|instant|bank|emi)", after, re.IGNORECASE):
+        if m.group(2) or NOT_A_PRICE.search(before) or MRP.search(re.split(r"₹|rs\.?|inr", snippet[max(0, m.start() - 30):m.start()], flags=re.IGNORECASE)[-1]) or re.match(r"\s*(?:off|cashback|discount|instant|bank|emi)", after, re.IGNORECASE):
             continue
         value = parse_price(m.group(1))
         if value and value >= 10:
@@ -402,9 +433,38 @@ def snippet_price(snippet):
     return None
 
 
-def store_pages(query, typical=None):
+def typical_price(offers, pages):
+    """The fair price of the searched product, and where it comes from.
+    International import stores never count (their prices include shipping and duty).
+    Normally: the median price of the trusted stores' exact, new, non-accessory shopping listings when 3+ have a
+    price; with fewer, of all of them plus the big stores' own product pages. But when the big stores' pages
+    (2+ prices) say the product costs more than 4 times what the shopping listings say (more than any normal
+    discount), most shopping listings are cheap copies (AirPods Pro 2 on Google Shopping India): then the median of
+    the big stores' page prices is the fair price. Page prices far (0.5x-2x) from the fair price are dropped:
+    snippets also show EMI, exchange and accessory amounts."""
+    base = [o for o in offers if o.get("match") == "exact" and o.get("price_value") and o.get("condition") == "new"
+            and not o.get("accessory") and not o.get("imported")]
+    trusted = [o["price_value"] for o in base if o.get("known")]
+    page_prices = [p["price_value"] for p in pages if p.get("price_value")]
+    shop = trusted if len(trusted) >= 3 else [o["price_value"] for o in base]
+    shop_typical = float(np.median(shop)) if len(shop) >= 3 else None
+    if len(page_prices) >= 2 and shop_typical is not None and np.median(page_prices) > 4 * shop_typical:
+        typical, source = float(np.median(page_prices)), "store pages"
+    elif len(trusted) >= 3:
+        typical, source = shop_typical, "listings"
+    else:   # few trusted shopping prices: all exact listings and the big stores' page prices (some are unlabelled MRPs)
+        both = [o["price_value"] for o in base] + page_prices
+        typical, source = (float(np.median(both)) if len(both) >= 3 else shop_typical), "listings"
+    for p in pages:
+        if p.get("price_value") and typical and not 0.5 * typical <= p["price_value"] <= 2 * typical:
+            p["price"] = p["price_value"] = None
+    return typical, source
+
+
+def store_pages(query):
     """Exact product pages on big / official store websites from Google web search (1 Serper credit): the link goes
-    straight to the product, the price is read from the page snippet Google shows (confirm on the page)."""
+    straight to the product, the price is read from the page snippet Google shows (confirm on the page; prices far
+    from the fair price are dropped by typical_price)."""
     try:
         hits = serper("search", {"q": f"{query} price", "gl": "in", "hl": "en", "num": 20}).get("organic", [])
     except Exception:
@@ -414,13 +474,10 @@ def store_pages(query, typical=None):
         host = urlparse(h.get("link", "")).netloc.lower().removeprefix("www.")
         site = next((v for d, v in STORE_DOMAINS.items() if host == d or host.endswith("." + d)), None)
         title = clean_title(h.get("title", "")) or h.get("title", "")
-        if not site or NOT_A_PRODUCT_PAGE.search(h.get("link", "")) or query_match(query, title) != "exact" \
+        if not site or NOT_A_PRODUCT_PAGE.search(h.get("link", "")) or match_search(query, title, site[0]) != "exact" \
                 or condition(title, site[0]) != "new":
             continue
         price = snippet_price(h.get("snippet", ""))
-        # a snippet price far from what the shopping listings of this exact model cost is probably something else
-        if price and typical and not 0.5 * typical <= price <= 2 * typical:
-            price = None
         key = (site[0], title.lower())
         if key in seen:
             continue
@@ -429,7 +486,7 @@ def store_pages(query, typical=None):
                         link=h["link"], image=None, rating=h.get("rating"), rating_count=None, delivery=None,
                         known=True, tier=site[1], condition="new", accessory=False, attrs=attributes(title),
                         match="exact", source="store page",
-                        price_note="from" if re.search(r"\bfrom\b|\bstarts?\b", h.get("snippet", ""), re.IGNORECASE) else None))
+                        price_note="from" if re.search(r"\bfrom\b|\bstart(?:s|ing)?\b", h.get("snippet", ""), re.IGNORECASE) else None))
     return out
 
 
@@ -466,10 +523,11 @@ def search(matcher, text=None, image_bytes=None, image_url=None, num=40, vectors
                    image=raw[i]["imageUrl"], rating=raw[i].get("rating"), rating_count=raw[i].get("ratingCount"),
                    delivery=raw[i].get("delivery"), known=store_tier(raw[i].get("source"), raw[i]["title"]) != "other",
                    tier=store_tier(raw[i].get("source"), raw[i]["title"]),
+                   imported=bool(IMPORT_STORES.search(raw[i].get("source") or "")),
                    condition=condition(raw[i]["title"], raw[i].get("source")),
                    accessory=is_accessory(raw[i]["title"]), attrs=attributes(raw[i]["title"]),
                    # what the user typed is the reference for name / link searches (not for photos: Lens only guesses)
-                   match=query_match(inp["query"], raw[i]["title"]) if inp["mode"] != "photo" else None)
+                   match=match_search(inp["query"], raw[i]["title"], raw[i].get("source")) if inp["mode"] != "photo" else None)
               for i in keep]
     photos = [photos[i] for i in keep]
     if inp["ref_photo"]:  # the user's own photo is item 0, compared with every offer like a listing
@@ -497,7 +555,9 @@ def search(matcher, text=None, image_bytes=None, image_url=None, num=40, vectors
         out["pca_xy"], out["pca_share"] = pca_map(ret)
         # Bait-listing detector (PCA): among listings whose TITLE names the searched product, a photo that the other
         # listings' main PCA directions cannot rebuild (DINOv2 features, leave-one-out, robust z > 2.5) shows
-        # something else: flagged, never the best price. Injection test: results/json/photo_xray_test*.json.
+        # something else. Only less-known shops are flagged (a big store, authorised reseller or brand store with an
+        # unusual photo is a photo choice, not a scam); flagged listings are never the best price.
+        # Injection test: results/json/photo_xray_test*.json.
         from src.photo_xray import loo_residuals, robust_z
         exact = [i for i, o in enumerate(offers) if o.get("match") == "exact"]
         if len(exact) >= 5:
@@ -505,24 +565,15 @@ def search(matcher, text=None, image_bytes=None, image_url=None, num=40, vectors
             z = robust_z(np.sqrt((loo_residuals(D, min(3, len(exact) - 2)) ** 2).sum(1)))
             for i, zi in zip(exact, z):
                 offers[i]["photo_z"] = round(float(zi), 2)
-                offers[i]["photo_mismatch"] = bool(zi > 2.5)
-        # PCA Colour Decoder: colour of the product in each photo (a filter; it did not help as a same-item rule)
-        from src.colour_pca import decode_offers
-        col = decode_offers(photos)
-        if col:
-            for i, o in enumerate(offers):
-                if col["group"][i] >= 0:
-                    o["photo_colour"], o["photo_swatch"] = col["groups"][col["group"][i]]["name"], col["swatch"][i]
-            out["colour_groups"] = col["groups"]
+                offers[i]["photo_mismatch"] = bool(zi > 2.5 and offers[i]["tier"] == "other")
         if vectors:  # 64-number retrieval vectors (PCA 32 + 32), for the cross-search PCA map in src/insights.py
             out["vectors"] = np.round(ret, 5).tolist()
         t["score"] = time.time()
     # Big-store product pages for name / link searches: added AFTER the model scored the shopping offers (they have
     # no photo); matched to the search by name only, so their "probability" is -1 (shown as "matched by name").
     if inp["mode"] != "photo" and tag is None and out.get("verdict"):
-        exact_prices = [o["price_value"] for o in offers if o.get("match") == "exact" and o.get("price_value")
-                        and o.get("condition") == "new" and not o.get("accessory")]
-        pages = store_pages(inp["query"], float(np.median(exact_prices)) if len(exact_prices) >= 3 else None)
+        pages = store_pages(inp["query"])
+        out["typical"], out["typical_source"] = typical_price(offers, pages)
         n = len(offers)
         for k, pg in enumerate(pages):
             offers.append(pg)
@@ -539,7 +590,6 @@ def search(matcher, text=None, image_bytes=None, image_url=None, num=40, vectors
                 out["prob_cal"].append([-1] * (n + m))
         out["store_pages"] = m
         t["pages"] = time.time()
-    out["prefer"] = attributes(inp["query"]) if inp["mode"] != "photo" else {}
     names = {"offers": "Find offers", "photos": "Download photos", "encode": "Neural networks read photos + titles",
              "score": "Model scores every pair", "pages": "Big-store product pages"}
     keys = list(t)
@@ -554,7 +604,8 @@ def store_link(title, store):
     hits = serper("search", {"q": f"{title} {store}", "gl": "in", "hl": "en", "num": 10}).get("organic", [])
     for h in hits:
         host = re.sub(r"[^a-z0-9]", "", urlparse(h.get("link", "")).netloc.lower())
-        if key and key[:6] in host:
+        # Amazon.in / Flipkart are Indian sites: never send a buyer to amazon.com
+        if key and key[:6] in host and not (key.startswith("amazon") and "amazonin" not in host):
             return h["link"]
     return f"https://www.google.com/search?q={quote_plus(title + ' ' + store)}"
 

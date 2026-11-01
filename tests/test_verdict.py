@@ -123,3 +123,62 @@ def test_name_before_model_number_must_match():
     from src.verdict import query_match as m
     assert m("boAt Airdopes 141", "boAt Immortal 141 TWS Gaming Earbuds") == "related"
     assert m("boAt Airdopes 141", "boAt Airdopes 141 True Wireless") == "exact"
+
+
+def test_typed_details_pick_the_variant():
+    from src.live import match_search
+    q = "iphone 17 pro 256gb orange"
+    assert match_search(q, "Apple iPhone 17 Pro 256 GB Cosmic Orange") == "exact"
+    assert match_search(q, "Apple iPhone 17 Pro (256 GB)") == "exact"          # colour not stated: kept
+    assert match_search(q, "Apple iPhone 17 Pro 512GB Cosmic Orange") == "related"
+    assert match_search(q, "Apple iPhone 17 Pro 256 GB Silver") == "related"
+    assert match_search("tata salt 1kg", "Tata Salt Iodised 500 g") == "related"
+    assert match_search("iphone 17 pro", "Apple iPhone 17 Pro 1TB Silver") == "exact"
+
+
+def test_generations_spellings_and_accessories():
+    from src.live import match_search
+    q = "apple airpods pro 2"
+    assert match_search(q, "Apple AirPods Pro (2nd Generation) with MagSafe Case (USB-C)") == "exact"
+    assert match_search(q, "Apple AirPods Pro 2. Gen. USB-C") == "exact"
+    assert match_search(q, "Apple AirPods Pro 3") == "related"
+    assert match_search("boat airdopes 141", "boAt Airdopes 141 Gen 2") == "related"
+    assert match_search("levis 511 jeans", "Levis Mens 511 Light Blue Slim Fit Jeans") == "exact"
+    assert match_search("ps5 console", "Playstation 5 Disc Standard Console") == "exact"
+    assert match_search("cetaphil gentle skin cleanser", "Cetaphil Gentle Skin Cleanser 125ml") == "exact"
+    assert match_search("oneplus 13r", "OnePlus 13R AI Art Series Skins") == "accessory"
+    assert match_search("casio g-shock ga-2100", "Casio G-Shock GA-2100-7A7 Analogue-Digital Watch") == "exact"
+
+
+def test_snippet_price_skips_mrp_and_copies_are_not_new():
+    from src.live import condition, snippet_price
+    assert snippet_price("MRP(Inclusive All Taxes) ₹4,490 ; Country Of Origin India") is None
+    assert snippet_price("MRP: ₹6999 Price: ₹6999 (₹6999/pc)") == 6999
+    assert snippet_price("listed at Rs. 18,900, down from an MRP of Rs. 24,900") == 18900
+    assert condition("Wauronix Airpods Pro Gen 2 Copy Smart Headphones", "Flipkart") == "copy"
+    assert condition("Nike Air Force 1 First Copy", "Shop") == "copy"
+    assert condition("Harry Potter and the Philosopher's Stone", "Amazon") == "new"
+
+
+def test_brand_word_must_be_named():
+    from src.live import match_search
+    q = "samsung galaxy buds 3 pro"
+    assert match_search(q, "Samsung Galaxy Buds 3 Pro") == "exact"
+    assert match_search(q, "Dssb Buds 3 Pro Tws Earbuds With Charging Case") == "related"
+    assert match_search("apple airpods pro 2", "Air Pods Pro 2 with Charging Case") == "exact"   # 'apple' is optional
+
+
+def test_brand_store_skins_and_spare_screens():
+    from src.live import match_search
+    q = "samsung galaxy s24 fe"
+    assert match_search(q, "Galaxy S24 FE 5G", "Samsung") == "exact"
+    assert match_search(q, "Galaxy S24 FE 5G", "Some Shop") == "related"
+    assert match_search(q, "Skinadda Samsung Galaxy S24 Fe 5g Premium Vinyl Back Mobile Skin") == "accessory"
+    assert match_search(q, "Samsung Galaxy S24 FE LCD Screen") == "accessory"
+    assert match_search("samsung galaxy buds 3 pro", "Samsung Galaxy Buds 3 Pro सिंगल राइट ईयर रिप्लेसमेंट बड") == "accessory"
+
+
+def test_s_suffix_is_a_model_number():
+    from src.live import match_search
+    assert match_search("logitech mx master 3s", "Logitech MX Master 3S Wireless Mouse") == "exact"
+    assert match_search("logitech mx master 3s", "Logitech MX Master 3 Wireless Mouse") == "related"
