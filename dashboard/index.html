@@ -230,7 +230,8 @@
   </section>
 
   <footer>
-    Prices, ratings and links come live from Google Shopping (India) at search time. Same-product matching uses DupeLens's own trained model (Shopee validation F1 0.864; on held-out Amazon India pairs 33 of 40 "same product" verdicts were correct, labelled by Claude, an AI assistant, not humans). The seller score is a fixed, transparent rule, not a trained model. Details and limits: <a href="evidence.html">how we tested the model</a>.
+    <b>How accurate is it?</b> Tested on 8 fresh products never used to build the rules (Prestige cooker, Philips trimmer, Mi power bank, Boroplus, Casio calculator, Sony headphones, Wipro bulb, Vaseline lotion): when DupeLens says two listings are the same item, it was the identical item in 23 of 40 pairs (57.5%, 95% CI 40–72.5%) and at least the same product line in 33 of 40 (82.5%); a random pair from the same search was the same item only 3 of 30 times (10%). Labelled blind by Claude, an AI assistant, not humans.
+    Prices, ratings and links come live from Google Shopping (India) at search time. The matching model is DupeLens's own (trained on 34,250 Shopee listings, validation F1 0.864); the seller score is a fixed, transparent rule, not a trained model. Details and limits: <a href="evidence.html">how we tested the model</a>.
   </footer>
 </main>
 <div class="tip" id="tip"></div>

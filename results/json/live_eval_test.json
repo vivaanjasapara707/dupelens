@@ -1,0 +1,33 @@
+{
+ "S": {
+  "what": "model says same: truly same item",
+  "n": 40,
+  "correct": 4,
+  "rate": 0.1,
+  "ci": [
+   0.025,
+   0.2
+  ]
+ },
+ "R": {
+  "what": "random pair from a search: truly same item",
+  "n": 30,
+  "correct": 1,
+  "rate": 0.033,
+  "ci": [
+   0.0,
+   0.1
+  ]
+ },
+ "H": {
+  "what": "rejected look-alike: truly same item (missed)",
+  "n": 30,
+  "correct": 0,
+  "rate": 0.0,
+  "ci": [
+   0.0,
+   0.0
+  ]
+ },
+ "S_same_or_variant": 22
+}

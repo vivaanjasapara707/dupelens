@@ -33,7 +33,7 @@ import requests
 from src import config
 from src.extra import colour_dist
 from src.numtokens import compare, extract
-from src.verdict import classify, combo_mismatch, model_conflict
+from src.verdict import classify, combo_mismatch, model_conflict, name_conflicts, size_conflict
 
 SERPER = "https://google.serper.dev/"
 LIVE_CACHE = config.CACHE_DIR / "live"
@@ -224,8 +224,10 @@ def score_pairs(matcher, sig, titles):
     })[matcher.cfg["features_v2"]]
     prob = matcher.model.predict_proba(X)[:, 1]
     combo = np.array([combo_mismatch(titles[i], titles[j]) for i, j in zip(a, b)])
-    other_model = np.array([model_conflict(titles[i], titles[j]) for i, j in zip(a, b)])
-    verdict = classify(prob, num[:, 1], X["colour_dist"].to_numpy(), combo, matcher.cfg, other_model)
+    names = name_conflicts(titles)  # rare words in this search = model / line / shade names
+    other_model = np.array([model_conflict(titles[i], titles[j]) or names(i, j) for i, j in zip(a, b)])
+    sizes = np.array([size_conflict(titles[i], titles[j]) for i, j in zip(a, b)])  # watt/litre/gm: verdict only
+    verdict = classify(prob, num[:, 1].astype(bool) | sizes, X["colour_dist"].to_numpy(), combo, matcher.cfg, other_model)
     P, V = np.eye(n), np.full((n, n), "same", dtype=object)
     P[a, b] = P[b, a] = prob
     V[a, b] = V[b, a] = verdict
@@ -287,7 +289,10 @@ def search(matcher, text=None, image_bytes=None, image_url=None, num=40):
         sig = encode_all(matcher, titles, photos)
         t["encode"] = time.time()
         P, V, F, ret = score_pairs(matcher, sig, titles)
-        out["groups"] = group_offers(V, range(len(offers)))
+        # Start each group from the offer most other offers confirm as the same item (the user's photo first).
+        links = (V == "same").sum(1)
+        order = sorted(range(len(offers)), key=lambda j: (not offers[j].get("is_ref"), -links[j], j))
+        out["groups"] = group_offers(V, order)
         out["prob"] = np.round(P, 4).tolist()          # lets the page re-group around any offer the user clicks
         out["verdict"] = [[v[0].upper() for v in row] for row in V]  # S / V / D
         out["features"] = {f: np.round(m, 3).tolist() for f, m in F.items()}

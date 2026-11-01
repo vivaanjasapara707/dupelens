@@ -175,3 +175,14 @@ Affiliate API for a fresh Indian catalog once the user has an affiliate account.
   "suspiciously cheap"); "Behind the scenes" panel (PCA 2-D map, pair features, timing). Uploaded photos need a
   public URL: works online via PUBLIC_URL + /uploads; locally the auto-mode classifier blocked third-party temp
   hosts, so laptop users paste the photo address. Warm timings: name 3.5 s, link 2.2 s, photo 2.8 s.
+- 2026-11-01: live-search accuracy (src/live_eval.py; blind 3-way labels by Claude, not humans; strata S = model
+  says same, R = random pair, H = rejected look-alike with TF-IDF >= 0.5). Three rounds, each fresh set run once:
+  "tune" (8 searches): S 20/40 same -> rules improved (model numbers with spaces/decimals, V2/V3, UV/SPF,
+  refurbished, accessories, size_conflict for W/L/gm/jars, "only one title names a model").
+  "test" (8 new searches, after those rules): S 4/40 same (lipstick shades, Dettol scents, Butterfly line
+  names) -> added name_conflicts (per-search rare words = model/line/shade names; vague vs named title) and
+  glued codes (DX2 = DX 2). So "test" is ALSO tuning data now.
+  "final" (8 new searches, rules frozen) = THE REPORTED NUMBER: S same 23/40 = 0.575 [0.40, 0.725]; same or
+  variant 33/40 = 0.825 [0.675, 0.95]; R 3/30 = 0.10; H missed 2/30 = 0.067 (results/json/live_eval_final.json).
+  Do not tune on "final"; any new rule needs a 4th fresh set. Grouping now starts from the offer with most
+  "same" links (display only). 6 example searches saved in dashboard/data/searches/. 35 tests pass.

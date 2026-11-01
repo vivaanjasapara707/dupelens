@@ -24,3 +24,37 @@ def test_model_codes():
 
 def test_specs_are_not_model_codes():
     assert not model_conflict("Earbuds 42hr playback 13mm drivers", "Earbuds 50hr battery 10mm drivers")
+
+
+def test_model_numbers_with_spaces_and_decimals():
+    assert model_conflict("Prestige PIC 20 1600 Watt Induction Cooktop", "Prestige PIC 3.1 V3 2000 Watts Induction Cooktop")
+    assert model_conflict("Prestige PIC 6.0 V3 2000 W Induction Cooktop", "Prestige Induction Cooktop PIC 6.1 V3")
+    assert not model_conflict("Prestige PIC 20.0 Induction Cooktop", "Prestige PIC 20 1200 Watt Induction Cooktop")
+
+
+def test_word_order_and_sizes_are_not_model_names():
+    assert not model_conflict("Philips 3000 series Hair Dryer", "PHILIPS Hair Dryer 3000 Series")
+    assert not model_conflict("Nivea Soft Light Moisturising Cream 200 ml", "Nivea Soft Light Moisturiser 200 ml")
+
+
+def test_formulation_condition_and_accessories():
+    assert model_conflict("Nivea Soft Light Moisturising Cream 200 ml", "Nivea Soft Daily UV Light Moisturizer Cream With SPF 15")
+    assert model_conflict("Samsung Galaxy M35 5G 128GB", "Samsung Galaxy M35 5G 128GB (Refurbished)")
+    assert model_conflict("Milton Thermosteel Carafe 1000 ml Flask", "Replacement Flip Lid Compatible with Milton Thermosteel Flask")
+
+
+def test_size_conflict_reads_watts_and_litres():
+    from src.verdict import size_conflict
+    assert size_conflict("Prestige PIC 20 WIZ 1600W", "Prestige PIC 20 1200 Watt")
+    assert not size_conflict("Pigeon Kettle 1.5 Litre", "Pigeon Hot Kettle 1500 ml")
+
+
+def test_glued_codes_jars_and_name_words():
+    from src.verdict import name_conflicts, size_conflict
+    assert model_conflict("Bajaj DX 6", "Bajaj Bajaj_Dx2 600 W Dry Iron")
+    assert size_conflict("Butterfly Smart 750W Mixer Grinder with 3 Jars", "Butterfly Smart 750 Watts Mixer Grinder with 4 Jars")
+    titles = ["Butterfly Matchless 750 W Mixer Grinder", "Butterfly Xeno 750 W Mixer Grinder"] + \
+             [f"Butterfly Mixer Grinder 750 W model{k}" for k in range(8)]
+    names = name_conflicts(titles)
+    assert names(0, 1)                      # Matchless vs Xeno: different name words
+    assert not name_conflicts(titles[:2])(0, 1)  # too few offers to know which words are rare

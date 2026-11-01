@@ -1,0 +1,112 @@
+"""Accuracy of live search on FRESH searches (not the Airdopes search the model-word rule was designed on).
+
+--sheet [--test] : run the searches, sample offer pairs in three strata, write a blind sheet (titles only, no scores,
+          shuffled) to results/live_eval_sheet.csv + photo grids results/labelling/live_*.jpg; the stratum and
+          model verdict go to a hidden key cache/live_eval_key.csv.
+          S = pairs the model calls "same"        -> precision of "same"
+          R = random pairs from the same search    -> how often a naive "all results are the product" site is right
+          H = rejected pairs with similar titles   -> how many true matches the model misses among look-alikes
+--stats : after the `label` column is filled (same / variant / different), report each stratum with a
+          bootstrap 95% CI. Labels are made by Claude, an AI assistant, not humans, blind to the key.
+"""
+import sys
+
+import numpy as np
+import pandas as pd
+from PIL import Image, ImageDraw
+
+from src import config
+from src.live import download, search
+
+# "tune": the first 8 searches; their labels were used to design the model-word rules, so their score is
+# optimistic. "test": 8 fresh searches run only after the rules were frozen -> the number we report.
+SETS = {
+    "tune": ["Philips BHD308 hair dryer", "Milton Thermosteel Flip Lid 1000 ml", "Samsung Galaxy M35 5G 128GB",
+             "Nivea Soft light moisturising cream 200 ml", "Logitech M235 wireless mouse", "Pigeon electric kettle 1.5 litre",
+             "Prestige PIC 20 induction cooktop", "JBL Tune 510BT headphones"],
+    "test": ["Bajaj DX 6 dry iron", "boAt Rockerz 450 headphones", "Dettol original liquid handwash 200 ml",
+             "Redmi 13C 5G 128GB", "Lakme 9 to 5 primer matte lipstick", "Wildcraft 35 L backpack",
+             "Butterfly mixer grinder 750 W", "Usha table fan 400 mm"],
+    # "final": run once after the name-word rule was frozen (the "test" set was used to design it).
+    "final": ["Prestige Popular pressure cooker 3 litre", "Philips BT3221 beard trimmer", "Mi Power Bank 3i 20000 mAh",
+              "Boroplus antiseptic cream 80 ml", "Casio FX-991ES Plus calculator", "Sony WH-1000XM5 headphones",
+              "Wipro 9W LED bulb", "Vaseline intensive care deep restore body lotion 400 ml"],
+}
+SET = "final" if "--final" in sys.argv else "test" if "--test" in sys.argv else "tune"
+QUERIES = SETS[SET]
+N = {"S": 40, "R": 30, "H": 30}
+SHEET = config.RESULTS_DIR / ("live_eval_sheet.csv" if SET == "tune" else f"live_{SET}_sheet.csv")
+KEY = config.CACHE_DIR / ("live_eval_key.csv" if SET == "tune" else f"live_{SET}_key.csv")
+
+
+def make_sheet():
+    from src.service import Matcher
+    m, rng, rows = Matcher(), np.random.default_rng(config.SEED), []
+    for q in QUERIES:
+        res = search(m, q)
+        O, V = res["offers"], np.array(res["verdict"])
+        tf = np.array(res["features"]["tfidf_cos"])
+        a, b = np.triu_indices(len(O), 1)
+        for i, j in zip(a, b):
+            rows.append(dict(query=q, a_title=O[i]["title"], b_title=O[j]["title"], a_store=O[i]["store"], b_store=O[j]["store"],
+                             a_image=O[i]["image"], b_image=O[j]["image"], verdict=V[i, j], tfidf=tf[i, j]))
+        print(f"{q}: {len(O)} offers, {int((V[a, b] == 'S').sum())} same pairs")
+    pool = pd.DataFrame(rows)
+    picks = [pool[pool.verdict == "S"].sample(min(N["S"], (pool.verdict == "S").sum()), random_state=1).assign(stratum="S")]
+    rest = pool.drop(picks[0].index)
+    picks.append(rest.sample(N["R"], random_state=2).assign(stratum="R"))
+    rest = rest.drop(picks[1].index)
+    hard = rest[(rest.verdict != "S") & (rest.tfidf >= 0.5)]
+    picks.append(hard.sample(min(N["H"], len(hard)), random_state=3).assign(stratum="H"))
+    sheet = pd.concat(picks).sample(frac=1, random_state=4).reset_index(drop=True)
+    sheet["pair_id"] = [f"L{k:03d}" for k in range(len(sheet))]
+    sheet[["pair_id", "stratum", "verdict", "tfidf", "query"]].to_csv(KEY, index=False)
+    sheet[["pair_id", "a_title", "b_title", "a_store", "b_store"]].assign(label="").to_csv(SHEET, index=False)
+    grids(sheet)
+    print("pairs:", len(sheet), sheet.stratum.value_counts().to_dict(), "| sheet:", SHEET)
+
+
+def grids(sheet, per=10, size=180):
+    """Photo grids: each line = pair id, photo A, photo B (titles are in the sheet)."""
+    out = config.RESULTS_DIR / "labelling"
+    out.mkdir(parents=True, exist_ok=True)
+    for start in range(0, len(sheet), per):
+        part = sheet.iloc[start:start + per]
+        canvas = Image.new("RGB", (2 * size + 90, per * (size + 10)), "white")
+        draw = ImageDraw.Draw(canvas)
+        for k, r in enumerate(part.itertuples()):
+            y = k * (size + 10)
+            draw.text((5, y + size // 2), r.pair_id, fill="black")
+            for c, url in enumerate((r.a_image, r.b_image)):
+                data = download(url)
+                if data:
+                    import io
+                    im = Image.open(io.BytesIO(data)).convert("RGB")
+                    im.thumbnail((size, size))
+                    canvas.paste(im, (80 + c * (size + 5), y))
+        canvas.save(out / f"live_{SET}_{start // per:02d}.jpg", quality=85)
+
+
+def stats():
+    lab = pd.read_csv(SHEET).merge(pd.read_csv(KEY), on="pair_id")
+    assert lab["label"].isin(["same", "variant", "different"]).all(), "fill every label first"
+    rng, out = np.random.default_rng(config.SEED), {}
+    for s, name in [("S", "model says same: truly same item"), ("R", "random pair from a search: truly same item"),
+                    ("H", "rejected look-alike: truly same item (missed)")]:
+        y = (lab[lab.stratum == s]["label"] == "same").to_numpy(dtype=float)
+        if not len(y):
+            continue
+        boot = [rng.choice(y, len(y)).mean() for _ in range(config.N_BOOT)]
+        out[s] = dict(what=name, n=len(y), correct=int(y.sum()), rate=round(y.mean(), 3),
+                      ci=[round(np.percentile(boot, 2.5), 3), round(np.percentile(boot, 97.5), 3)])
+        print(f"{s} {name}: {int(y.sum())}/{len(y)} = {y.mean():.3f} [{out[s]['ci'][0]}, {out[s]['ci'][1]}]")
+    s = lab[lab.stratum == "S"]
+    out["S_same_or_variant"] = int(s["label"].isin(["same", "variant"]).sum())
+    print("S pairs that are at least the same product line (same or variant):", out["S_same_or_variant"], "/", len(s))
+    import json
+    (config.RESULTS_DIR / "json" / f"live_eval_{SET}.json").write_text(json.dumps(out, indent=1))
+    return out
+
+
+if __name__ == "__main__":
+    make_sheet() if "--sheet" in sys.argv else stats()
