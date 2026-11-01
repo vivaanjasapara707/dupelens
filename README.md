@@ -1,34 +1,78 @@
 # DupeLens
 
-**Same product, many sellers: know where to buy it.** Type a product name, paste an Amazon/Flipkart link, or give a product photo. DupeLens collects offers from Indian online stores, uses machine learning to keep only the listings that are *exactly the same item* (not a look-alike, another colour or another pack), and tells you the fair price, the seller to trust and where to buy.
+**Same product, many sellers: know where to buy it.** Type a product name, paste an Amazon or Flipkart link, or give a product photo. DupeLens collects offers from Indian online stores, uses a trained matcher to keep the listings that are likely the same item (not a look-alike, another colour or another pack), and shows the fair price, the sellers in a transparent sort order, and where to buy.
 
-## Live search (any product)
+Status (1 Nov 2026): runs locally; not yet hosted (a Docker / Hugging Face Spaces setup is included). Every number in this file comes from code in this repo; the files are named next to each number. Accuracy labels after the Shopee stage were made by **Claude, an AI assistant, not humans**.
+
+## What you can do with it
+
+| Page | What it does | Code |
+|---|---|---|
+| **Search** (`/`) | Name, store link or photo address -> up to 40 live offers; likely-same-item sellers with fair price, cheapest, sort order, "suspiciously cheap" flag; colour/pack variants and look-alikes shown apart; well-known stores only by default (toggle); "Behind the scenes" panel with a per-search PCA map | `src/live.py`, `src/verdict.py`, `dashboard/index.html` |
+| **Ask DupeLens AI** | Questions about the search on screen ("Is Amazon cheaper than Flipkart here?"), answered by a Groq-hosted LLM from that data only; store-vs-store numbers are computed by the page, not the LLM | `src/assistant.py` |
+| **Store insights** (`/insights.html`) | 60 live searches: price spread for the same item, cheapest store, Amazon vs Flipkart, and a PCA map of 2,300 offers | `src/insights.py` |
+| **Price tracker** (`/tracker.html`) | Track an item; a daily job re-runs the search, the model finds the item again, history + buy-now-or-wait advice + price-drop alerts (in-app, optional Telegram) | `src/tracker.py` |
+| **How we tested** (`/evidence.html`) | The original Shopee model and the 698-listing 2023 Amazon India test catalog | `src/service.py` |
+
+## Run it
 
 ```bash
-.venv\Scripts\python.exe -m src.app        # Windows   (Mac/Linux: .venv/bin/python -m src.app)
+python3.11 -m venv .venv
+.venv\Scripts\pip install -r requirements.txt        # Windows (Mac/Linux: .venv/bin/pip); versions pinned for the saved models
+.venv\Scripts\python -m pytest tests -q               # 42 tests
+.venv\Scripts\python -m src.app                       # http://127.0.0.1:8000
 ```
-Open http://127.0.0.1:8000 and type, for example, `Sony WH-1000XM5 headphones`. Needs a free Serper key (serper.dev) in a file `.env`: `SERPER_API_KEY=...`.
+Keys go in a file `.env` (never committed): `SERPER_API_KEY` (live search, free tier at serper.dev; a search costs 2 credits), `GROQ_API_KEY` (AI assistant, console.groq.com), optional `TELEGRAM_BOT_TOKEN` + `TELEGRAM_CHAT_ID` (alerts). The first start downloads 3.3 GB of pretrained encoders. Daily price checks: `scripts\update_prices.bat` (register it once with the `schtasks` line inside the file).
+Online: `docker build .` runs anywhere; `python scripts/deploy_hf.py` creates a Hugging Face Space and stores the keys as Space secrets (needs `HF_TOKEN`). Tests also run on GitHub Actions (`.github/workflows/tests.yml`).
 
-1. **Understand the input.** A name is searched as is; a store link gives the name from the link (`src/live.py: name_from_link`); a photo goes to Google Lens, which names the product, and the photo itself is compared with every offer.
-2. **Collect offers.** Up to 40 offers from Google Shopping (India) through Serper: title, photo, price, store, rating.
-3. **Read photos and titles.** CLIP (photo, 512 numbers), DINOv2 (exact object, 384), MPNet (title meaning, 768), colour histogram, perceptual hash. PCA (fitted on Shopee train) compresses CLIP and MPNet to 32 numbers each.
-4. **Judge every pair.** The trained logistic-regression model (M1_v2 below) gives each pair a probability; rules in `src/verdict.py` turn it into same / variant / different: model words (Pro, Neo, Gen 2, UV), model numbers (PIC 20 vs PIC 3.1, DX2), accessories (cover, replacement), sizes (1600 W vs 1200 W, 3 vs 4 jars), and per-search name words (Matchless vs Xeno, Plum Pick vs Red Coat).
-5. **Rank the sellers** of the exact item: fair price = median; seller score = same-item confidence 35 + fair price 25 + star rating 15 + number of reviews 10 + known store 15 (a fixed rule, not a trained model); a price more than 40% below the median is flagged "suspiciously cheap". Price is never a matching feature.
+## How it works
 
-Example (search on 1 Nov 2026, saved in `dashboard/data/searches/`): Sony WH-1000XM5 — 5 offers of the exact item from 3 stores at ₹19,900–₹48,928 (146% apart); variants in silver, pink and blue, the XM6, the WF earbuds and replacement ear pads kept apart.
+1. **Understand the input.** A name is searched as is; a store link gives the name from its address (`name_from_link`); a photo address goes to Google Lens through Serper, which names the product, and the photo itself is compared with every offer.
+2. **Collect offers.** Up to 40 offers from Google Shopping India through Serper (title, photo, price, store, rating). Offers are not limited to big stores; 50.3% of 2,260 offers in the insights searches came from well-known stores (`src/insights.py`).
+3. **Read photos and titles.** Three pretrained neural networks: CLIP ViT-B/32 (photo, 512 numbers), DINOv2-small (exact object, 384), multilingual MPNet (title, 768); plus a colour histogram and a perceptual hash.
+4. **PCA (used three ways).**
+   - *Compression inside the matcher:* one PCA per modality, fitted on 24,065 Shopee training listings with shrinkage whitening, keeps 32 of 512 (photo) and 32 of 768 (title) numbers. Validation F1 stayed 0.843 vs 0.846 at full size, and whitening beat plain PCA on candidate recall at every size (table below).
+   - *Per-search map:* a second PCA puts each search's offers on a 2-D map in the "Behind the scenes" panel.
+   - *Product map across 60 searches:* PCA of 2,300 offers' 64 numbers; the first two directions explain 18.2% of the variation, yet 58.0% of each offer's 10 nearest neighbours on the 2-D map share its category, against 12.1% by chance; PCA never saw the categories (`src/insights.py`).
+5. **Judge every pair.** Logistic regression M1_v2 (trained on Shopee pairs, features below) gives each pair a probability; same / variant / different comes from the v2 rules (probability >= 0.90, number/size conflict, combo, colour distance) plus live-search rules in `src/verdict.py`: model words (Pro, Neo, Gen, ANC, UV, refurbished), model numbers and codes (PIC 20 vs PIC 3.1, V2 vs V3, DX2 = DX 2), accessory words, sizes (W, L, ml, g, jars), "only one title names a model", and per-search rare name words (Matchless vs Xeno, Plum Pick vs Red Coat). **Price is never a matching feature.**
+6. **Sort the sellers** of the likely same item: fair price = median; sort order = same-item probability 35 + fair price 25 + star rating 15 + number of reviews 10 + well-known store 15 (a fixed rule, not a trained model or a trust rating). More than 40% below the median is flagged "suspiciously cheap". The probability shown is calibrated once `src/calibrate.py` has run (see Pending); until then it is labelled "model score".
 
-**Live-search accuracy** (`src/live_eval.py`, `results/json/live_eval_final.json`). Eight fresh products searched only after every rule was frozen (Prestige cooker, Philips trimmer, Mi power bank, Boroplus, Casio calculator, Sony headphones, Wipro bulb, Vaseline lotion); offer pairs labelled blind by **Claude, an AI assistant, not humans**:
+## Live-search accuracy
 
-| When DupeLens says "same item" | Result | 95% CI |
-|---|---|---|
-| it is the identical item | 23 / 40 = 57.5% | 40–72.5% |
-| it is at least the same product line (identical or colour/size/pack variant) | 33 / 40 = 82.5% | 67.5–95% |
-| baseline: a random pair of offers from the same search is the identical item | 3 / 30 = 10% | 0–23% |
-| true matches missed among look-alikes the model rejected | 2 / 30 = 6.7% | 0–17% |
+Three rounds of 8 product searches each; pairs of offers labelled blind (same / variant / different, from titles and photos, without model output) by Claude, an AI assistant, not humans. Strata: **S** = pairs the system calls same, **R** = random pairs from the same search, **H** = rejected pairs with similar titles. 95% CIs resample whole searches (pairs within a search are not independent).
 
-Two earlier rounds of 8 searches each were used to design the rules and are not reported as accuracy (on the first, before the rules, "same" was right 20 / 40 times). Once the models are loaded a search took 2–5 s on a Windows laptop CPU (measured 2.2–4.6 s).
+| Round | Use | S: identical item | S: at least same product line |
+|---|---|---|---|
+| Tune (`live_eval_tune.json`) | rules designed from its errors | 20/40 = 50.0% (CI 15.4–74.6%) | 23/40 |
+| Test (`live_eval_test.json`) | rules redesigned again (shades, scents, line names), so also tuning data | 4/40 = 10.0% (CI 0–38.1%) | 22/40 |
+| **Final** (`live_eval_final.json`) | 8 new products, rules frozen first, run once | **23/40 = 57.5% (CI 28.6–81.4%)** | **33/40 = 82.5% (CI 63.9–94.3%)** |
 
-Limits of live search: shades, scents and pack sizes that only differ in the photo or are not named in the title are still the main error; the seller score weights are a design choice; uploaded photos need the online version (Google Lens must reach the photo), on a laptop paste the photo's address instead; prices are what Google Shopping shows at search time.
+Final round baselines: a random pair from the same search was the identical item 3/30 = 10.0% (CI 3.4–15.4%); among rejected look-alikes, 2/30 = 6.7% were actually identical (CI 0–15.4%).
+
+**Ablation, final round** (`src/ablation.py`, `results/json/ablation_final.json`). The live rules only remove "same" verdicts, so a fresh blind sample of the removed pairs (40, mixed with 20 decoys) gives the model-alone precision:
+
+| | Pairs called same (8 searches) | Identical-item precision | 95% CI |
+|---|---|---|---|
+| M1_v2 + v2 rules only | 995 | 26.4% | 7.8–49.5% |
+| + live-search rules | 171 | 57.5% | 28.6–81.4% |
+
+The rules double precision but drop real matches: 8 of 40 removed pairs (20%) were identical.
+
+**Error analysis, final round** (`results/error_analysis_final.csv`; types assigned by Claude). Of the 17 "same" verdicts that were not the identical item: colour/finish visible only in the photo or one title 6, bundle/combo/pack not detected 4, other model of the same product line sharing a name word 4, different formulation 1, vague vs specific title 1, hyphenated code read wrongly (WH-1000XM5 vs WF-1000XM5) 1. The 2 missed matches: code in only one title (strict rule) 1, verdict "variant" 1.
+
+**Identifier check** (`src/identifiers.py`, `results/json/identifiers.json`). Serper offers carry no GTIN/EAN/UPC/MPN/ASIN field; Google's productId is almost unique per offer (971 distinct among 978), so it cannot link stores. A model code appears in 228 of 978 titles. In the final round, 26 of 100 pairs have a code in both titles; code-based same/different model labels agree with Claude's model-level labels on 25 of 26 (the exception: replacement ear pads named after the WH-1000XM5).
+
+## Store insights (60 searches, 1 Nov 2026)
+
+From `results/json/insights.json` (CIs resample searches; "same item" = the model's largest non-accessory group per search):
+- Price spread for the likely same item (middle half of prices, 75th / 25th percentile, searches with 4+ prices): median **37.9%** (CI 30.0–69.6%, 43 searches); over 20% in 79.1% of searches. Max vs min was dominated by matching mistakes (bulk packs, accessories), so it is not used.
+- Amazon vs Flipkart on the same item: only **6** searches had both; Amazon was cheaper in 5 (median gap -18.8%, CI -63.8% to -0.3%). Too few to generalise.
+- Cheapest well-known store, in 23 searches with 2+ of them: Amazon 7, JioMart 5, BigBasket 4, Zepto 2, Myntra 2, 1mg 2, Blinkit 1.
+
+## Pending (scripts ready, results not produced yet)
+
+- **Second, non-Anthropic labeller** (`src/llm_labels.py`): sends the final-round pairs (titles, stores, photos only) to a Groq vision model (`qwen/qwen3.8-27b`) and reports Cohen's kappa vs the Claude labels and precision on agreed pairs. Needs `GROQ_API_KEY`.
+- **Calibration of M1_v2** (`src/calibrate.py`): Platt and isotonic, cross-fitted on Shopee validation, reliability plot, calibrated probability in the sort order. Needs the Shopee data (Kaggle) on this machine.
 
 ## How the matching model was built and tested
 
@@ -43,13 +87,13 @@ Every number below comes from code in this repo; the raw rows are in `results/re
 ## Check one listing against the 2023 test catalog
 
 - **Online demo:** https://dupelens.vercel.app — pick any of the 698 catalog listings; it is hidden from the catalog and checked as if new (real model output, precomputed).
-- **Check a brand-new listing (runs the models on your Mac):**
+- **Check a brand-new listing against the catalog (runs the models locally):**
 
 ```bash
-cd "/Volumes/T7 Shield/dupelens" && .venv/bin/python -m src.app
+.venv/bin/python -m src.app      # then open /evidence.html
 ```
 
-Open http://127.0.0.1:8000, choose **Check a new listing**, paste the Amazon title, paste the photo address (right-click the product photo → Copy image address) or drop the photo file, optionally add your price, and press **Check listing**.
+Open http://127.0.0.1:8000/evidence.html, choose **Check a new listing**, paste the Amazon title, paste the photo address (right-click the product photo → Copy image address) or drop the photo file, optionally add your price, and press **Check listing**.
 
 Example (a real Amazon listing that is *not* in the catalog): "FIT & SHAPE Hair Straightener Comb…", ₹390 → **Already listed by 12 other sellers**, same product sells for ₹395–₹1,449, typical ₹498, so ₹390 is 21.7% below typical. The first check takes ~10 s while the models load; later checks took 0.13–0.48 s (measured, photo download included).
 
@@ -119,17 +163,18 @@ The Shopee test split was already used once, so v2 is compared on validation and
 
 ## Limits
 
-- Shopee has no prices; the price comparison runs only on the Indian snapshot, which is a 2023 scrape, not live prices.
-- India precision rests on 60 AI-labelled pairs; its CI is wide.
-- Colour variants are the main India error: the image features at 32 dims do not separate shades of the same model well.
-- Number tokens miss karat ("22 K") and model codes; the brand "3M" is read as 3 metres.
+- All accuracy figures after the Shopee stage rest on labels made by Claude, an AI assistant, not humans, with 30–40 pairs per stratum; CIs are wide. No human agreement has been measured yet.
+- Live search: identical-item precision 57.5% on the final round; the main errors are colours, shades and packs visible only in photos. Hand-written rules do much of the work (ablation above) and remove some true matches.
+- Live offers come from Google Shopping India through Serper; it does not list every seller on Amazon or Flipkart, and prices are as shown at search time. Uploading a photo file needs the hosted version (Google Lens must reach it); locally, paste the photo's address.
+- The sort order and the buy-or-wait advice are fixed rules, not trained models; price history starts on the day an item is first tracked.
+- 2023 catalog demo: Shopee has no prices, so the catalog price comparison runs only on that 2023 snapshot; number tokens miss karat ("22 K"), and the brand "3M" is read as 3 metres.
 
 ## Reproduce
 
 ```bash
 python3.11 -m venv --copies .venv && .venv/bin/pip install torch sentence-transformers faiss-cpu scikit-learn pandas numpy matplotlib imagehash pillow requests kaggle six pytest fastapi uvicorn python-multipart
 kaggle competitions download -c shopee-product-matching -p data/ && unzip data/shopee-product-matching.zip -d data/
-.venv/bin/python -m pytest tests            # 25 unit tests
+.venv/bin/python -m pytest tests            # 42 unit tests
 .venv/bin/python -m src.data                # group split
 .venv/bin/python -m src.india               # Indian listings + photos (category in src/config.py)
 .venv/bin/python -m src.embed               # embeddings + phash (Apple GPU 'mps' if available)
@@ -145,19 +190,25 @@ kaggle competitions download -c shopee-product-matching -p data/ && unzip data/s
 .venv/bin/python -m src.service             # demo results for every catalog listing
 .venv/bin/python -m src.app                 # live app at http://127.0.0.1:8000 (live search needs SERPER_API_KEY in .env)
 .venv/bin/python -m src.live "boat airdopes 141"   # one live search in the terminal
-.venv/bin/python -m src.live_eval --sheet --final  # blind sheet for the final accuracy round (then --stats --final)
+.venv/bin/python -m src.live_eval --stats --final # live-search accuracy (search-level CIs); --sheet builds a new blind sheet
+.venv/bin/python -m src.ablation           # LR vs LR+rules on the final round
+.venv/bin/python -m src.identifiers        # identifier coverage + code-based labels
+.venv/bin/python -m src.insights --collect # 60 searches (2 Serper credits each), then without --collect: insights + PCA map
+.venv/bin/python -m src.llm_labels --label # second labeller (Groq), then without --label: kappa
+.venv/bin/python -m src.calibrate          # Platt / isotonic on Shopee validation (needs Kaggle data)
+.venv/bin/python -m src.tracker --update   # one round of price checks
 .venv/bin/python -m http.server 8765 --directory dashboard   # open http://localhost:8765 (live: https://dupelens.vercel.app)
 ```
 
 `notebooks/dupelens.ipynb` runs the same steps and shows the results. On an exFAT drive, delete macOS `._*` sidecar files after big writes (`find . -name '._*' -delete`). Do not import torch and faiss in one process unless faiss is imported first.
 
-## Future work (not in this build)
+## Future work
 
 - More Indian categories (one setting in `src/config.py`, then re-run the India steps).
-- A colour feature to separate colour variants; karat and model-code tokens.
-- Human labels with a second annotator for agreement.
+- Read shade and colour from the photo (the main live error); split hyphenated model codes correctly.
+- Human labels with two annotators for agreement; a learned (fine-tuned) matcher to replace hand-written rules.
 - Live scraping, CLIP fine-tuning or ArcFace, approximate search (IVF/HNSW), price prediction, listing photos on the dashboard.
 
 ## Resume bullet
 
-Built DupeLens, a duplicate-listing classifier trained on 34k Shopee listings (product-group split) using image, text, and variant-aware features; logistic regression reached test F1 0.838 (95% CI 0.825–0.851) vs 0.794 for the best single-feature baseline, with number-token features adding 0.45 points. Compressed image and text embeddings from 512/768 to 32 dimensions each with PCA and shrinkage whitening, keeping validation F1 at 0.843 vs 0.846 at full dimension. Added DINOv2 and colour features (validation F1 0.843 → 0.864) and a same/variant/different verdict that is 82.5% precise on fresh blind-labelled Amazon India pairs (up from 50%), flagging 62 of 698 listings priced more than 20% above the typical price for the same product; shipped as an app that checks any new listing (title + photo) in under half a second once loaded.
+Built DupeLens, a duplicate-listing matcher for Indian e-commerce: logistic regression over CLIP, DINOv2 and MPNet embeddings (PCA-compressed 512/768 -> 32 dims with shrinkage whitening, validation F1 0.843 vs 0.846 uncompressed) reached Shopee test F1 0.838 (95% CI 0.825-0.851) vs 0.794 for the best single feature; built it into a live search over Google Shopping India where "same item" verdicts were identical 57.5% of the time on a frozen, blind-labelled final round (vs 10% for random pairs; AI-labelled), with an ablation showing rules doubled precision (26.4% -> 57.5%), plus a 60-search store-insights study, a PCA product map, a price tracker and a Groq-powered shopping assistant.

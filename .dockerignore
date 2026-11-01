@@ -1,0 +1,13 @@
+.git
+.venv
+.env*
+.claude
+__pycache__
+.pytest_cache
+data
+cache/live
+cache/insights
+cache/uploads
+cache/shopee_val_*.npy
+results/labelling
+notebooks

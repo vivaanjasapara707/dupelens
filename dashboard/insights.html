@@ -110,7 +110,7 @@ fetch("data/insights.json").then(r => r.json()).then(D => {
   // ---- PCA map: highlight one category in blue, the rest muted (keeps colour-blind safety with 9 categories) ----
   const cats = [...new Set(D.map.map(p => p.category))];
   let pick = cats[0];
-  $("#pca-sub").textContent = `All ${D.pca.points.toLocaleString("en-IN")} offers from all ${D.pca.searches} searches (the numbers above use the ${D.searches} searches where the model found a main item). The two directions shown explain ${D.pca.first_two_pct}% of the variation in the 64 PCA numbers; pick a category to see where its products sit.`;
+  $("#pca-sub").textContent = `All ${D.pca.points.toLocaleString("en-IN")} offers from all ${D.pca.searches} searches (the numbers above use the ${D.searches} searches where the model found a main item). The two directions shown explain ${D.pca.first_two_pct}% of the variation in the 64 PCA numbers, yet ${D.pca.neighbours_same_category_pct}% of each offer's 10 nearest neighbours on this map are from its own category (chance: ${D.pca.chance_pct}%). Pick a category to see where its products sit.`;
   function drawMap() {
     const W = 900, H = 440, pad = 24, P = D.map;
     const xs = P.map(p => p.x), ys = P.map(p => p.y);

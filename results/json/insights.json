@@ -102,6 +102,8 @@
    2.9
   ],
   "first_two_pct": 18.2,
+  "neighbours_same_category_pct": 58.0,
+  "chance_pct": 12.1,
   "input": "64 numbers per offer = PCA(CLIP photo, 32) + PCA(MPNet title, 32)"
  },
  "per_search": [

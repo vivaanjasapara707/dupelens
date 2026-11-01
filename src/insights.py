@@ -153,6 +153,13 @@ def analyse():
     xy = U[:, :2] * S[:2]
     for p, (x, y) in zip(pts, xy):
         p["x"], p["y"] = round(float(x), 4), round(float(y), 4)
+    # Does the 2-D map keep categories together? Share of each offer's 10 nearest map neighbours in its category,
+    # against chance (sum of squared category shares). PCA never saw the categories.
+    cat = np.array([p["category"] for p in pts])
+    dist = ((xy[:, None] - xy[None]) ** 2).sum(-1)
+    np.fill_diagonal(dist, np.inf)
+    same_cat = float((cat[np.argsort(dist, 1)[:, :10]] == cat[:, None]).mean())
+    chance = float(sum(((cat == c).mean()) ** 2 for c in set(cat)))
 
     out = dict(
         searches=len(rows), offers=int(sum(r["offers"] for r in rows)), stores=None,
@@ -169,7 +176,8 @@ def analyse():
         cheapest_platform_counts=dict(sorted(cheapest.items(), key=lambda kv: -kv[1])),
         by_category=by_cat,
         pca=dict(points=len(pts), searches=len({p["query"] for p in pts}), explained_variance_pct=[round(100 * float(s), 1) for s in share[:10]],
-                 first_two_pct=round(100 * float(share[:2].sum()), 1), input="64 numbers per offer = PCA(CLIP photo, 32) + PCA(MPNet title, 32)"),
+                 first_two_pct=round(100 * float(share[:2].sum()), 1),
+                 neighbours_same_category_pct=round(100 * same_cat, 1), chance_pct=round(100 * chance, 1), input="64 numbers per offer = PCA(CLIP photo, 32) + PCA(MPNet title, 32)"),
         per_search=rows,
         method="search-level bootstrap (1,000 resamples) for CIs; prices as shown by Google Shopping India on the search date",
     )
