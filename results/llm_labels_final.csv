@@ -7,3 +7,11 @@ L004,variant,"Both are 20000mAh Xiaomi power banks, but they differ in color (Lu
 L005,variant,"Both are 20000mAh power banks from the same brand, but they differ in color (black vs. white) and design features (listing B has a strap and 67W marking).",qwen/qwen3.8-27b
 L006,different,"The listings are for different brands and models, with Listing A being a Casio FX-991MS and Listing B being a Dupota OA-991ES Plus.",qwen/qwen3.8-27b
 L007,variant,The listings are for the same product model but differ in size (80mL vs 120mL) and pack count (single vs pack of 2).,qwen/qwen3.8-27b
+L008,different,"Listing A is a 9-in-1 multi-grooming kit (3000 series), while Listing B is a single-function trimmer (BT1000 series).",qwen/qwen3.8-27b
+L009,variant,"Both listings are for Vaseline body lotions, but they are different product lines (Expert Care Elasticity Restore vs. Intensive Care Deep Moisture).",qwen/qwen3.8-27b
+L010,variant,"Both listings feature the same Philips Series 3000 beard trimmer model, but the bundle contents differ (Listing A includes a travel pouch while Listing B includes a USB charging cable).",qwen/qwen3.8-27b
+L011,same,Both listings feature the Philips Series 3000 beard trimmer (model BT3222) with identical black and silver color schemes and matching accessories.,qwen/qwen3.8-27b
+L012,variant,The listings are for the same Wipro 9W LED bulb model but with different color temperatures (Warm White vs. Cool Day White).,qwen/qwen3.8-27b
+L013,same,Both listings feature the same black Xiaomi Redmi 20000mAh 18W power bank model.,qwen/qwen3.8-27b
+L014,variant,The listings are for the same power bank model but specify different colors (Listing B is explicitly White while Listing A is Black).,qwen/qwen3.8-27b
+L015,same,Both listings feature the Vaseline Intensive Care Deep Moisture body lotion in the same 400ml size and packaging.,qwen/qwen3.8-27b

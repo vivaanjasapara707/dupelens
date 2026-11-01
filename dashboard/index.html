@@ -176,6 +176,7 @@ const ATTRS = [["storage", "Storage"], ["colour", "Colour"], ["size", "Size"], [
 const matchesPick = o => Object.entries(PICK).every(([k, v]) => !v || (o.attrs || {})[k] === v || !(o.attrs || {})[k]);
 
 // ---------- grouping around one offer (same rule as src/live.py) ----------
+let SORT = "price";   // "price": cheapest first, big stores before small ones; "score": the sort-order score
 function groupAround(seed) {
   const V = DATA.verdict, O = DATA.offers, n = O.length;
   const all = [...Array(n).keys()];
@@ -183,21 +184,24 @@ function groupAround(seed) {
   const model = all.filter(j => inModel(j) && !O[j].is_ref);
   const hidden = model.filter(j => !visible(O[j])).length;
   const listing = model.filter(j => visible(O[j]));
-  const members = listing.filter(j => j === seed || V[seed][j] === "S");      // likely the same item as the top pick
-  const variants = listing.filter(j => V[seed][j] === "V");                   // same model, other colour/size/pack
-  // fair price: offers of the chosen variant if one is picked, else offers of the likely same item
   const picked = Object.values(PICK).some(Boolean);
-  const basis = picked ? listing.filter(j => matchesPick(O[j]) && Object.entries(PICK).every(([k, v]) => !v || (O[j].attrs || {})[k] === v)) : members;
-  const prices = basis.map(j => O[j].price_value).filter(v => v != null);
-  const typical = prices.length >= 3 ? median(prices) : null;   // fair price needs at least 3 prices
   const shown = listing.filter(j => matchesPick(O[j]));
-  const scored = shown.map(j => ({ j, same: members.includes(j), ...sellerScore(O[j], j === seed ? 1 : sameProb(seed, j), typical) }));
-  // well-known stores first, then the sort order (same-item listings before other variants at equal score)
-  scored.sort((a, b) => (isKnown(O[b.j]) - isKnown(O[a.j])) || (b.total + 3 * b.same) - (a.total + 3 * a.same));
-  const top = scored.find(s => s.same) || scored[0];
-  const cheapest = basis.filter(j => O[j].price_value != null).sort((a, b) => O[a].price_value - O[b].price_value)[0];
+  // typical price of the listings on screen (median, needs 3 prices)
+  const prices = shown.map(j => O[j].price_value).filter(v => v != null);
+  const typical = prices.length >= 3 ? median(prices) : null;
+  const scored = shown.map(j => ({ j, ...sellerScore(O[j], j === seed ? 1 : sameProb(seed, j), typical) }));
+  // a price far below the typical price, an accessory or a missing price can never be the best price
+  const ok = x => !x.suspicious && !O[x.j].accessory && O[x.j].price_value != null;
+  const byPrice = (a, b) => O[a.j].price_value - O[b.j].price_value;
+  const top = scored.filter(x => ok(x) && isKnown(O[x.j])).sort(byPrice)[0] || scored.filter(ok).sort(byPrice)[0] || scored[0];
+  if (top) scored.forEach(x => x.same = x.j === top.j || V[top.j][x.j] === "S");   // same item as the best price?
+  if (SORT === "price") scored.sort((a, b) => (ok(b) - ok(a)) || (isKnown(O[b.j]) - isKnown(O[a.j])) || ((O[a.j].price_value ?? 1e12) - (O[b.j].price_value ?? 1e12)));
+  else scored.sort((a, b) => b.total - a.total);
+  const members = scored.filter(x => x.same).map(x => x.j), variants = scored.filter(x => !x.same).map(x => x.j);
+  const okPrices = scored.filter(ok).map(x => O[x.j].price_value);
+  const cheapest = scored.filter(ok).sort(byPrice).map(x => x.j)[0];
   return { seed, members, variants, listing, shown, scored, top, cheapest, typical, n_prices: prices.length, hidden, picked,
-           min: prices.length ? Math.min(...prices) : null, max: prices.length ? Math.max(...prices) : null };
+           min: okPrices.length ? Math.min(...okPrices) : null, max: okPrices.length ? Math.max(...okPrices) : null };
 }
 
 // One row of chips per attribute that differs across this model's listings (storage, colour, size, pack).
@@ -242,16 +246,16 @@ function render(seed) {
 
   if (!top) { $("#best").innerHTML = `<div style="grid-column:1/-1"><div class="label" style="color:var(--warn)">No likely match with a price</div><h2>The model did not find another store selling the likely same item.</h2><p class="sub">Look at the similar products below, or try a more specific name.</p></div>`; $("#side").innerHTML = ""; }
   else {
-    const save = g.max != null && b.price_value != null ? g.max - b.price_value : 0;
+    const save = g.typical != null && b.price_value != null ? g.typical - b.price_value : 0;   // vs the typical price, not the dearest outlier
     $("#best").innerHTML = `
       <img class="ph" src="${esc(b.image)}" alt="" referrerpolicy="no-referrer">
       <div>
-        <div class="label">Top of the sort order · ${top.total}/100</div>
+        <div class="label">${isKnown(b) ? "Best price at a big store" : "Best price (no big store sells it in these results)"}</div>
         <h2>${esc(b.title)}</h2>
         <div class="facts">
           <div class="fact"><div class="v num">${esc(b.price ?? "–")}</div><div class="l">at ${esc(b.store)}</div></div>
-          ${g.typical ? `<div class="fact"><div class="v num">${inr(g.typical)}</div><div class="l">fair price (median of ${g.n_prices}${g.picked ? " offers of this variant" : " offers of this item"})</div></div>` : ""}
-          ${save > 0 ? `<div class="fact"><div class="v good num">${inr(save)}</div><div class="l">less than the dearest seller</div></div>` : ""}
+          ${g.typical ? `<div class="fact"><div class="v num">${inr(g.typical)}</div><div class="l">typical price (median of ${g.n_prices} listing${g.n_prices === 1 ? "" : "s"}${g.picked ? " of this variant" : ""})</div></div>` : ""}
+          ${save > 0 ? `<div class="fact"><div class="v good num">${inr(save)}</div><div class="l">below the typical price</div></div>` : ""}
         </div>
         <div class="pills" style="margin-bottom:14px">${Object.entries(top.parts).map(([k, [w, v]]) => `<span class="pill">${k} ${Math.round(w * v)}/${w}</span>`).join("")}</div>
         <button class="buy" data-j="${top.j}" data-label="Buy at ${esc(b.store)} →" type="button" style="border:0;cursor:pointer;font:inherit;font-weight:700">Buy at ${esc(b.store)} →</button>
@@ -261,27 +265,31 @@ function render(seed) {
       </div>`;
     const ch = g.cheapest != null ? O[g.cheapest] : null;
     $("#side").innerHTML = `
-      <div class="stat"><div class="v num">${g.listing.length}</div><div class="l">listings of this model from ${new Set(g.listing.map(j => O[j].store)).size} stores (${g.listing.filter(j => isKnown(O[j])).length} from big stores); ${g.members.length} likely the same item as the top pick</div></div>
-      ${ch ? `<div class="stat"><div class="v num">${esc(ch.price)}</div><div class="l">cheapest: ${esc(ch.store)}${g.cheapest !== top.j ? " (lower in the sort order, see list)" : " (also first in the sort order)"}</div></div>` : ""}
-      ${g.min != null && g.max != null && g.max > g.min ? `<div class="stat"><div class="v num">${inr(g.min)} – ${inr(g.max)}</div><div class="l">price range for the same item: ${Math.round(100 * (g.max / g.min - 1))}% difference</div></div>` : ""}
+      <div class="stat"><div class="v num">${g.listing.length}</div><div class="l">listings of this model from ${new Set(g.listing.map(j => O[j].store)).size} stores (${g.listing.filter(j => isKnown(O[j])).length} from big stores); ${g.members.length} likely the same item as the best price</div></div>
+      ${ch ? `<div class="stat"><div class="v num">${esc(ch.price)}</div><div class="l">cheapest: ${esc(ch.store)}${g.cheapest !== top.j ? (isKnown(ch) ? "" : " (less-known store, see list)") : " (same as the best price)"}</div></div>` : ""}
+      ${g.min != null && g.max != null && g.max > g.min ? `<div class="stat"><div class="v num">${inr(g.min)} – ${inr(g.max)}</div><div class="l">price range of these listings (not counting suspiciously cheap ones)</div></div>` : ""}
       ${g.variants.length ? `<div class="stat"><div class="v num">${g.variants.length}</div><div class="l">other colours / sizes / packs of the same model (in the list, marked "other variant")</div></div>` : ""}`;
   }
 
-  $("#same-h").textContent = `Where to buy: ${g.shown.length} listing${g.shown.length === 1 ? "" : "s"} of this model, big stores first`;
-  $("#same-sub").innerHTML = "Sort order = how sure the model is it's the same item (35) + fair price (25) + star rating (15) + number of reviews (10) + well-known store (15). A price far below the fair price is a warning sign, not a bargain." +
+  $("#same-h").textContent = `Where to buy: ${g.shown.length} listing${g.shown.length === 1 ? "" : "s"} of this model`;
+  $("#same-sub").innerHTML = `<div class="seg" style="margin:0 0 8px"><span class="hint" style="margin:0 6px 0 0;align-self:center">Order:</span>
+      <button type="button" data-sort="price" aria-pressed="${SORT === "price"}">Cheapest first (big stores before small)</button>
+      <button type="button" data-sort="score" aria-pressed="${SORT === "score"}">Sort-order score</button></div>` +
+    "Best price = the cheapest listing from a big store, never one priced more than 40% below the typical price (that is a warning sign: often a different, used or fake item). Sort-order score = how sure the model is it's the same item (35) + fair price (25) + star rating (15) + number of reviews (10) + well-known store (15)." +
     (g.hidden > 0 ? ` <b>${g.hidden} listing${g.hidden > 1 ? "s" : ""} from less-known stores hidden.</b> <button class="linkbtn" id="show-all" type="button">Show them</button>` : "") +
     variantChips(g);
   if (g.hidden > 0) $("#show-all").onclick = () => { ONLY_KNOWN = false; render(seed); };
   document.querySelectorAll("[data-attr]").forEach(b => b.onclick = () => { PICK[b.dataset.attr] = b.dataset.val || null; render(seed); });
+  document.querySelectorAll("[data-sort]").forEach(b => b.onclick = () => { SORT = b.dataset.sort; render(seed); });
   $("#same").innerHTML = g.scored.map((s, k) => {
     const o = O[s.j], pills = [];
-    if (s.j === top.j) pills.push(`<span class="pill g">Top pick</span>`);
-    pills.push(s.same ? `<span class="pill conf">same item as top pick</span>` : `<span class="pill">other variant</span>`);
+    if (s.j === top.j) pills.push(`<span class="pill g">Best price</span>`);
+    else pills.push(s.same ? `<span class="pill conf">same item as best price</span>` : `<span class="pill">other variant</span>`);
     Object.values(o.attrs || {}).forEach(v => pills.push(`<span class="pill">${esc(v)}</span>`));
     if (s.j === g.cheapest) pills.push(`<span class="pill c">Cheapest</span>`);
     if (s.suspicious) pills.push(`<span class="pill warn">Suspiciously cheap</span>`);
-    else if (s.pct != null && s.pct > 0.05) pills.push(`<span class="pill up">${Math.round(100 * s.pct)}% above fair price</span>`);
-    else if (s.pct != null && s.pct < -0.05) pills.push(`<span class="pill down">${Math.round(-100 * s.pct)}% below fair price</span>`);
+    else if (s.pct != null && s.pct > 0.05) pills.push(`<span class="pill up">${Math.round(100 * s.pct)}% above typical price</span>`);
+    else if (s.pct != null && s.pct < -0.05) pills.push(`<span class="pill down">${Math.round(-100 * s.pct)}% below typical price</span>`);
     if (s.j !== seed) pills.push(`<span class="pill conf">${DATA.prob_cal ? "same item" : "model score"} ${(100 * sameProb(seed, s.j)).toFixed(0)}%</span>`);
     if (o.rating) pills.push(`<span class="pill">★ ${esc(o.rating)}${o.rating_count ? ` (${Number(o.rating_count).toLocaleString("en-IN")})` : ""}</span>`);
     pills.push(isKnown(o) ? `<span class="pill">Big store</span>` : `<span class="pill warn">Less-known store</span>`);
@@ -437,7 +445,7 @@ function askContext() {
     const [x, px] = stores[a], [y, py] = stores[b], d = py - px;
     comparisons.push(d > 0 ? `${x} (Rs ${Math.round(px)}) is Rs ${Math.round(d)} cheaper than ${y} (Rs ${Math.round(py)}), ${Math.round(100 * d / py)}% less` : `${x} and ${y} both Rs ${Math.round(px)}`);
   }
-  const top = g.scored[0];
+  const top = g.top;
   return {
     query: DATA.query, input_type: DATA.mode, data_source: "Google Shopping India via Serper, prices as shown at search time" + (DATA.cached_at ? ` (saved on ${DATA.cached_at})` : ""),
     showing: ONLY_KNOWN ? "well-known stores only" : "all stores", hidden_likely_same_item_sellers_from_less_known_stores: g.hidden,
@@ -447,7 +455,7 @@ function askContext() {
       vs_fair_price_pct: s.pct == null ? null : Math.round(100 * s.pct), suspiciously_cheap: s.suspicious })),
     fair_price_median: g.typical, price_range: g.min != null ? [g.min, g.max] : null,
     cheapest: g.cheapest != null ? offer(g.cheapest) : null,
-    top_of_sort_order: top ? { ...offer(top.j), sort_order: top.total } : null,
+    best_price: top ? { ...offer(top.j), sort_order: top.total, rule: "cheapest listing from a big store, never more than 40% below the typical price" } : null,
     cheapest_by_store: Object.fromEntries(stores), store_comparisons: comparisons,
     variants: g.variants.slice(0, 12).map(offer),
     variants_cheapest_by_store: Object.fromEntries(cheapestByStore(g.variants)),

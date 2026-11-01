@@ -73,6 +73,11 @@ def model_conflict(title_a, title_b):
     vb, xb, cb, nb, wb = _model_parts(title_b)
     if va != vb or xa != xb:
         return True
+    # a model number with a letter suffix is another model: "iPhone 16e" vs "iPhone 16", "Redmi 13C" vs "Redmi 13"
+    suffixed = lambda codes: {re.match(r"\d+", c).group(0) for c in codes if re.fullmatch(r"\d+[a-z]{1,2}", c)}
+    plain = lambda words: {w for w in words if w.isdigit()}
+    if suffixed(ca) & plain(wb) - suffixed(cb) or suffixed(cb) & plain(wa) - suffixed(ca):
+        return True
     if bool(ca or na) != bool(cb or nb):  # only one title names a model: cannot confirm it is the same one
         return True
     if ca and cb and not ca & cb:

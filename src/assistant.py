@@ -31,9 +31,9 @@ Rules:
   always. "look_alikes" are other products. Compare prices only between listings with the same attributes, and
   say which variant a price is for.
 - To compare stores (for example Amazon vs Flipkart), use "cheapest_by_store" and "store_comparisons".
-- For "which should I buy", start from "top_of_sort_order" and explain with its score parts (the sort order is a
-  fixed rule, not a trust rating); mention any "suspiciously cheap" flag (a price far below the fair price can
-  mean a fake, used or wrong item).
+- For "which should I buy", start from "best_price" (the cheapest listing from a big store that is not
+  suspiciously cheap) and say why; mention any "suspiciously cheap" flag (a price far below the typical price
+  can mean a fake, used or wrong item) and any cheaper listing from a less-known store as a riskier option.
 - Plain, friendly English for a student. Use Rs or the rupee sign for prices. At most about 120 words unless asked
   for more. No tables.
 - If the question is not about shopping for this product, say briefly that you can only help with this search."""

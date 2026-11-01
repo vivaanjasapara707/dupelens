@@ -85,3 +85,10 @@ def test_rules_v3_hyphen_codes_colours_packs():
     assert pack_mismatch("Prestige Popular 2 L 3 L", "Prestige Popular 3 L Pressure Cooker")
     assert pack_mismatch("Sony WH-1000XM5 Bundle with Case", "Sony WH-1000XM5")
     assert not pack_mismatch("Pigeon Kettle 1.5 Litre 1500 W", "Pigeon Hot Kettle 1.5 L")
+
+
+def test_suffixed_model_numbers_are_other_models():
+    assert model_conflict("Apple iPhone 16e", "Apple iPhone 16")
+    assert model_conflict("Redmi 13C 5G", "Redmi 13 5G")
+    assert not model_conflict("iPhone 16 128Gb", "Apple iPhone 16")
+    assert not model_conflict("Redmi 13C 6GB 128GB", "Xiaomi Redmi 13C 6GB RAM, 128GB Storage")
