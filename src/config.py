@@ -4,9 +4,22 @@ Kept free of heavy imports (no torch, no faiss) so any module can import it
 cheaply. Importing torch and faiss in one process can crash on this Mac
 (two OpenMP runtimes), so each stage imports only what it needs.
 """
+import os
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+
+
+def env(name):
+    """A secret (API key) from the environment, else from the .env file in the repo root (gitignored)."""
+    if os.environ.get(name):
+        return os.environ[name]
+    path = ROOT / ".env"
+    if path.exists():
+        for line in path.read_text().splitlines():
+            if line.strip().startswith(name + "="):
+                return line.split("=", 1)[1].strip().strip('"')
+    return None
 DATA_DIR = ROOT / "data"
 TRAIN_CSV = DATA_DIR / "train.csv"
 TRAIN_IMAGES = DATA_DIR / "train_images"

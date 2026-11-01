@@ -4,6 +4,7 @@ that exact item and where it is best to buy.
 Serves the dashboard (index.html = live search, evidence.html = how the model was tested) plus:
   POST /api/search  name / link / photo -> offers from many stores, grouped into "same item" by the model
   GET  /api/link    the real product page of one offer at its store
+  POST /api/ask     a question about the current search -> answer from a Groq-hosted LLM (src/assistant.py)
   POST /api/check   one listing (title + photo) -> is it already in the 698-listing test catalog?
 Run: python -m src.app   then open http://127.0.0.1:8000
 """
@@ -13,9 +14,10 @@ import threading
 import uvicorn
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel
 from starlette.concurrency import run_in_threadpool
 
-from src import config, live
+from src import assistant, config, live
 from src.service import Matcher
 
 DASHBOARD = config.ROOT / "dashboard"
@@ -33,7 +35,26 @@ def health():
     except RuntimeError:
         search_ready = False
     return {"live": True, "search": search_ready, "uploads": bool(os.environ.get("PUBLIC_URL")),
-            "catalog": len(matcher.catalog)}
+            "assistant": bool(config.env("GROQ_API_KEY")), "catalog": len(matcher.catalog)}
+
+
+class Question(BaseModel):
+    question: str
+    context: dict
+    history: list = []
+
+
+@app.post("/api/ask")
+async def ask(q: Question):
+    """Shopping question about the search on screen -> short answer grounded in that search's data."""
+    if not q.question.strip():
+        raise HTTPException(400, "Type a question.")
+    try:
+        return await run_in_threadpool(assistant.answer, q.question.strip()[:500], q.context, q.history)
+    except RuntimeError as err:  # no Groq key
+        raise HTTPException(503, str(err))
+    except Exception as err:  # network or Groq error
+        raise HTTPException(502, f"The AI assistant failed: {err}")
 
 
 @app.post("/api/search")

@@ -133,6 +133,14 @@
   .how div { background: var(--raised); border: 1px solid var(--line); border-radius: 14px; padding: 14px; }
   .how b { display: block; margin-bottom: 4px; } .how p { margin: 0; color: var(--muted); font-size: 13px; }
   .how .n { width: 26px; height: 26px; border-radius: 8px; background: var(--raised-2); color: var(--accent-2); display: grid; place-items: center; font-weight: 700; margin-bottom: 8px; }
+  .chat { display: grid; gap: 8px; max-height: 380px; overflow-y: auto; margin-bottom: 10px; }
+  .msg { padding: 10px 13px; border-radius: 12px; font-size: 14px; line-height: 1.5; white-space: pre-wrap; max-width: 88%; }
+  .msg.user { background: var(--raised-2); justify-self: end; }
+  .msg.ai { background: var(--raised); border: 1px solid var(--line); justify-self: start; }
+  .msg.ai.err { border-color: rgba(248,113,113,.5); color: #fecaca; }
+  form.ask { display: flex; gap: 8px; }
+  form.ask input { flex: 1; min-width: 0; background: var(--bg); border: 1px solid var(--line); color: var(--ink); border-radius: 10px; padding: 10px 12px; font: inherit; }
+  .ai-badge { font-size: 11.5px; color: var(--accent-2); border: 1px solid rgba(34,211,238,.35); border-radius: 99px; padding: 2px 8px; margin-left: 8px; vertical-align: 2px; font-weight: 500; }
   footer { margin-top: 28px; color: var(--muted); font-size: 12.5px; line-height: 1.6; }
 </style>
 </head>
@@ -182,6 +190,14 @@
       <h2 id="same-h"></h2>
       <p class="sub" id="same-sub"></p>
       <div class="rows" id="same"></div>
+    </div>
+
+    <div class="card" id="ask-card">
+      <h2>Ask DupeLens AI <span class="ai-badge" id="ai-model">Groq</span></h2>
+      <p class="sub">Ask anything about this search, like "Is Amazon cheaper than Flipkart here?" or "Which one should I buy right now?". An AI answers from the data on this page only (store comparisons are calculated by DupeLens, not guessed). It can still be wrong: check the store page before you buy.</p>
+      <div class="examples" id="ask-chips" style="justify-content:flex-start;margin:0 0 12px"></div>
+      <div class="chat" id="chat"></div>
+      <form class="ask" id="ask-form"><input id="ask-q" type="text" placeholder="Ask a question about this product…" autocomplete="off" aria-label="Question"><button class="btn" id="ask-go" type="submit">Ask</button></form>
     </div>
 
     <div class="card" id="var-card">
@@ -241,7 +257,8 @@ const $ = s => document.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const inr = v => v == null ? "–" : "₹" + Math.round(v).toLocaleString("en-IN");
 const median = a => { const s = [...a].sort((x, y) => x - y), m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; };
-let LIVE = false, SEARCH = false, UPLOADS = false, EXAMPLES = [], DATA = null, PHOTO = null;
+let LIVE = false, SEARCH = false, UPLOADS = false, ASSISTANT = false, EXAMPLES = [], DATA = null, PHOTO = null;
+let CURRENT = null, HISTORY = [];   // the group on screen and the chat so far (both reset when the view changes)
 
 // ---------- seller score: a fixed, transparent rule (not a trained model) ----------
 // "known" is set by the server (src/live.py well_known): big Indian retailers, quick-commerce apps, pharmacies, brand's own store.
@@ -379,6 +396,7 @@ function render(seed) {
   document.querySelectorAll("#best [data-j], #same [data-j]").forEach(el => el.onclick = () => openStore(+el.dataset.j, el));
 
   renderBTS(seed, g, top);
+  CURRENT = g; HISTORY = []; renderAsk();
   $("#results").hidden = false;
 }
 
@@ -421,6 +439,78 @@ function renderBTS(seed, g, top) {
   const T = DATA.timing || [], mx = Math.max(...T.map(t => t.seconds), 0.01);
   $("#timing").innerHTML = T.map(t => `<div class="hbar"><span>${esc(t.step)}</span><span class="track"><i style="width:${100 * t.seconds / mx}%;background:var(--accent-2)"></i></span><span class="v num">${t.seconds.toFixed(1)} s</span></div>`).join("");
 }
+
+// ---------- Ask DupeLens AI (Groq) ----------
+// Store names as buyers know them, so "Amazon.in" and "amazon.in" count as one store.
+const PLATFORMS = [["amazon", "Amazon"], ["shopsy", "Shopsy (Flipkart)"], ["flipkart", "Flipkart"], ["jiomart", "JioMart"], ["croma", "Croma"],
+  ["reliance", "Reliance Digital"], ["tata", "Tata CLiQ"], ["vijay", "Vijay Sales"], ["myntra", "Myntra"], ["nykaa", "Nykaa"], ["blinkit", "Blinkit"],
+  ["zepto", "Zepto"], ["bigbasket", "BigBasket"], ["meesho", "Meesho"], ["dmart", "DMart"], ["apollo", "Apollo"], ["pharmeasy", "PharmEasy"], ["1mg", "1mg"]];
+const platform = s => { const t = (s || "").toLowerCase(); const hit = PLATFORMS.find(([k]) => t.includes(k)); return hit ? hit[1] : s; };
+
+// Cheapest price per store among the given offers, cheapest store first.
+function cheapestByStore(ids) {
+  const O = DATA.offers, best = {};
+  ids.forEach(j => { const p = O[j].price_value; if (p == null) return; const n = platform(O[j].store); if (!(n in best) || p < best[n]) best[n] = p; });
+  return Object.entries(best).sort((a, b) => a[1] - b[1]);
+}
+
+// Everything the AI may use, computed here so it never has to do arithmetic or guess.
+function askContext() {
+  const O = DATA.offers, g = CURRENT;
+  const offer = j => ({ store: O[j].store, title: O[j].title, price: O[j].price, rating: O[j].rating ?? null, reviews: O[j].rating_count ?? null,
+                        well_known_store: !!O[j].known, delivery: O[j].delivery ?? null });
+  const stores = cheapestByStore(g.members), comparisons = [];
+  for (let a = 0; a < stores.length; a++) for (let b = a + 1; b < stores.length && comparisons.length < 20; b++) {
+    const [x, px] = stores[a], [y, py] = stores[b], d = py - px;
+    comparisons.push(d > 0 ? `${x} (Rs ${Math.round(px)}) is Rs ${Math.round(d)} cheaper than ${y} (Rs ${Math.round(py)}), ${Math.round(100 * d / py)}% less` : `${x} and ${y} both Rs ${Math.round(px)}`);
+  }
+  const top = g.scored[0];
+  return {
+    query: DATA.query, input_type: DATA.mode, data_source: "Google Shopping India via Serper, prices as shown at search time" + (DATA.cached_at ? ` (saved on ${DATA.cached_at})` : ""),
+    showing: ONLY_KNOWN ? "well-known stores only" : "all stores", hidden_exact_item_sellers_from_less_known_stores: g.hidden,
+    exact_item_sellers: g.scored.map((s, k) => ({ rank_by_seller_score: k + 1, ...offer(s.j), seller_score: s.total,
+      score_parts: Object.fromEntries(Object.entries(s.parts).map(([n, [w, v]]) => [n, `${Math.round(w * v)}/${w}`])),
+      same_item_confidence_pct: s.j === g.seed ? 100 : Math.round(100 * DATA.prob[g.seed][s.j]),
+      vs_fair_price_pct: s.pct == null ? null : Math.round(100 * s.pct), suspiciously_cheap: s.suspicious })),
+    fair_price_median: g.typical, price_range: g.min != null ? [g.min, g.max] : null,
+    cheapest: g.cheapest != null ? offer(g.cheapest) : null,
+    recommended: top ? { ...offer(top.j), seller_score: top.total } : null,
+    cheapest_by_store: Object.fromEntries(stores), store_comparisons: comparisons,
+    variants: g.variants.slice(0, 12).map(offer),
+    variants_cheapest_by_store: Object.fromEntries(cheapestByStore(g.variants)),
+    look_alikes: (DATA.groups || []).filter(x => !g.members.includes(x.seed) && !g.variants.includes(x.seed) && !O[x.seed].is_ref).slice(0, 10).map(x => offer(x.seed)),
+    seller_score_rule: "same-item confidence 35 + fair price 25 + star rating 15 + number of reviews 10 + well-known store 15; more than 40% below the fair price = suspiciously cheap",
+  };
+}
+
+function renderAsk() {
+  $("#ask-card").hidden = !ASSISTANT;
+  if (!ASSISTANT) return;
+  const stores = cheapestByStore(CURRENT.members).map(([n]) => n);
+  const qs = [stores.includes("Amazon") && stores.includes("Flipkart") ? "How much cheaper is Amazon than Flipkart here?" : "Which store is cheapest for this exact item?",
+              "Which one should I buy right now?", "Why is the recommended seller ranked first?", "Is the cheapest offer safe to buy?",
+              CURRENT.variants.length ? "What other colours or packs are there, and do they cost less?" : "Are there similar products that cost less?"];
+  $("#ask-chips").innerHTML = qs.map(q => `<button class="ex" type="button">${esc(q)}</button>`).join("");
+  document.querySelectorAll("#ask-chips .ex").forEach(b => b.onclick = () => ask(b.textContent));
+  $("#chat").innerHTML = "";
+}
+
+async function ask(question) {
+  question = (question || "").trim(); if (!question || !CURRENT) return;
+  const chat = $("#chat"), add = (cls, text) => { const d = document.createElement("div"); d.className = "msg " + cls; d.textContent = text; chat.appendChild(d); chat.scrollTop = chat.scrollHeight; return d; };
+  add("user", question); $("#ask-q").value = ""; $("#ask-go").disabled = true;
+  const wait = add("ai", "Thinking…");
+  try {
+    const r = await fetch("/api/ask", { method: "POST", headers: { "Content-Type": "application/json" },
+                                        body: JSON.stringify({ question, context: askContext(), history: HISTORY }) });
+    const data = await r.json(); if (!r.ok) throw new Error(data.detail || r.statusText);
+    wait.textContent = data.answer.replace(/\*\*(.+?)\*\*/g, "$1");   // plain text: drop markdown bold
+    $("#ai-model").textContent = "Groq · " + data.model;
+    HISTORY.push({ role: "user", content: question }, { role: "assistant", content: data.answer });
+  } catch (e) { wait.textContent = e.message; wait.classList.add("err"); }
+  finally { $("#ask-go").disabled = false; }
+}
+$("#ask-form").onsubmit = e => { e.preventDefault(); ask($("#ask-q").value); };
 
 // ---------- input: text / link / photo ----------
 function attach(file) {
@@ -477,7 +567,7 @@ form.onsubmit = e => { e.preventDefault(); run($("#q").value); };
 Promise.all([fetch("/api/health").then(r => r.ok ? r.json() : null).catch(() => null),
              fetch("data/searches/index.json").then(r => r.ok ? r.json() : []).catch(() => [])])
 .then(([h, ex]) => {
-  LIVE = !!(h && h.live); SEARCH = !!(h && h.search); UPLOADS = !!(h && h.uploads); EXAMPLES = ex;
+  LIVE = !!(h && h.live); SEARCH = !!(h && h.search); UPLOADS = !!(h && h.uploads); ASSISTANT = !!(h && h.assistant); EXAMPLES = ex;
   const st = $("#status"); st.classList.add(SEARCH ? "live" : "demo");
   st.lastElementChild.textContent = SEARCH ? "Live search connected" : LIVE ? "Model connected · no search key" : "Demo: saved example searches";
   if (LIVE && !SEARCH) note("The model is running, but live search needs a free Serper key in the file <code>.env</code> (SERPER_API_KEY=...).", true);

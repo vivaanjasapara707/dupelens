@@ -194,6 +194,14 @@ Affiliate API for a fresh Indian catalog once the user has an affiliate account.
   The model still scores ALL offers (same pipeline as measured); the page shows/recommends only well-known
   stores by default (toggle; "N more sellers hidden - show them"). Tried Serper page 2: +2 credits, ~2x time,
   mostly added accessories (cases) -> reverted. Offers flagged accessory (verdict.is_accessory) are never the
-  default product. 36 tests pass. NEXT (user said: deploy LAST): Hugging Face Spaces (needs user's HF account + write
+  default product. 36 tests pass.
+- 2026-11-01: "Ask DupeLens AI" (user request): src/assistant.py calls Groq chat completions
+  (https://api.groq.com/openai/v1, default model openai/gpt-oss-120b, reasoning_effort low, include_reasoning
+  false; checked on console.groq.com/docs on 2026-11-01). The page sends the data on screen (exact-item sellers,
+  scores, fair price, cheapest per store, store-vs-store differences computed in JS, variants, look-alikes);
+  system prompt = answer only from that data, never invent numbers. POST /api/ask; card hidden until
+  GROQ_API_KEY is in .env. config.env() reads keys. tests/test_assistant.py (38 tests pass). NOT yet tested
+  against Groq (no key yet). PROJECT_SUMMARY.md = honest summary for an external reviewer.
+  NEXT (user said: deploy LAST): Hugging Face Spaces (needs user's HF account + write
   token; set SERPER_API_KEY as a Space secret and PUBLIC_URL for photo upload), update Vercel static site, push to
   GitHub (ask first).

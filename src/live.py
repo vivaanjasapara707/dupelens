@@ -43,12 +43,7 @@ NOT_SHOPS = {"youtube", "tiktok", "instagram", "pinterest", "facebook", "reddit"
 
 def api_key():
     """SERPER_API_KEY from the environment, else from the .env file in the repo root."""
-    key = os.environ.get("SERPER_API_KEY")
-    env = config.ROOT / ".env"
-    if not key and env.exists():
-        for line in env.read_text().splitlines():
-            if line.strip().startswith("SERPER_API_KEY="):
-                key = line.split("=", 1)[1].strip().strip('"')
+    key = config.env("SERPER_API_KEY")
     if not key:
         raise RuntimeError("No Serper key: put SERPER_API_KEY=... in .env (free at serper.dev)")
     return key
