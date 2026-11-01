@@ -254,6 +254,13 @@ Affiliate API for a fresh Indian catalog once the user has an affiliate account.
   45 tests. Vercel: scripts/deploy_vercel.py (pages on Vercel, /api/* rewritten to the HF Space; needs
   VERCEL_TOKEN); models cannot run on Vercel (3.3 GB). Still needed from user: empty GitHub repo, HF_TOKEN,
   VERCEL_TOKEN (optional Kaggle token, Keepa or Serper top-up, Telegram).
+- 2026-11-01: user bug report: "iphone 16" showed Unicorn Store Rs 84,506 as top pick while Reliance Digital sold it
+  at Rs 69,900; iPhone 16e was listed. Fix: best price = cheapest listing from a big store that is not >40% below
+  the typical (median) price and not an accessory (else cheapest such listing anywhere); list sorted cheapest
+  first with big stores before small ones (toggle: sort-order score); "same item" tags now relative to the best
+  price; savings shown vs typical price (not vs the dearest outlier). New rule verdict.model_conflict: a model
+  number with a letter suffix is another model (16e vs 16, 13C vs 13). NOTE: this rule came after round 4, so
+  round-4 numbers describe the rules before it. 46 tests.
   NEXT (user said: deploy LAST): Hugging Face Spaces (needs user's HF account + write
   token; set SERPER_API_KEY as a Space secret and PUBLIC_URL for photo upload), update Vercel static site, push to
   GitHub (ask first).
