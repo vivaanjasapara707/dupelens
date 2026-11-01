@@ -155,12 +155,23 @@ function sellerScore(o, prob, typical) {
   return { total: Math.round(total), parts, pct, suspicious: pct != null && pct < -0.4 };
 }
 
+// The searched product: offers whose title names exactly what the user typed (src/verdict.py query_match).
+// FOCUS = null shows that product; clicking a related product sets FOCUS to it (the model's group around it).
+let FOCUS = null;
+const exactIds = () => DATA.offers.map((o, j) => o.match === "exact" && !o.is_ref ? j : -1).filter(j => j >= 0);
+const exactMode = () => FOCUS === null && exactIds().length > 0;
+
 // Which product to show first: the user's photo if given; else, among groups that are not accessories
 // (cases, covers) and have a visible seller, the one most sellers agree on (server order breaks ties).
 function bestSeed() {
   const O = DATA.offers, V = DATA.verdict, n = O.length;
   const ref = O.findIndex(o => o.is_ref);
   if (ref >= 0) return ref;
+  if (exactMode()) {   // reference = the exact listing (with a photo) that most other exact listings agree with
+    const ex = exactIds().filter(j => O[j].image);
+    if (ex.length) return ex.reduce((a, b) => ex.filter(j => V[b][j] !== "D").length > ex.filter(j => V[a][j] !== "D").length ? b : a);
+    return exactIds()[0];
+  }
   // the offer with the most listings of the same model (same item or variant), not an accessory; big stores break ties
   let best = 0, bestKey = -1;
   for (let i = 0; i < n; i++) {
@@ -181,7 +192,7 @@ function groupAround(seed) {
   const V = DATA.verdict, O = DATA.offers, n = O.length;
   const all = [...Array(n).keys()];
   const inModel = j => j === seed || V[seed][j] === "S" || V[seed][j] === "V";
-  const model = all.filter(j => inModel(j) && !O[j].is_ref);
+  const model = exactMode() ? exactIds() : all.filter(j => inModel(j) && !O[j].is_ref);
   const hidden = model.filter(j => !visible(O[j])).length;
   const listing = model.filter(j => visible(O[j]));
   const picked = Object.values(PICK).some(Boolean);
@@ -189,10 +200,11 @@ function groupAround(seed) {
   // typical price of the listings on screen (median, needs 3 prices)
   const prices = shown.map(j => O[j].price_value).filter(v => v != null);
   const typical = prices.length >= 3 ? median(prices) : null;
-  const scored = shown.map(j => ({ j, ...sellerScore(O[j], j === seed ? 1 : sameProb(seed, j), typical) }));
+  // store pages are matched by name, not by the model (no photo): count them as 0.85 confident in the sort order
+  const scored = shown.map(j => ({ j, ...sellerScore(O[j], j === seed ? 1 : sameProb(seed, j) < 0 ? 0.85 : sameProb(seed, j), typical) }));
   // a price far below the typical price, an accessory or a missing price can never be the best price
   // a price far below the typical price, an accessory, a refurbished/used listing or a missing price is never the best price
-  const ok = x => !x.suspicious && !O[x.j].accessory && O[x.j].price_value != null && O[x.j].condition !== "refurbished";
+  const ok = x => !x.suspicious && !O[x.j].accessory && O[x.j].price_value != null && (O[x.j].condition || "new") === "new";
   const byPrice = (a, b) => O[a.j].price_value - O[b.j].price_value;
   // best price only from a trusted store (big store, authorised reseller, brand store), new, not suspicious
   const top = scored.filter(x => ok(x) && isKnown(O[x.j])).sort(byPrice)[0] || null;
@@ -227,6 +239,12 @@ function variantChips(g) {
   return rows.length ? `<div>${rows.join("")}<div class="hint" style="margin:6px 0 0">Listings that do not state a value stay in the list.</div></div>` : "";
 }
 
+// Listing photo, or a store badge for big-store product pages (Google web results carry no photo).
+function photo(o, big) {
+  if (o.image) return `<img class="ph" src="${esc(o.image)}" alt="" loading="lazy" referrerpolicy="no-referrer">`;
+  return `<div class="ph ph-store${big ? " big" : ""}"><span>${esc((o.store || "?").split(" ")[0])}</span></div>`;
+}
+
 function storeSearch(o) {
   const s = (o.store || "").toLowerCase(), q = encodeURIComponent(o.title);
   if (s.includes("amazon")) return `https://www.amazon.in/s?k=${q}`;
@@ -235,6 +253,7 @@ function storeSearch(o) {
 }
 async function openStore(j, el) {
   const o = DATA.offers[j]; let url = storeSearch(o);
+  if (o.source === "store page" && o.link) { window.open(o.link, "_blank", "noopener"); return; }   // exact product page
   if (SEARCH) { el.textContent = "Finding page…"; try { const r = await fetch(`/api/link?title=${encodeURIComponent(o.title)}&store=${encodeURIComponent(o.store)}`); if (r.ok) url = (await r.json()).url; } catch {} el.textContent = el.dataset.label; }
   window.open(url, "_blank", "noopener");
 }
@@ -250,10 +269,32 @@ function render(seed) {
   $("#understood").innerHTML = `${how}: <b>${esc(DATA.query)}</b> · ${nOffers} offers compared by the model in ${DATA.seconds} s · ${nKnown} from well-known stores` + (DATA.cached_at ? ` · saved example (${esc(DATA.cached_at)})` : "") +
     ` <label class="chip" style="cursor:pointer;margin-left:6px"><input type="checkbox" id="only-known" ${ONLY_KNOWN ? "checked" : ""} style="margin:0 4px 0 0">Big stores only</label>`;
   $("#only-known").onchange = e => { ONLY_KNOWN = e.target.checked; render(bestSeed()); };
+  const cnt = m => O.filter(o => o.match === m).length;
+  if (DATA.mode !== "photo" && O.some(o => o.match)) {
+    $("#understood").insertAdjacentHTML("beforeend", `<div style="flex-basis:100%;margin-top:4px">${FOCUS === null
+      ? (exactIds().length ? `Showing only <b>${esc(DATA.query)}</b>: ${cnt("exact")} exact listings${DATA.store_pages ? ` (incl. ${DATA.store_pages} big-store product pages)` : ""}; ${cnt("related")} related products and ${cnt("accessory")} accessories are kept separate.`
+                           : `<span style="color:var(--warn)">No listing names exactly "${esc(DATA.query)}". Showing the closest product the model found; check the title.</span>`)
+      : `Showing a related product, not your search. <button class="linkbtn" id="back-exact" type="button">← Back to ${esc(DATA.query)}</button>`}</div>`);
+    if ($("#back-exact")) $("#back-exact").onclick = () => { FOCUS = null; render(bestSeed()); };
+  }
   $("#seen-card").hidden = !(DATA.seen_on && DATA.seen_on.length);
   $("#seen").innerHTML = (DATA.seen_on || []).slice(0, 6).map(s => `<a class="tile" href="${esc(s.link)}" target="_blank" rel="noopener">${s.image ? `<img class="ph" src="${esc(s.image)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : ""}<span class="t">${esc(s.title)}</span><span class="s">${esc(s.store)}</span></a>`).join("");
 
-  if (!top) {
+  const notFound = FOCUS === null && DATA.mode !== "photo" && O.some(o => o.match) && exactIds().length === 0;
+  if (notFound) {
+    const q = encodeURIComponent(DATA.query);
+    $("#best").innerHTML = `<div style="grid-column:1/-1">
+      <div class="label" style="color:var(--warn)">Not found: no listing of exactly "${esc(DATA.query)}"</div>
+      <h2>None of the ${O.length} offers is "${esc(DATA.query)}" itself. It may not be released yet, not sold in India, or named differently.</h2>
+      <p class="sub">The closest products are listed below as recommendations, not as your product. Check the big stores directly:</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <a class="go" href="https://www.amazon.in/s?k=${q}" target="_blank" rel="noopener">Search Amazon</a>
+        <a class="go" href="https://www.flipkart.com/search?q=${q}" target="_blank" rel="noopener">Search Flipkart</a>
+        <a class="go" href="https://www.croma.com/searchB?q=${q}%3Arelevance" target="_blank" rel="noopener">Search Croma</a>
+        <a class="go" href="https://www.reliancedigital.in/search?q=${q}" target="_blank" rel="noopener">Search Reliance Digital</a></div></div>`;
+    $("#side").innerHTML = `<div class="stat"><div class="v num">${O.filter(o => o.match === "related").length}</div><div class="l">offers of related models (for example other versions of the same line)</div></div>`;
+  }
+  else if (!top) {
     // no trusted store sells it new: say so, never push a random shop as "Buy"
     const q = encodeURIComponent(DATA.query), alt = (x, label, warn) => x ? `<div class="stat" style="margin-top:10px"><div class="v num" style="font-size:18px">${esc(O[x.j].price)}</div><div class="l">${label}: <b>${esc(O[x.j].store)}</b> · ${esc(O[x.j].title)} <span class="pill warn">${warn}</span></div></div>` : "";
     $("#best").innerHTML = `<div style="grid-column:1/-1">
@@ -273,7 +314,7 @@ function render(seed) {
   else {
     const save = g.typical != null && b.price_value != null ? g.typical - b.price_value : 0;   // vs the typical price, not the dearest outlier
     $("#best").innerHTML = `
-      <img class="ph" src="${esc(b.image)}" alt="" referrerpolicy="no-referrer">
+      ${photo(b, true)}
       <div>
         <div class="label">${isKnown(b) ? "Best price at a big store" : "Best price (no big store sells it in these results)"}</div>
         <h2>${esc(b.title)}</h2>
@@ -296,7 +337,9 @@ function render(seed) {
       ${g.variants.length ? `<div class="stat"><div class="v num">${g.variants.length}</div><div class="l">other colours / sizes / packs of the same model (in the list, marked "other variant")</div></div>` : ""}`;
   }
 
-  $("#same-h").textContent = `Where to buy: ${g.shown.length} listing${g.shown.length === 1 ? "" : "s"} of this model`;
+  $("#same-h").textContent = notFound ? `Recommendation: closest product found (${O[seed].title}), not what you searched`
+    : exactMode() ? `Where to buy ${DATA.query}: ${g.shown.length} listing${g.shown.length === 1 ? "" : "s"}`
+                                          : `Where to buy: ${g.shown.length} listing${g.shown.length === 1 ? "" : "s"} of this model`;
   $("#same-sub").innerHTML = `<div class="seg" style="margin:0 0 8px"><span class="hint" style="margin:0 6px 0 0;align-self:center">Order:</span>
       <button type="button" data-sort="price" aria-pressed="${SORT === "price"}">Cheapest first (big stores before small)</button>
       <button type="button" data-sort="score" aria-pressed="${SORT === "score"}">Sort-order score</button></div>` +
@@ -315,13 +358,15 @@ function render(seed) {
     if (s.suspicious) pills.push(`<span class="pill warn">Suspiciously cheap</span>`);
     else if (s.pct != null && s.pct > 0.05) pills.push(`<span class="pill up">${Math.round(100 * s.pct)}% above typical price</span>`);
     else if (s.pct != null && s.pct < -0.05) pills.push(`<span class="pill down">${Math.round(-100 * s.pct)}% below typical price</span>`);
-    if (s.j !== seed) pills.push(`<span class="pill conf">${DATA.prob_cal ? "same item" : "model score"} ${(100 * sameProb(seed, s.j)).toFixed(0)}%</span>`);
+    if (o.source === "store page") pills.push(`<span class="pill conf">store product page</span>`, `<span class="pill">${o.price ? (o.price_note === "from" ? "\"from\" price, confirm on the page" : "price from Google, confirm on the page") : "see price on the page"}</span>`);
+    else if (s.j !== seed && sameProb(seed, s.j) >= 0) pills.push(`<span class="pill conf">${DATA.prob_cal ? "same item" : "model score"} ${(100 * sameProb(seed, s.j)).toFixed(0)}%</span>`);
     if (o.rating) pills.push(`<span class="pill">★ ${esc(o.rating)}${o.rating_count ? ` (${Number(o.rating_count).toLocaleString("en-IN")})` : ""}</span>`);
     pills.push(isKnown(o) ? `<span class="pill">${TIER[o.tier] || "Big store"}</span>` : `<span class="pill warn">Less-known store</span>`);
     if (o.condition === "refurbished") pills.push(`<span class="pill warn">Refurbished / used</span>`);
+    if (o.condition === "bulk") pills.push(`<span class="pill warn">Bulk / wholesale lot</span>`);
     return `<div class="row ${top && s.j === top.j ? "top" : ""}">
       <div class="rk">${k + 1}</div>
-      <img class="ph" src="${esc(o.image)}" alt="" loading="lazy" referrerpolicy="no-referrer">
+      ${photo(o)}
       <div><div class="store">${esc(o.store)}</div><div class="t">${esc(o.title)}</div><div class="pills">${pills.join("")}</div></div>
       <div class="score">Sort order <b>${s.total}</b><div class="sbar"><i style="width:${s.total}%"></i></div></div>
       <div class="price num">${esc(o.price ?? "–")}</div>
@@ -334,12 +379,18 @@ function render(seed) {
       <span class="t">${esc(o.title)}</span><span class="p num">${esc(o.price ?? "–")}</span><span class="s">${esc(o.store)}${note ? " · " + note : ""}</span></button>`; };
   $("#var-card").hidden = true;   // variants are now in the main list, marked "other variant"
   const shown = new Set([...g.listing, seed]);
+  // in exact mode only RELATED products (other models of the same brand / line) are recommended; accessories never
+  const keep = j => visible(O[j]) && !O[j].accessory && O[j].match !== "accessory" && (!exactMode() || O[j].match === "related");
   const others = (DATA.groups || []).filter(x => !shown.has(x.seed))
-    .map(x => ({ first: x.members.find(j => visible(O[j])), n: x.members.filter(j => visible(O[j])).length }))
+    .map(x => ({ first: x.members.find(keep), n: x.members.filter(keep).length }))
     .filter(x => x.first != null && !shown.has(x.first));
+  $("#other-card").querySelector("h2").textContent = exactMode() ? "Related products (not what you searched)" : "Look-alikes the model kept apart";
+  $("#other-card").querySelector(".sub").textContent = exactMode()
+    ? `Other models of the same brand or line that the search also returned${cnt("accessory") ? `; ${cnt("accessory")} accessories (cases, covers, parts) are not shown` : ""}. Click one to see where to buy it.`
+    : "The search also returned these. A normal price-comparison site would mix them in. Click one to compare sellers of that product instead.";
   $("#other-card").hidden = !others.length;
   $("#others").innerHTML = others.map(x => tile(x.first, x.n > 1 ? `${x.n} sellers` : "")).join("");
-  document.querySelectorAll(".tile[data-seed]").forEach(t => t.onclick = () => { render(+t.dataset.seed); $("#results").scrollIntoView({ behavior: "smooth" }); });
+  document.querySelectorAll(".tile[data-seed]").forEach(t => t.onclick = () => { FOCUS = +t.dataset.seed; PICK = {}; render(FOCUS); $("#results").scrollIntoView({ behavior: "smooth" }); });
   document.querySelectorAll("#best [data-j], #same [data-j]").forEach(el => el.onclick = () => openStore(+el.dataset.j, el));
 
   renderBTS(seed, g, top);
@@ -413,7 +464,7 @@ async function trackItem(g, top) {
 let XRAY_ODD = new Set();
 async function runXray(g) {
   const card = $("#xray-card"), O = DATA.offers;
-  const ids = g.listing.slice(0, 30);
+  const ids = g.listing.filter(j => O[j].image).slice(0, 30);
   if (!LIVE || ids.length < 4) { card.hidden = true; return; }
   card.hidden = false;
   $("#xray").innerHTML = `<div class="step on"><span class="spin"></span>Running PCA on ${ids.length} listing photos…</div>`;
@@ -561,7 +612,8 @@ async function run(q) {
       const r = await fetch("/api/search", { method: "POST", body: fd });
       data = await r.json(); if (!r.ok) throw new Error(data.detail || r.statusText);
     } else data = await (await fetch(`data/searches/${ex.file}`)).json();
-    DATA = data; PICK = {}; hideSteps();
+    DATA = data; FOCUS = null; hideSteps();
+    PICK = Object.fromEntries(Object.entries(data.prefer || {}).filter(([k]) => ["storage", "colour", "size", "pack"].includes(k)));
     if (!data.offers.filter(o => !o.is_ref).length) { note(`No offers with photos came back for "${esc(data.query)}". Try a more common product name.`); return; }
     render(bestSeed());
     $("#results").scrollIntoView({ behavior: "smooth" });

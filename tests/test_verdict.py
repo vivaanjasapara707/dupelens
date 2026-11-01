@@ -104,3 +104,16 @@ def test_store_tiers_and_condition():
     assert condition("Apple iPhone 15 pro, 128GB / Black Titanium / Excellent", "Shop") == "refurbished"
     assert condition("OnePlus Nord CE4 (128 GB)", "GudFast") == "refurbished"
     assert condition("Apple iPhone 16 (128 GB)", "Croma") == "new"
+
+
+def test_query_match_exact_product_only():
+    from src.verdict import query_match as m
+    assert m("iphone 18", "Apple iPhone 18 (256 GB) - Black") == "exact"
+    assert m("iphone 18", "Apple iPhone 18 Pro") == "related"
+    assert m("iphone 18", "iPhone 18e") == "related"
+    assert m("iphone 18", "Silicone Case for iPhone 18") == "accessory"
+    assert m("iphone 16 pro", "iPhone 16 - Apple (IN)") == "related"
+    assert m("Sony WH-1000XM5 headphones", "Sony WF-1000XM5 Wireless Headphones") == "related"
+    assert m("Philips BT3221 beard trimmer", "Philips Beardtrimmer Series 3000 BT3221/15") == "exact"
+    assert m("Dettol original liquid handwash 200 ml", "Dettol Skincare Liquid Handwash") == "related"
+    assert m("Pigeon electric kettle 1.5 litre", "Pigeon Hot Electric Kettle 1.5 L") == "exact"

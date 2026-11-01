@@ -209,3 +209,7 @@ details.table td.n, details.table th.n { text-align: right; font-variant-numeric
 .xray-imgs { display: flex; gap: 4px; } .xray-imgs img { width: 33%; aspect-ratio: 1; image-rendering: pixelated; border-radius: 8px; background: #fff; }
 .xray-meta { font-size: 12.5px; } .xray-meta .sbar { height: 6px; background: var(--bg); border-radius: 99px; overflow: hidden; margin: 3px 0 4px; }
 .xray-meta .sbar i { display: block; height: 100%; background: linear-gradient(90deg, var(--accent), var(--warn)); border-radius: 99px; }
+
+.ph-store { display: grid; place-items: center; background: linear-gradient(135deg, #1b3558, #10233c); color: var(--ink);
+  font-weight: 700; font-size: 12px; text-align: center; border: 1px solid var(--line); }
+.ph-store.big { width: 150px; font-size: 20px; }

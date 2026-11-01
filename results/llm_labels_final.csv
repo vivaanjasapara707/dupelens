@@ -23,3 +23,6 @@ L020,different,"Listing A is a book titled 'Mastering Casio FX-991ES Plus', whil
 L021,same,Both listings feature the same Noise 20000 mAh power bank model with a built-in cable and matching gold/silver color finish.,qwen/qwen3.8-27b
 L022,variant,"The listings are for different models within the same product line, specifically the 'Popular' (stainless steel) versus the 'Popular Plus' (virgin aluminium).",qwen/qwen3.8-27b
 L023,variant,The listings are for different product lines within the Vaseline Intensive Care range (Deep Restore vs. Deep Moisture) and different pack sizes.,qwen/qwen3.8-27b
+L024,different,"Listing A is a calculator with a built-in e-ink writing pad, while Listing B is a book about using a standard Casio calculator.",qwen/qwen3.8-27b
+L025,variant,"The listings feature different models of the same product line, specifically differing in capacity (20000mAh vs 10000mAh) and port configuration.",qwen/qwen3.8-27b
+L026,same,Both listings feature the Vaseline Deep Moisture body lotion in the same 400 ml size with identical packaging.,qwen/qwen3.8-27b

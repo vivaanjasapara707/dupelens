@@ -35,7 +35,7 @@ from src import config
 from src.extra import colour_dist
 from src.numtokens import compare, extract
 from src.verdict import (classify, colour_conflict, colours, combo_mismatch, is_accessory, model_conflict,
-                         name_levels, pack_mismatch, size_conflict, storage_unconfirmed)
+                         name_levels, pack_mismatch, query_match, size_conflict, storage_unconfirmed)
 
 SERPER = "https://google.serper.dev/"
 LIVE_CACHE = config.CACHE_DIR / "live"
@@ -145,8 +145,13 @@ def store_tier(store, title):
 
 
 def condition(title, store):
-    """'refurbished' when the title says refurbished / used / renewed / graded, or the seller deals in them."""
-    return "refurbished" if REFURB_WORDS.search(title or "") or REFURB_STORES.search(store or "") else "new"
+    """'refurbished' when the title says refurbished / used / renewed / graded, or the seller deals in them;
+    'bulk' for wholesale lots ("1000 Pieces iPhone 16 Pro", "MOQ 10"); else 'new'."""
+    if REFURB_WORDS.search(title or "") or REFURB_STORES.search(store or ""):
+        return "refurbished"
+    if re.search(r"\b(?:\d{2,}\s?(?:pieces|pcs|units)|moq|bulk|lot of \d+)\b", (title or "").lower()):
+        return "bulk"
+    return "new"
 
 
 def parse_price(text):
@@ -368,6 +373,66 @@ def group_offers(V, order):
     return groups
 
 
+# Store websites whose product pages may be added from Google web search (exact product links with prices).
+STORE_DOMAINS = {"amazon.in": ("Amazon", "big"), "flipkart.com": ("Flipkart", "big"), "croma.com": ("Croma", "big"),
+                 "reliancedigital.in": ("Reliance Digital", "big"), "jiomart.com": ("JioMart", "big"),
+                 "tatacliq.com": ("Tata CLiQ", "big"), "vijaysales.com": ("Vijay Sales", "big"), "myntra.com": ("Myntra", "big"),
+                 "nykaa.com": ("Nykaa", "big"), "bigbasket.com": ("BigBasket", "big"), "blinkit.com": ("Blinkit", "big"),
+                 "ajio.com": ("AJIO", "big"), "snapdeal.com": ("Snapdeal", "big"), "pharmeasy.in": ("PharmEasy", "big"),
+                 "1mg.com": ("Tata 1mg", "big"), "decathlon.in": ("Decathlon", "big"), "apple.com": ("Apple Store", "brand"),
+                 "samsung.com": ("Samsung", "brand"), "mi.com": ("Xiaomi", "brand"), "oneplus.in": ("OnePlus", "brand"),
+                 "boat-lifestyle.com": ("boAt", "brand"), "iplanet.one": ("iPlanet (Apple Premium Reseller)", "authorised"),
+                 "imagineonline.store": ("Imagine (Apple Premium Reseller)", "authorised"),
+                 "unicornstore.in": ("Unicorn (Apple Premium Reseller)", "authorised")}
+SNIPPET_PRICE = re.compile(r"(?:₹|rs\.?|inr)\s?([\d,]+(?:\.\d+)?)(\s*(?:/|per)\s*(?:mo|month)\w*)?", re.IGNORECASE)
+NOT_A_PRICE = re.compile(r"emi|/mo|month|off\b|discount|cashback|exchange|bonus|save|saving|coupon|upto|up to", re.IGNORECASE)
+NOT_A_PRODUCT_PAGE = re.compile(r"blog|news|article|resource-center|unboxed|review|compare|specification|/specs|"
+                                r"price-in-india|/c/|/stories/|/guide", re.IGNORECASE)
+
+
+def snippet_price(snippet):
+    """First rupee amount in a Google snippet that is not an EMI, discount, cashback or exchange amount."""
+    for m in SNIPPET_PRICE.finditer(snippet or ""):
+        before, after = snippet[max(0, m.start() - 20):m.start()], snippet[m.end():m.end() + 12]
+        if m.group(2) or NOT_A_PRICE.search(before) or re.match(r"\s*(?:off|cashback|discount|instant|bank|emi)", after, re.IGNORECASE):
+            continue
+        value = parse_price(m.group(1))
+        if value and value >= 10:
+            return value
+    return None
+
+
+def store_pages(query, typical=None):
+    """Exact product pages on big / official store websites from Google web search (1 Serper credit): the link goes
+    straight to the product, the price is read from the page snippet Google shows (confirm on the page)."""
+    try:
+        hits = serper("search", {"q": f"{query} price", "gl": "in", "hl": "en", "num": 20}).get("organic", [])
+    except Exception:
+        return []
+    out, seen = [], set()
+    for h in hits:
+        host = urlparse(h.get("link", "")).netloc.lower().removeprefix("www.")
+        site = next((v for d, v in STORE_DOMAINS.items() if host == d or host.endswith("." + d)), None)
+        title = clean_title(h.get("title", "")) or h.get("title", "")
+        if not site or NOT_A_PRODUCT_PAGE.search(h.get("link", "")) or query_match(query, title) != "exact" \
+                or condition(title, site[0]) != "new":
+            continue
+        price = snippet_price(h.get("snippet", ""))
+        # a snippet price far from what the shopping listings of this exact model cost is probably something else
+        if price and typical and not 0.5 * typical <= price <= 2 * typical:
+            price = None
+        key = (site[0], title.lower())
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append(dict(title=title, store=site[0], price=f"₹{price:,.0f}" if price else None, price_value=price,
+                        link=h["link"], image=None, rating=h.get("rating"), rating_count=None, delivery=None,
+                        known=True, tier=site[1], condition="new", accessory=False, attrs=attributes(title),
+                        match="exact", source="store page",
+                        price_note="from" if re.search(r"\bfrom\b|\bstarts?\b", h.get("snippet", ""), re.IGNORECASE) else None))
+    return out
+
+
 def search(matcher, text=None, image_bytes=None, image_url=None, num=40, vectors=False, tag=None):
     """Full live search -> JSON-ready dict for the website."""
     t = {"start": time.time()}
@@ -402,7 +467,9 @@ def search(matcher, text=None, image_bytes=None, image_url=None, num=40, vectors
                    delivery=raw[i].get("delivery"), known=store_tier(raw[i].get("source"), raw[i]["title"]) != "other",
                    tier=store_tier(raw[i].get("source"), raw[i]["title"]),
                    condition=condition(raw[i]["title"], raw[i].get("source")),
-                   accessory=is_accessory(raw[i]["title"]), attrs=attributes(raw[i]["title"]))
+                   accessory=is_accessory(raw[i]["title"]), attrs=attributes(raw[i]["title"]),
+                   # what the user typed is the reference for name / link searches (not for photos: Lens only guesses)
+                   match=query_match(inp["query"], raw[i]["title"]) if inp["mode"] != "photo" else None)
               for i in keep]
     photos = [photos[i] for i in keep]
     if inp["ref_photo"]:  # the user's own photo is item 0, compared with every offer like a listing
@@ -431,8 +498,31 @@ def search(matcher, text=None, image_bytes=None, image_url=None, num=40, vectors
         if vectors:  # 64-number retrieval vectors (PCA 32 + 32), for the cross-search PCA map in src/insights.py
             out["vectors"] = np.round(ret, 5).tolist()
         t["score"] = time.time()
+    # Big-store product pages for name / link searches: added AFTER the model scored the shopping offers (they have
+    # no photo); matched to the search by name only, so their "probability" is -1 (shown as "matched by name").
+    if inp["mode"] != "photo" and tag is None and out.get("verdict"):
+        exact_prices = [o["price_value"] for o in offers if o.get("match") == "exact" and o.get("price_value")
+                        and o.get("condition") == "new" and not o.get("accessory")]
+        pages = store_pages(inp["query"], float(np.median(exact_prices)) if len(exact_prices) >= 3 else None)
+        n = len(offers)
+        for k, pg in enumerate(pages):
+            offers.append(pg)
+            for i, row in enumerate(out["verdict"]):
+                row.append("V" if offers[i].get("match") == "exact" else "D")
+                out["prob"][i].append(-1)
+                if out.get("prob_cal"):
+                    out["prob_cal"][i].append(-1)
+        m = len(pages)
+        for k in range(m):
+            out["verdict"].append([out["verdict"][i][n + k] for i in range(n)] + ["S" if a == k else "V" for a in range(m)])
+            out["prob"].append([-1] * (n + m))
+            if out.get("prob_cal"):
+                out["prob_cal"].append([-1] * (n + m))
+        out["store_pages"] = m
+        t["pages"] = time.time()
+    out["prefer"] = attributes(inp["query"]) if inp["mode"] != "photo" else {}
     names = {"offers": "Find offers", "photos": "Download photos", "encode": "Neural networks read photos + titles",
-             "score": "Model scores every pair"}
+             "score": "Model scores every pair", "pages": "Big-store product pages"}
     keys = list(t)
     out["timing"] = [dict(step=names[k], seconds=round(t[k] - t[keys[i]], 2)) for i, k in enumerate(keys[1:])]
     out["seconds"] = round(time.time() - t["start"], 2)

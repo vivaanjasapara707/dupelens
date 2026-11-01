@@ -37,6 +37,65 @@ def combo_mismatch(title_a, title_b):
     return bool(COMBO.search(title_a)) != bool(COMBO.search(title_b))
 
 
+GENERIC = {"price", "buy", "online", "new", "latest", "best", "india", "in", "with", "and", "for", "the",
+           "of", "phone", "smartphone", "mobile", "cheap", "deal", "offer", "lowest", "apple", "by"}
+
+
+def _tokens(text):
+    """Lower-case word tokens; '128 GB' -> '128gb' so sizes are one token."""
+    t = re.sub(r"(\d)\s+(gb|tb|ml|litres?|liters?|ltrs?|l|gms?|g|kg|watts?|w|mah|mm|cm|inch)\b", r"\1\2", text.lower())
+    t = re.sub(r"\b([a-z]+)-(\d[a-z0-9]*)\b", r"\1\2", t)   # a hyphenated model code is one token: WH-1000XM5
+    t = re.sub(r"/\d+\b", "", t)                             # region suffix: BT3221/15 -> BT3221
+    return re.findall(r"\d+(?:\.\d+)?[a-z]*|[a-z]+[a-z0-9]*", t)   # keeps 1.5litre and 18e together
+
+
+def query_parts(query):
+    """The words that identify the product in a search: brand / model words and model numbers. Sizes such as
+    128GB are preferences (pre-selected in the variant filter), not identity."""
+    toks = [w for w in _tokens(query) if w not in GENERIC and not SPEC.match(w) and w not in ("5g", "4g")]
+    return [w for w in toks if any(c.isdigit() for c in w)], [w for w in toks if w.isalpha()]
+
+
+def query_match(query, title):
+    """How a listing title relates to what the user searched for:
+      'exact'     names the searched product: every model number of the search, (nearly) every model word,
+                  and no extra model word the search did not ask for (Pro, Max, Plus, Mini, Ultra, Lite, Neo,
+                  FE, ...) and no letter-suffixed number (18e when the search says 18);
+      'accessory' an accessory or spare part for it (case, cover, "... for iPhone 18");
+      'related'   another model of the same brand or line (iPhone 18 Pro for "iPhone 18");
+      'other'     anything else.
+    """
+    nums, words = query_parts(query)
+    tt = _tokens(title)
+    ts = set(tt)
+    if not nums and not words:
+        return "other"
+    compact = "".join(tt)
+    # moisturising ~ moisturizing; "beard" inside "Beardtrimmer"
+    word_hit = lambda w: w in ts or (len(w) >= 4 and w in compact) or any(len(w) >= 5 and t[:6] == w[:6] for t in ts)
+    have_nums = all(n in ts for n in nums)                     # model NUMBERS / codes must all match
+    hits = sum(word_hit(w) for w in words)
+    if nums:   # a model code identifies the product; the other words only need to half-match
+        need = max(1, int(np.ceil(0.5 * len(words))))
+    else:      # no model number: the words are the identity (Dettol Original vs Dettol Skincare)
+        need = len(words) if len(words) <= 4 else int(np.ceil(0.8 * len(words)))
+    related = (bool(words) and word_hit(words[0])) or (bool(nums) and any(n in ts for n in nums))
+    # accessory: accessory words, or the searched model named only after "for" ("Flipkart SmartBuy for iPhone 16")
+    before_for = tt[:tt.index("for")] if "for" in tt else tt
+    if is_accessory(title) or ("for" in tt and nums and not any(n in before_for for n in nums)):
+        return "accessory" if related else "other"
+    # model words the user asked for (Pro, Max, Plus, ...) must be there: "iPhone 16" is not "iPhone 16 Pro"
+    asked_variant = set(words) & VARIANT_WORDS
+    if not (have_nums and hits >= need and asked_variant <= ts):
+        return "related" if related else "other"
+    extra_variant = (ts & VARIANT_WORDS) - set(words)
+    suffixed = any(re.fullmatch(r"(\d+)[a-z]{1,2}", t) and re.fullmatch(r"(\d+)[a-z]{1,2}", t).group(1) in nums
+                   and t not in nums and not SPEC.match(t) and t not in ("5g", "4g") for t in ts)
+    if extra_variant or suffixed:
+        return "related"
+    return "exact"
+
+
 def is_accessory(title):
     """True when the listing is an accessory or spare part (case, cover, replacement ...), not the product."""
     return bool(set(re.findall(r"[a-z]+", title.lower())) & ACCESSORY_WORDS)
