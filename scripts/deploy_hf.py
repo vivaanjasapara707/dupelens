@@ -45,7 +45,9 @@ def main():
                       ignore_patterns=[".git/*", ".venv/*", ".env*", ".claude/*", "data/*", "cache/live/*", "cache/insights/*",
                                        "cache/uploads/*", "results/labelling/*", "notebooks/*", "**/__pycache__/*", "README.md"])
     api.upload_file(path_or_fileobj=SPACE_README.encode(), path_in_repo="README.md", repo_id=repo, repo_type="space")
-    print(f"Deployed: https://huggingface.co/spaces/{repo}  (the app: https://{repo.replace('/', '-').lower()}.hf.space)")
+    app_url = f"https://{repo.replace('/', '-').replace('_', '-').lower()}.hf.space"
+    print(f"Deployed: https://huggingface.co/spaces/{repo}  (the app: {app_url})")
+    print(f"Website on Vercel with the live API:  python scripts/deploy_vercel.py {app_url}")
 
 
 if __name__ == "__main__":

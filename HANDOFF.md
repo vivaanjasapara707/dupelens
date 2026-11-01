@@ -245,6 +245,15 @@ Affiliate API for a fresh Indian catalog once the user has an affiliate account.
   History keeps Krish's 8 commits under his name (not rewritten).
   Buy-now-or-wait data: no free daily Indian price-history dataset found; Keepa API (paid, from ~EUR 49/month per
   a July-2026 review, amazon.in API coverage unconfirmed) or own daily collection (tracker) for weeks.
+- 2026-11-01: GROQ_API_KEY in .env; assistant answers (tested). Second labeller running in background
+  (src.llm_labels --label, qwen/qwen3.8-27b, ~1 pair/min on the free tier, resumable; then --stats for kappa).
+  Photo X-ray (src/photo_xray.py, /api/xray, card on the search page): 48x48 cut-outs, pixel PCA -> mean photo,
+  eigen-images, leave-one-out rebuild + residual heatmap; odd-one-out = robust z of leave-one-out PCA residual on
+  DINOv2 vectors (z > 2.5 flagged). Injection test, 48 searches: different-product intruder top-1 0.958
+  [0.896, 1.0] (pixel 0.542, chance 0.124); same-search look-alike 0.312 [0.167, 0.458] (pixel 0.229).
+  45 tests. Vercel: scripts/deploy_vercel.py (pages on Vercel, /api/* rewritten to the HF Space; needs
+  VERCEL_TOKEN); models cannot run on Vercel (3.3 GB). Still needed from user: empty GitHub repo, HF_TOKEN,
+  VERCEL_TOKEN (optional Kaggle token, Keepa or Serper top-up, Telegram).
   NEXT (user said: deploy LAST): Hugging Face Spaces (needs user's HF account + write
   token; set SERPER_API_KEY as a Space secret and PUBLIC_URL for photo upload), update Vercel static site, push to
   GitHub (ask first).

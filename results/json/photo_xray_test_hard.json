@@ -12,7 +12,7 @@
  ],
  "dino_flagged_z_over_2_5": 0.25,
  "chance_mean": 0.124,
- "method": "one photo of an offer from a different search added to each main listing; success = it gets the highest leave-one-out PCA residual; CIs resample searches",
+ "method": "one look-alike from the same search (kept out of the listing by the model) added to each main listing; success = it gets the highest leave-one-out PCA residual; CIs resample searches",
  "rows": [
   {
    "query": "boAt Rockerz 255 Pro Plus",
