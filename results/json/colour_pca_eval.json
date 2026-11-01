@@ -1,0 +1,55 @@
+{
+ "final": {
+  "pairs": 40,
+  "removed_by_colour": 8,
+  "removed_that_were_not_identical": 3,
+  "removed_that_were_identical": 5,
+  "before": {
+   "n": 40,
+   "hits": 23,
+   "rate": 0.575,
+   "searches": 8,
+   "ci_search_bootstrap": [
+    0.286,
+    0.814
+   ]
+  },
+  "after": {
+   "n": 32,
+   "hits": 18,
+   "rate": 0.562,
+   "searches": 7,
+   "ci_search_bootstrap": [
+    0.346,
+    0.771
+   ]
+  }
+ },
+ "round4": {
+  "pairs": 40,
+  "removed_by_colour": 17,
+  "removed_that_were_not_identical": 12,
+  "removed_that_were_identical": 5,
+  "before": {
+   "n": 40,
+   "hits": 13,
+   "rate": 0.325,
+   "searches": 7,
+   "ci_search_bootstrap": [
+    0.162,
+    0.6
+   ]
+  },
+  "after": {
+   "n": 23,
+   "hits": 8,
+   "rate": 0.348,
+   "searches": 7,
+   "ci_search_bootstrap": [
+    0.167,
+    0.5
+   ]
+  }
+ },
+ "labels": "Claude, an AI assistant, not humans"
+}

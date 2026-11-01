@@ -117,3 +117,9 @@ def test_query_match_exact_product_only():
     assert m("Philips BT3221 beard trimmer", "Philips Beardtrimmer Series 3000 BT3221/15") == "exact"
     assert m("Dettol original liquid handwash 200 ml", "Dettol Skincare Liquid Handwash") == "related"
     assert m("Pigeon electric kettle 1.5 litre", "Pigeon Hot Electric Kettle 1.5 L") == "exact"
+
+
+def test_name_before_model_number_must_match():
+    from src.verdict import query_match as m
+    assert m("boAt Airdopes 141", "boAt Immortal 141 TWS Gaming Earbuds") == "related"
+    assert m("boAt Airdopes 141", "boAt Airdopes 141 True Wireless") == "exact"

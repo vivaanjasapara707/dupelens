@@ -86,7 +86,10 @@ def query_match(query, title):
         return "accessory" if related else "other"
     # model words the user asked for (Pro, Max, Plus, ...) must be there: "iPhone 16" is not "iPhone 16 Pro"
     asked_variant = set(words) & VARIANT_WORDS
-    if not (have_nums and hits >= need and asked_variant <= ts):
+    # the name in front of each model number must be there too: "Airdopes 141" is not "Immortal 141"
+    qt = [w for w in _tokens(query) if w not in GENERIC]
+    anchors = {qt[i - 1] for i, w in enumerate(qt) if w in nums and i > 0 and qt[i - 1].isalpha()}
+    if not (have_nums and hits >= need and asked_variant <= ts and all(word_hit(a) for a in anchors)):
         return "related" if related else "other"
     extra_variant = (ts & VARIANT_WORDS) - set(words)
     suffixed = any(re.fullmatch(r"(\d+)[a-z]{1,2}", t) and re.fullmatch(r"(\d+)[a-z]{1,2}", t).group(1) in nums

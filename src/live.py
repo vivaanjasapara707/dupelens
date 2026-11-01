@@ -495,6 +495,25 @@ def search(matcher, text=None, image_bytes=None, image_url=None, num=40, vectors
         out["verdict_lr"] = [[v[0].upper() for v in row] for row in V_lr]  # model + v2 rules only (ablation)
         out["features"] = {f: np.round(m, 3).tolist() for f, m in F.items()}
         out["pca_xy"], out["pca_share"] = pca_map(ret)
+        # Bait-listing detector (PCA): among listings whose TITLE names the searched product, a photo that the other
+        # listings' main PCA directions cannot rebuild (DINOv2 features, leave-one-out, robust z > 2.5) shows
+        # something else: flagged, never the best price. Injection test: results/json/photo_xray_test*.json.
+        from src.photo_xray import loo_residuals, robust_z
+        exact = [i for i, o in enumerate(offers) if o.get("match") == "exact"]
+        if len(exact) >= 5:
+            D = np.asarray(sig["dino"], dtype=np.float64)[exact]
+            z = robust_z(np.sqrt((loo_residuals(D, min(3, len(exact) - 2)) ** 2).sum(1)))
+            for i, zi in zip(exact, z):
+                offers[i]["photo_z"] = round(float(zi), 2)
+                offers[i]["photo_mismatch"] = bool(zi > 2.5)
+        # PCA Colour Decoder: colour of the product in each photo (a filter; it did not help as a same-item rule)
+        from src.colour_pca import decode_offers
+        col = decode_offers(photos)
+        if col:
+            for i, o in enumerate(offers):
+                if col["group"][i] >= 0:
+                    o["photo_colour"], o["photo_swatch"] = col["groups"][col["group"][i]]["name"], col["swatch"][i]
+            out["colour_groups"] = col["groups"]
         if vectors:  # 64-number retrieval vectors (PCA 32 + 32), for the cross-search PCA map in src/insights.py
             out["vectors"] = np.round(ret, 5).tolist()
         t["score"] = time.time()

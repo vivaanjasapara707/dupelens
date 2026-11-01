@@ -269,6 +269,19 @@ Affiliate API for a fresh Indian catalog once the user has an affiliate account.
   Amazon/Flipkart/Croma/Reliance search buttons and shows the cheapest risky options with warnings. Smart fallback
   search: when < 2 trusted new offers, also query "<q> amazon" and "<q> flipkart" (4 credits; out["extra_search"]).
   List order: trusted new, other new, refurbished, suspicious. Assistant told the same. 47 tests.
+- 2026-11-01: user: "search must show THAT product only (iPhone 18 showed 18 Pro on top); exact product links;
+  a PCA feature that actually solves something". Done: verdict.query_match (exact / related / accessory / other,
+  anchored on the typed query; hyphen codes one token; /15 region suffix dropped; model-number anchor word
+  required; "for <model>" = accessory); page: exact mode (list = exact offers), "Related products" card, not-found
+  card, PICK preset from sizes in the query. live.store_pages: Google web search (1 credit) -> exact product pages
+  on big/official domains with snippet prices (EMI/exchange skipped; outside 0.5-2x the exact median -> no price);
+  appended after model scoring with prob -1 ("matched by name"). condition 'bulk' (1000 pieces, MOQ).
+  PCA bait-listing check (live.search): LOO PCA residual on DINOv2 among exact offers, z > 2.5 -> photo_mismatch,
+  excluded from best price (flagged merova.in logo photo; Immortal 141 exposed the anchor-word bug, fixed).
+  PCA Colour Decoder (src/colour_pca.py): Lab profiles -> PCA -> k-means by silhouette -> named colours; eval as a
+  same-item rule (colour_pca_eval.json) did NOT help (final 0.575 -> 0.562; round4 0.325 -> 0.348) -> filter only.
+  Second labeller partial: 27 pairs, kappa same-vs-not 0.899, 3-class 0.467 (resuming in background). 49 tests.
+  All of this is after round 4: a fresh round 5 is needed before quoting accuracy for the new search.
   NEXT (user said: deploy LAST): Hugging Face Spaces (needs user's HF account + write
   token; set SERPER_API_KEY as a Space secret and PUBLIC_URL for photo upload), update Vercel static site, push to
   GitHub (ask first).

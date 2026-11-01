@@ -183,8 +183,9 @@ function bestSeed() {
   }
   return best;
 }
-const ATTRS = [["storage", "Storage"], ["colour", "Colour"], ["size", "Size"], ["pack", "Pack"]];
-const matchesPick = o => Object.entries(PICK).every(([k, v]) => !v || (o.attrs || {})[k] === v || !(o.attrs || {})[k]);
+const ATTRS = [["storage", "Storage"], ["colour", "Colour (title)"], ["photo_colour", "Colour (from photo, PCA)"], ["size", "Size"], ["pack", "Pack"]];
+const attrOf = (o, k) => k === "photo_colour" ? o.photo_colour : (o.attrs || {})[k];
+const matchesPick = o => Object.entries(PICK).every(([k, v]) => !v || attrOf(o, k) === v || !attrOf(o, k));
 
 // ---------- grouping around one offer (same rule as src/live.py) ----------
 let SORT = "price";   // "price": cheapest first, big stores before small ones; "score": the sort-order score
@@ -204,7 +205,7 @@ function groupAround(seed) {
   const scored = shown.map(j => ({ j, ...sellerScore(O[j], j === seed ? 1 : sameProb(seed, j) < 0 ? 0.85 : sameProb(seed, j), typical) }));
   // a price far below the typical price, an accessory or a missing price can never be the best price
   // a price far below the typical price, an accessory, a refurbished/used listing or a missing price is never the best price
-  const ok = x => !x.suspicious && !O[x.j].accessory && O[x.j].price_value != null && (O[x.j].condition || "new") === "new";
+  const ok = x => !x.suspicious && !O[x.j].accessory && O[x.j].price_value != null && (O[x.j].condition || "new") === "new" && !O[x.j].photo_mismatch;
   const byPrice = (a, b) => O[a.j].price_value - O[b.j].price_value;
   // best price only from a trusted store (big store, authorised reseller, brand store), new, not suspicious
   const top = scored.filter(x => ok(x) && isKnown(O[x.j])).sort(byPrice)[0] || null;
@@ -229,12 +230,12 @@ function variantChips(g) {
   const O = DATA.offers, rows = [];
   for (const [key, name] of ATTRS) {
     const counts = {};
-    g.listing.forEach(j => { const v = (O[j].attrs || {})[key]; if (v) counts[v] = (counts[v] || 0) + 1; });
+    g.listing.forEach(j => { const v = attrOf(O[j], key); if (v) counts[v] = (counts[v] || 0) + 1; });
     const vals = Object.entries(counts).sort((a, b) => b[1] - a[1]);
     if (vals.length < 2 && !PICK[key]) continue;
     rows.push(`<div class="seg" style="margin:10px 0 0"><span class="hint" style="margin:0 6px 0 0;align-self:center">${name}:</span>
       <button type="button" data-attr="${key}" data-val="" aria-pressed="${!PICK[key]}">All</button>
-      ${vals.map(([v, c]) => `<button type="button" data-attr="${key}" data-val="${esc(v)}" aria-pressed="${PICK[key] === v}">${esc(v)} (${c})</button>`).join("")}</div>`);
+      ${vals.map(([v, c]) => `<button type="button" data-attr="${key}" data-val="${esc(v)}" aria-pressed="${PICK[key] === v}">${key === "photo_colour" ? `<i class="sw" style="background:${esc((DATA.colour_groups || []).find(x => x.name === v)?.hex || "#888")}"></i>` : ""}${esc(v)} (${c})</button>`).join("")}</div>`);
   }
   return rows.length ? `<div>${rows.join("")}<div class="hint" style="margin:6px 0 0">Listings that do not state a value stay in the list.</div></div>` : "";
 }
@@ -343,7 +344,7 @@ function render(seed) {
   $("#same-sub").innerHTML = `<div class="seg" style="margin:0 0 8px"><span class="hint" style="margin:0 6px 0 0;align-self:center">Order:</span>
       <button type="button" data-sort="price" aria-pressed="${SORT === "price"}">Cheapest first (big stores before small)</button>
       <button type="button" data-sort="score" aria-pressed="${SORT === "score"}">Sort-order score</button></div>` +
-    "Best price = the cheapest listing from a big store, never one priced more than 40% below the typical price (that is a warning sign: often a different, used or fake item). Sort-order score = how sure the model is it's the same item (35) + fair price (25) + star rating (15) + number of reviews (10) + well-known store (15)." +
+    "Best price = the cheapest new listing from a big store; never one priced more than 40% below the typical price, a refurbished or bulk listing, or one whose photo does not match the product (PCA bait-listing check: in tests it caught a wrong product's photo 95.8% of the time). Sort-order score = how sure the model is it's the same item (35) + fair price (25) + star rating (15) + number of reviews (10) + well-known store (15)." +
     (g.hidden > 0 ? ` <b>${g.hidden} listing${g.hidden > 1 ? "s" : ""} from less-known stores hidden.</b> <button class="linkbtn" id="show-all" type="button">Show them</button>` : "") +
     variantChips(g);
   if (g.hidden > 0) $("#show-all").onclick = () => { ONLY_KNOWN = false; render(seed); };
@@ -364,6 +365,8 @@ function render(seed) {
     pills.push(isKnown(o) ? `<span class="pill">${TIER[o.tier] || "Big store"}</span>` : `<span class="pill warn">Less-known store</span>`);
     if (o.condition === "refurbished") pills.push(`<span class="pill warn">Refurbished / used</span>`);
     if (o.condition === "bulk") pills.push(`<span class="pill warn">Bulk / wholesale lot</span>`);
+    if (o.photo_mismatch) pills.push(`<span class="pill warn" title="The title names this product but its photo is unlike the other listings of it (PCA bait-listing check): it may show another item or colour, a logo, or a stock image">Photo unlike the other listings: check it is the right item</span>`);
+    if (o.photo_colour) pills.push(`<span class="pill"><i class="sw" style="background:${esc(o.photo_swatch)}"></i>photo: ${esc(o.photo_colour)}</span>`);
     return `<div class="row ${top && s.j === top.j ? "top" : ""}">
       <div class="rk">${k + 1}</div>
       ${photo(o)}

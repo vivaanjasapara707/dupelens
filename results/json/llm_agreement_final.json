@@ -1,0 +1,26 @@
+{
+ "model": "qwen/qwen3.8-27b",
+ "pairs": 27,
+ "kappa_3class": 0.467,
+ "kappa_same_vs_not": 0.899,
+ "raw_agreement": "17/27",
+ "confusion": {
+  "different": {
+   "different": 4,
+   "same": 0,
+   "variant": 0
+  },
+  "same": {
+   "different": 0,
+   "same": 6,
+   "variant": 1
+  },
+  "variant": {
+   "different": 9,
+   "same": 0,
+   "variant": 7
+  }
+ },
+ "model_same_precision_llm_labels": "7/13",
+ "model_same_precision_on_agreed_pairs": "6/10"
+}
