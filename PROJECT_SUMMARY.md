@@ -37,7 +37,7 @@ prices, and search results mix in look-alikes (other models, colours, pack sizes
 - **Offers:** up to 40 per search from Google Shopping India, via the paid-per-call Serper API (free tier
   2,500 credits; a search costs 2 credits).
 - **Results:**
-  - **exact-item sellers:** ranked by a seller score, with fair price and price range
+  - **likely-same-item sellers:** listed in a sort order, with fair price and price range
   - **variants:** same product, another colour, size or pack
   - **look-alikes kept apart**
   - a "suspiciously cheap" flag when the price is more than 40% below the median
@@ -47,7 +47,7 @@ prices, and search results mix in look-alikes (other models, colours, pack sizes
   - 511 (55%) were classed as well-known: big retailers and marketplaces, quick-commerce apps, pharmacies, or the
     brand's own store.
   - The model still compares every offer; the filter only changes what is shown and recommended.
-- **Seller score:** a fixed hand-set rule, not learned.
+- **Sort order:** a fixed hand-set rule, not learned and not a trust rating.
   - Weights: model's same-item confidence 35, fair price 25, star rating 15, number of reviews 10, well-known store 15.
 - **Offline backup:** 6 example searches are saved for a demo without internet.
 - **Speed:** 2–5 s per search once models are loaded (measured 2.2–4.6 s on a Windows laptop CPU).
@@ -129,16 +129,16 @@ The test split was used exactly once.
 |---|---|---|---|
 | Tune | 8 | 20/40 | Rules were redesigned from these errors |
 | Test | 8 new | 4/40 (shades, scents, model-line names) | Rules were redesigned again, so this round is also tuning data |
-| **Final** | 8 new, rules frozen first, run once | **23/40 = 57.5%** (CI 40–72.5%) | Reported result |
+| **Final** | 8 new, rules frozen first, run once | **23/40 = 57.5%** (CI 28.6–81.4%) | Reported result |
 
 **Final round in full:**
 
 | Measure | Result | 95% CI |
 |---|---|---|
-| "Same" verdicts that are the identical item | 23/40 = 57.5% | 40–72.5% |
-| "Same" verdicts that are at least the same product line (identical or variant) | 33/40 = 82.5% | 67.5–95% |
-| Random pairs from the same search that are identical (naive baseline) | 3/30 = 10% | 0–23% |
-| Rejected look-alike pairs that were actually identical (misses) | 2/30 = 6.7% | 0–17% |
+| "Same" verdicts that are the identical item | 23/40 = 57.5% | 28.6–81.4% |
+| "Same" verdicts that are at least the same product line (identical or variant) | 33/40 = 82.5% | 63.9–94.3% |
+| Random pairs from the same search that are identical (naive baseline) | 3/30 = 10% | 3.4–15.4% |
+| Rejected look-alike pairs that were actually identical (misses) | 2/30 = 6.7% | 0–15.4% |
 
 **Caveats:**
 - The samples are small: 40/30/30 pairs.
@@ -177,7 +177,7 @@ The test split was used exactly once.
    Part of the gain comes from rules, not learning.
 4. **No model is fine-tuned on product-matching data.** The embeddings are used as is, and the logistic regression
    was trained on Shopee (Indonesian marketplace), not Indian listings.
-5. **The seller score weights are a design choice.** They are not validated against any outcome (returns, fraud,
+5. **The sort-order weights are a design choice.** They are not validated against any outcome (returns, fraud,
    satisfaction).
 6. **Data source:** Google Shopping via a third-party API (Serper).
    - It does not see every seller on Amazon or Flipkart.
@@ -192,3 +192,11 @@ The test split was used exactly once.
 - **Results:** `results/results.csv`, `results/json/live_eval_final.json`, `results/live_final_sheet.csv` with
   `cache/live_final_key.csv`
 - **Docs:** `README.md`, `HANDOFF.md` section 9
+
+## 11. Added after the first review (see README.md for every number and its file)
+- CIs for live metrics now resample whole searches (the table above uses them).
+- Ablation (final round): model alone 26.4% identical-item precision on 995 pairs (CI 7.8–49.5%) vs 57.5% with the rules on 171 pairs; 8 of 40 sampled removed pairs were identical.
+- Error analysis of the 17 wrong "same" verdicts (types assigned by Claude); identifier check (no GTIN/ASIN fields; model codes in 228/978 titles; 25/26 agreement on code-bearing pairs).
+- Store insights over 60 searches, a PCA product map (58.0% same-category nearest neighbours vs 12.1% chance), a price tracker with a rule-based buy-or-wait hint and alerts, a Groq-hosted assistant answering from on-screen data.
+- Deployment files (Dockerfile, Hugging Face Spaces script) and a GitHub Actions test workflow; 42 tests.
+- Pending: second labeller via a non-Anthropic vision model (script ready; needs a Groq key) and calibration on Shopee validation (script ready; needs the Kaggle data). Not deployed yet.

@@ -202,6 +202,34 @@ Affiliate API for a fresh Indian catalog once the user has an affiliate account.
   system prompt = answer only from that data, never invent numbers. POST /api/ask; card hidden until
   GROQ_API_KEY is in .env. config.env() reads keys. tests/test_assistant.py (38 tests pass). NOT yet tested
   against Groq (no key yet). PROJECT_SUMMARY.md = honest summary for an external reviewer.
+- 2026-11-01: external-review task list (user pasted it) + ideas 3,4,5,7,10 + UI polish. Done:
+  (2) src/identifiers.py: no GTIN/EAN/UPC/MPN/ASIN fields; productId 971 distinct of 978 (not cross-store);
+  model codes in 228/978 titles; final round 26/100 pairs with codes in both, 25/26 agree with Claude model-level.
+  (4) src/ablation.py: LR (M1_v2 + v2 rules) 995 same pairs, precision 0.264 [0.078, 0.495]; LR+rules 171, 0.575
+  [0.286, 0.814]; removed-by-rules sample 8/40 identical. New blind sheet results/ablation_sheet.csv (40 removed +
+  20 decoys), key cache/ablation_key.csv, counts results/ablation_counts.csv. live.py returns verdict_lr.
+  (5) live_eval stats now bootstrap SEARCHES: final S 23/40 [0.286, 0.814], same-or-variant 33/40 [0.639, 0.943],
+  R 3/30 [0.034, 0.154], H 2/30 [0, 0.154]; files live_eval_{tune,test,final}.json (old live_eval.json removed).
+  (7) results/error_analysis_final.csv (+json): colour 6, bundle 4, other model same line 4, formulation 1,
+  vague 1, hyphen code 1; misses: strict rule 1, variant 1.
+  (8) UI: "likely same item", "sort order"; AI context keys renamed to match; prompt updated.
+  (3) src/llm_labels.py READY, NOT RUN: Groq qwen/qwen3.8-27b (vision, checked docs 2026-11-01), titles+stores+photos
+  only; kappa + precision on agreed pairs. Needs GROQ_API_KEY.
+  (6) src/calibrate.py READY, NOT RUN: embeds Shopee VAL only, cross-fitted Platt/isotonic, reliability plot,
+  cache/calibrator_v2.joblib; live.calibrate() -> out["prob_cal"] used by the sort order. Needs Kaggle data.
+  Ideas: (5) src/insights.py 60 searches (cache/insights/, ~100 credits): middle-half spread median 37.9% [30.0,
+  69.6] (43 searches; max/min rejected, dominated by matching mistakes), Amazon cheaper than Flipkart 5/6 searches
+  (median -18.8%), cheapest-store counts; PCA product map 2,300 offers, first two directions 18.2%, 58.0% of 10
+  nearest map neighbours same category vs 12.1% chance. dashboard/insights.html (dataviz palette validated dark).
+  (4)+(10) src/tracker.py + dashboard/tracker.html: SQLite data/tracker.db, daily update (Serper tag=date slot),
+  rule-based buy/wait/hold + 7-day linear projection, alerts (target, >=5% drop) in-app + optional Telegram.
+  scripts/update_prices.bat; registering the Windows task was BLOCKED by the auto-mode classifier -> user runs the
+  schtasks line in the .bat. (7-idea) AI photo check NOT built yet (needs Groq vision; would need a 4th fresh round).
+  (3-idea) fine-tuning NOT done (needs Shopee data). UI: shared dashboard/style.css, sticky nav, hero, toasts.
+  Deploy: Dockerfile (CPU torch, encoders pre-downloaded, PORT 7860, PUBLIC_URL from SPACE_HOST),
+  scripts/deploy_hf.py (needs HF_TOKEN), .github/workflows/tests.yml. 42 tests pass. README rewritten from the
+  results files. PUSH FAILED: account vivaanjasapara707 has no write access to figureitoutwithkrish/dupelens.
+  NEXT: keys from user (GROQ_API_KEY, Kaggle token, HF_TOKEN), push route, then run llm_labels + calibrate, deploy.
   NEXT (user said: deploy LAST): Hugging Face Spaces (needs user's HF account + write
   token; set SERPER_API_KEY as a Space secret and PUBLIC_URL for photo upload), update Vercel static site, push to
   GitHub (ask first).
