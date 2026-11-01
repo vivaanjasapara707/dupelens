@@ -49,10 +49,11 @@ def api_key():
     return key
 
 
-def serper(endpoint, payload):
-    """One Serper call (shopping, lens or search); answers cached on disk by request."""
+def serper(endpoint, payload, tag=None):
+    """One Serper call (shopping, lens or search); answers cached on disk by request.
+    tag: a separate cache slot, e.g. the date for the daily price tracker (a fresh answer once per day)."""
     LIVE_CACHE.mkdir(parents=True, exist_ok=True)
-    key = hashlib.sha1(f"{endpoint}|{json.dumps(payload, sort_keys=True).lower()}".encode()).hexdigest()[:16]
+    key = hashlib.sha1(f"{endpoint}|{json.dumps(payload, sort_keys=True).lower()}{'|' + tag if tag else ''}".encode()).hexdigest()[:16]
     path = LIVE_CACHE / f"{endpoint}_{key}.json"
     if path.exists():
         return json.loads(path.read_text(encoding="utf-8"))
@@ -256,6 +257,21 @@ def score_pairs(matcher, sig, titles):
     return P, V, F, ret, V_lr
 
 
+CALIBRATOR = config.CACHE_DIR / "calibrator_v2.joblib"  # written by src/calibrate.py (Shopee validation)
+
+
+def calibrate(prob):
+    """Calibrated probability (Platt or isotonic, fitted on Shopee validation); None if not fitted yet."""
+    if not CALIBRATOR.exists():
+        return None
+    import joblib
+    cal = joblib.load(CALIBRATOR)
+    if cal["kind"] == "platt":
+        p = np.clip(prob, 1e-6, 1 - 1e-6)
+        return cal["model"].predict_proba(np.log(p / (1 - p)).reshape(-1, 1))[:, 1].reshape(prob.shape)
+    return cal["model"].predict(prob.ravel()).reshape(prob.shape)
+
+
 def pca_map(ret):
     """2-D map of the offers: PCA of their 64-number retrieval vectors (centred, top 2 directions)."""
     Z = ret - ret.mean(0)
@@ -280,13 +296,13 @@ def group_offers(V, order):
     return groups
 
 
-def search(matcher, text=None, image_bytes=None, image_url=None, num=40):
+def search(matcher, text=None, image_bytes=None, image_url=None, num=40, vectors=False, tag=None):
     """Full live search -> JSON-ready dict for the website."""
     t = {"start": time.time()}
     inp = understand(text, image_bytes, image_url)
     # One result page (40 offers). A second page was tried: it doubled cost and time and mostly added
     # accessories (cases, covers), not more sellers of the product.
-    raw = serper("shopping", {"q": inp["query"], "gl": "in", "hl": "en", "num": num}).get("shopping", [])
+    raw = serper("shopping", {"q": inp["query"], "gl": "in", "hl": "en", "num": num}, tag=tag).get("shopping", [])
     raw = [o for o in raw if o.get("title") and o.get("imageUrl")]
     t["offers"] = time.time()
     with ThreadPoolExecutor(16) as pool:
@@ -316,10 +332,14 @@ def search(matcher, text=None, image_bytes=None, image_url=None, num=40):
         order = sorted(range(len(offers)), key=lambda j: (not offers[j].get("is_ref"), -links[j], j))
         out["groups"] = group_offers(V, order)
         out["prob"] = np.round(P, 4).tolist()          # lets the page re-group around any offer the user clicks
+        cal = calibrate(P)
+        out["prob_cal"] = np.round(cal, 4).tolist() if cal is not None else None  # used for the sort order
         out["verdict"] = [[v[0].upper() for v in row] for row in V]  # S / V / D
         out["verdict_lr"] = [[v[0].upper() for v in row] for row in V_lr]  # model + v2 rules only (ablation)
         out["features"] = {f: np.round(m, 3).tolist() for f, m in F.items()}
         out["pca_xy"], out["pca_share"] = pca_map(ret)
+        if vectors:  # 64-number retrieval vectors (PCA 32 + 32), for the cross-search PCA map in src/insights.py
+            out["vectors"] = np.round(ret, 5).tolist()
         t["score"] = time.time()
     names = {"offers": "Find offers", "photos": "Download photos", "encode": "Neural networks read photos + titles",
              "score": "Model scores every pair"}

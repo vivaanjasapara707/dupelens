@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DupeLens Store Insights</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+  /* chart roles (validated: dataviz validate_palette.js, dark mode, surface #0D1B2A) */
+  .viz { --series-1: #3987e5; --series-2: #e66767; --muted-mark: #3a5068; --ink-2: #c3d2e2; }
+</style>
+</head>
+<body>
+<div class="topbar"><div class="in">
+  <div class="brand"><a href="./" style="display:flex;gap:12px;align-items:center"><div class="logo" aria-hidden="true">DL</div>DupeLens</a></div>
+  <nav class="navlinks"><a class="navlink" href="./">Search</a><a class="navlink active" href="insights.html">Store insights</a><a class="navlink" href="tracker.html">Price tracker</a><a class="navlink" href="evidence.html">How we tested</a></nav>
+  <span class="chip"><span class="dot" style="background:var(--accent-2)"></span><span id="when">Loading…</span></span>
+</div></div>
+<main class="viz">
+  <section class="page-head">
+    <h1>Store insights</h1>
+    <p id="lead">What DupeLens saw across many live searches: how far prices spread for the same item, which store was cheapest, and a PCA map of every offer.</p>
+  </section>
+
+  <section class="tiles" id="tiles"></section>
+
+  <section class="card">
+    <h2>PCA product map: every offer from every search</h2>
+    <p class="sub" id="pca-sub"></p>
+    <div class="seg" id="cats" role="group" aria-label="Highlight a category"></div>
+    <div class="chart" id="map"></div>
+    <details class="table"><summary>How this map is made</summary>
+      <p>Each offer's photo is read by CLIP (512 numbers) and its title by MPNet (768 numbers). The matching model uses PCA, fitted on 24,065 Shopee training listings, to compress each to 32 numbers (shrinkage-whitened), giving 64 numbers per offer. Here a second PCA over all offers keeps the 2 directions with the most variation, so each offer becomes a point. Points close together look alike to the model. PCA is unsupervised: it never saw the category colours.</p>
+    </details>
+  </section>
+
+  <section class="grid2">
+    <div class="card">
+      <h2>How much each PCA direction explains</h2>
+      <p class="sub">Share of the variation in the 64 numbers captured by each of the first 10 directions.</p>
+      <div class="chart" id="scree"></div>
+    </div>
+    <div class="card">
+      <h2>Which store was cheapest</h2>
+      <p class="sub" id="cheap-sub"></p>
+      <div class="chart" id="cheapest"></div>
+    </div>
+  </section>
+
+  <section class="grid2">
+    <div class="card">
+      <h2>Price spread for the same item, by category</h2>
+      <p class="sub">Median spread of the middle half of prices (75th vs 25th percentile) among offers the model calls the same item. Searches with 4+ prices.</p>
+      <div class="chart" id="spread"></div>
+      <details class="table" id="spread-table"><summary>Table</summary></details>
+    </div>
+    <div class="card">
+      <h2>Amazon vs Flipkart on the same item</h2>
+      <p class="sub" id="avf-sub"></p>
+      <div class="chart" id="avf"></div>
+      <details class="table" id="avf-table"><summary>Table</summary></details>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Read this before quoting a number</h2>
+    <p class="sub" style="margin:0" id="caveats"></p>
+  </section>
+</main>
+<div class="tip" id="tip"></div>
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const tip = $("#tip");
+function hover(root) {
+  root.querySelectorAll("[data-tip]").forEach(el => {
+    el.onmousemove = e => { tip.style.display = "block"; tip.style.left = Math.min(e.clientX + 12, innerWidth - 300) + "px"; tip.style.top = e.clientY + 12 + "px"; tip.innerHTML = el.dataset.tip; };
+    el.onmouseleave = () => tip.style.display = "none";
+  });
+}
+
+// Horizontal bars, one series: label, rounded data end, value written at the end.
+function hbars(el, rows, fmt, opts = {}) {
+  const W = 520, rowH = 30, left = opts.left ?? 170, right = 60, H = rows.length * rowH + 8;
+  const max = Math.max(...rows.map(r => Math.abs(r.v)), 1e-9);
+  const x = v => left + (W - left - right) * v / max;
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(opts.label || "bar chart")}">
+    <line class="axis" x1="${left}" x2="${left}" y1="0" y2="${H}"/>
+    ${rows.map((r, i) => { const y = 6 + i * rowH, w = Math.max(2, x(r.v) - left);
+      return `<text x="${left - 8}" y="${y + 15}" text-anchor="end" fill="var(--ink-2)">${esc(r.label)}</text>
+        <rect x="${left}" y="${y + 5}" width="${w}" height="14" rx="4" fill="var(--series-1)" data-tip="${esc(r.tip || r.label + ": " + fmt(r.v))}"/>
+        <text x="${left + w + 6}" y="${y + 16}" fill="var(--ink-2)">${fmt(r.v)}</text>`; }).join("")}
+  </svg>`;
+  hover(el);
+}
+
+fetch("data/insights.json").then(r => r.json()).then(D => {
+  const avf = D.amazon_vs_flipkart, sp = D.price_spread;
+  $("#when").textContent = `${D.searches} searches · ${D.offers.toLocaleString("en-IN")} offers`;
+  $("#lead").textContent = `What DupeLens saw across ${D.searches} live searches (${D.offers.toLocaleString("en-IN")} offers from Google Shopping India): how far prices spread for the same item, which store was cheapest, and a PCA map of every offer.`;
+  $("#tiles").innerHTML = [
+    [`${sp.median_spread_pct}%`, `median spread of the middle half of prices for the likely same item (${sp.searches} searches)`, `95% CI ${sp.ci[0]}–${sp.ci[1]}%`],
+    [`${sp.share_over_20pct}%`, `of searches where that spread is over 20%`, `95% CI ${sp.share_over_20pct_ci[0]}–${sp.share_over_20pct_ci[1]}%`],
+    [`${avf.searches_with_both}`, `searches had both Amazon and Flipkart selling the same item; Amazon was cheaper in ${Math.round(avf.amazon_cheaper_pct * avf.searches_with_both / 100)} of them`, `median gap ${avf.median_amazon_vs_flipkart_pct}% (CI ${avf.ci[0]} to ${avf.ci[1]}%)`],
+    [`${D.well_known_share_pct}%`, `of offers came from well-known stores; the rest from small shops`, `${D.offers.toLocaleString("en-IN")} offers`],
+  ].map(([v, l, c]) => `<div class="tile-stat fade"><div class="v">${v}</div><div class="l">${l}</div><div class="ci">${c}</div></div>`).join("");
+
+  // ---- PCA map: highlight one category in blue, the rest muted (keeps colour-blind safety with 9 categories) ----
+  const cats = [...new Set(D.map.map(p => p.category))];
+  let pick = cats[0];
+  $("#pca-sub").textContent = `All ${D.pca.points.toLocaleString("en-IN")} offers from all ${D.pca.searches} searches (the numbers above use the ${D.searches} searches where the model found a main item). The two directions shown explain ${D.pca.first_two_pct}% of the variation in the 64 PCA numbers; pick a category to see where its products sit.`;
+  function drawMap() {
+    const W = 900, H = 440, pad = 24, P = D.map;
+    const xs = P.map(p => p.x), ys = P.map(p => p.y);
+    const [x0, x1, y0, y1] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
+    const sx = v => pad + (v - x0) / (x1 - x0) * (W - 2 * pad), sy = v => H - pad - (v - y0) / (y1 - y0) * (H - 2 * pad);
+    const dot = (p, on) => `<circle cx="${sx(p.x).toFixed(1)}" cy="${sy(p.y).toFixed(1)}" r="${on ? 4.5 : 3}" fill="${on ? "var(--series-1)" : "var(--muted-mark)"}" ${on ? 'stroke="#0D1B2A" stroke-width="1.5"' : 'opacity=".7"'}
+      data-tip="<b>${esc(p.store)}</b> ${esc(p.price || "")}<br>${esc(p.title)}<br><span style='color:#9AAFC4'>${esc(p.category)} · search: ${esc(p.query)}</span>"></circle>`;
+    $("#map").innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="PCA map of offers">
+      <rect width="${W}" height="${H}" rx="12" fill="#091626"/>
+      <text x="${pad}" y="${H - 6}">PCA direction 1 (${D.pca.explained_variance_pct[0]}%)</text>
+      <text x="${W - pad}" y="16" text-anchor="end">PCA direction 2 (${D.pca.explained_variance_pct[1]}%)</text>
+      ${P.filter(p => p.category !== pick).map(p => dot(p, false)).join("")}
+      ${P.filter(p => p.category === pick).map(p => dot(p, true)).join("")}
+    </svg>`;
+    hover($("#map"));
+    $("#cats").innerHTML = cats.map(c => `<button type="button" aria-pressed="${c === pick}">${esc(c)} (${P.filter(p => p.category === c).length})</button>`).join("");
+    $("#cats").querySelectorAll("button").forEach((b, i) => b.onclick = () => { pick = cats[i]; drawMap(); });
+  }
+  drawMap();
+
+  // ---- scree ----
+  hbars($("#scree"), D.pca.explained_variance_pct.map((v, i) => ({ label: `Direction ${i + 1}`, v })), v => v + "%", { left: 100, label: "explained variance" });
+
+  // ---- cheapest store ----
+  const cc = Object.entries(D.cheapest_platform_counts);
+  const nCheap = cc.reduce((s, [, n]) => s + n, 0);
+  $("#cheap-sub").textContent = `In ${nCheap} searches where 2+ well-known stores sold the likely same item: how often each store had the lowest price.`;
+  hbars($("#cheapest"), cc.map(([k, n]) => ({ label: k, v: n, tip: `${k}: cheapest in ${n} of ${nCheap} searches` })), v => v, { left: 110, label: "cheapest store counts" });
+
+  // ---- spread by category ----
+  const bc = Object.entries(D.by_category).sort((a, b) => b[1].median_spread_pct - a[1].median_spread_pct);
+  hbars($("#spread"), bc.map(([k, r]) => ({ label: k, v: r.median_spread_pct, tip: `${k}: ${r.median_spread_pct}% (${r.searches} searches, median ${r.median_sellers} sellers)` })), v => v + "%", { left: 170, label: "price spread by category" });
+  $("#spread-table").insertAdjacentHTML("beforeend", `<table><tr><th>Category</th><th class="n">Searches</th><th class="n">Median spread</th><th class="n">Median sellers</th></tr>${bc.map(([k, r]) => `<tr><td>${esc(k)}</td><td class="n">${r.searches}</td><td class="n">${r.median_spread_pct}%</td><td class="n">${r.median_sellers}</td></tr>`).join("")}</table>`);
+
+  // ---- Amazon vs Flipkart: diverging bars, blue = Amazon cheaper, red = Flipkart cheaper (labelled, not colour alone) ----
+  const both = D.per_search.filter(r => r.by_platform.Amazon && r.by_platform.Flipkart)
+    .map(r => ({ item: r.item, q: r.query, a: r.by_platform.Amazon, f: r.by_platform.Flipkart, d: 100 * (r.by_platform.Amazon / r.by_platform.Flipkart - 1) }))
+    .sort((a, b) => a.d - b.d);
+  $("#avf-sub").textContent = `Only ${both.length} searches had both stores in the model's main group, so treat this as a small sample. Left (blue) = Amazon cheaper, right (red) = Flipkart cheaper.`;
+  // each row: the search on its own line, the bar below it, growing left or right from the centre line
+  const W = 520, rowH = 44, mid = 260, H = both.length * rowH + 26, m = Math.max(...both.map(r => Math.abs(r.d)), 1);
+  const sx = v => v / m * 190;
+  $("#avf").innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Amazon vs Flipkart price gap">
+    <line class="axis" x1="${mid}" x2="${mid}" y1="0" y2="${H - 22}"/>
+    <text x="${mid - 6}" y="${H - 6}" text-anchor="end">← Amazon cheaper</text><text x="${mid + 6}" y="${H - 6}">Flipkart cheaper →</text>
+    ${both.map((r, i) => { const y = 2 + i * rowH, w = Math.max(2, Math.abs(sx(r.d))), left = r.d < 0;
+      return `<text x="${mid}" y="${y + 12}" text-anchor="middle" fill="var(--ink-2)">${esc(r.q)}</text>
+        <rect x="${left ? mid - w : mid}" y="${y + 18}" width="${w}" height="14" rx="4" fill="${left ? "var(--series-1)" : "var(--series-2)"}"
+          data-tip="<b>${esc(r.item)}</b><br>Amazon ₹${Math.round(r.a).toLocaleString("en-IN")} · Flipkart ₹${Math.round(r.f).toLocaleString("en-IN")} (${r.d.toFixed(0)}%)"/>
+        <text x="${left ? mid - w - 6 : mid + w + 6}" y="${y + 29}" text-anchor="${left ? "end" : "start"}" fill="var(--ink-2)">${r.d.toFixed(0)}%</text>`; }).join("")}
+  </svg>`;
+  hover($("#avf"));
+  $("#avf-table").insertAdjacentHTML("beforeend", `<table><tr><th>Search</th><th class="n">Amazon</th><th class="n">Flipkart</th><th class="n">Gap</th></tr>${both.map(r => `<tr><td>${esc(r.q)}</td><td class="n">₹${Math.round(r.a).toLocaleString("en-IN")}</td><td class="n">₹${Math.round(r.f).toLocaleString("en-IN")}</td><td class="n">${r.d.toFixed(1)}%</td></tr>`).join("")}</table>`);
+
+  $("#caveats").innerHTML = `Prices are what Google Shopping India showed on the search date, not every seller on each site. "Same item" groups come from the model, which was right about the identical item in 23 of 40 checked pairs (see <a href="evidence.html">how we tested</a>), so some spread comes from matching mistakes such as bulk packs; that is why the middle-half spread is used instead of max vs min. CIs resample whole searches (1,000 times). Amazon vs Flipkart rests on ${avf.searches_with_both} searches only.`;
+});
+</script>
+</body>
+</html>

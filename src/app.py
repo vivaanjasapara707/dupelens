@@ -5,6 +5,7 @@ Serves the dashboard (index.html = live search, evidence.html = how the model wa
   POST /api/search  name / link / photo -> offers from many stores, grouped into "same item" by the model
   GET  /api/link    the real product page of one offer at its store
   POST /api/ask     a question about the current search -> answer from a Groq-hosted LLM (src/assistant.py)
+  /api/track, /api/tracked   price tracker: history, buy-now-or-wait advice, alerts (src/tracker.py)
   POST /api/check   one listing (title + photo) -> is it already in the 698-listing test catalog?
 Run: python -m src.app   then open http://127.0.0.1:8000
 """
@@ -17,10 +18,13 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from starlette.concurrency import run_in_threadpool
 
-from src import assistant, config, live
+from src import assistant, config, live, tracker
 from src.service import Matcher
 
 DASHBOARD = config.ROOT / "dashboard"
+# Online (Hugging Face Spaces sets SPACE_HOST): uploaded photos get a public address Google Lens can reach.
+if os.environ.get("SPACE_HOST") and not os.environ.get("PUBLIC_URL"):
+    os.environ["PUBLIC_URL"] = "https://" + os.environ["SPACE_HOST"]
 app = FastAPI(title="DupeLens")
 matcher = Matcher()
 # Load the three encoders in the background so the first search does not wait for them.
@@ -35,7 +39,38 @@ def health():
     except RuntimeError:
         search_ready = False
     return {"live": True, "search": search_ready, "uploads": bool(os.environ.get("PUBLIC_URL")),
-            "assistant": bool(config.env("GROQ_API_KEY")), "catalog": len(matcher.catalog)}
+            "assistant": bool(config.env("GROQ_API_KEY")), "tracker": True, "catalog": len(matcher.catalog)}
+
+
+class Track(BaseModel):
+    query: str
+    title: str
+    image: str | None = None
+    target: float | None = None
+    snapshot: dict
+
+
+@app.post("/api/track")
+def track(t: Track):
+    """Start tracking an item; the page sends today's prices of the item it is showing."""
+    return {"id": tracker.add(t.query, t.title, t.image, t.target, t.snapshot)}
+
+
+@app.get("/api/tracked")
+def tracked():
+    return tracker.listing()
+
+
+@app.delete("/api/tracked/{tid}")
+def untrack(tid: int):
+    tracker.remove(tid)
+    return {"ok": True}
+
+
+@app.post("/api/tracked/update")
+async def update_prices():
+    """Check every tracked product now (one fresh search each, at most once per day per product)."""
+    return {"report": await run_in_threadpool(tracker.update, matcher)}
 
 
 class Question(BaseModel):
@@ -101,4 +136,5 @@ app.mount("/uploads", StaticFiles(directory=config.CACHE_DIR / "uploads"), name=
 app.mount("/", StaticFiles(directory=DASHBOARD, html=True), name="site")
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+    port = int(os.environ.get("PORT", 8000))  # hosting platforms set PORT and need 0.0.0.0
+    uvicorn.run(app, host="0.0.0.0" if "PORT" in os.environ else "127.0.0.1", port=port)

@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DupeLens Price Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="topbar"><div class="in">
+  <div class="brand"><a href="./" style="display:flex;gap:12px;align-items:center"><div class="logo" aria-hidden="true">DL</div>DupeLens</a></div>
+  <nav class="navlinks"><a class="navlink" href="./">Search</a><a class="navlink" href="insights.html">Store insights</a><a class="navlink active" href="tracker.html">Price tracker</a><a class="navlink" href="evidence.html">How we tested</a></nav>
+  <span class="chip" id="status"><span class="dot"></span><span>Connecting…</span></span>
+</div></div>
+<main>
+  <section class="page-head">
+    <h1>Price tracker</h1>
+    <p>Track any item from a search ("Track price" on the result). Once a day DupeLens searches again, the model finds the same item, and the lowest price is recorded. You get a buy-now-or-wait hint and an alert when the price drops 5% or reaches your target.</p>
+    <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+      <button class="btn" id="check" type="button">Check prices now</button>
+      <span class="hint" id="check-note" style="margin:0">Each check is one fresh search per item (at most once a day).</span>
+    </div>
+  </section>
+  <section id="list"></section>
+  <section class="card">
+    <h2>How the advice works</h2>
+    <p class="sub" style="margin:0">A simple rule on the prices recorded so far, not a trained forecaster. Under 3 days: collecting. At or within 2% of the lowest price seen: buy now. Falling trend (least-squares slope of the daily lowest price over the last 14 days, more than 0.2% a day): wait. Otherwise: how far it is above its low. With 7 or more days the dashed line shows where the straight-line trend points in a week. Telegram alerts work when a bot token is added to the server's <code>.env</code>.</p>
+  </section>
+</main>
+<div class="tip" id="tip"></div>
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const inr = v => v == null ? "–" : "₹" + Math.round(v).toLocaleString("en-IN");
+
+// One line of daily lowest prices; a dashed projection when the server gives one.
+function spark(hist, proj) {
+  const W = 260, H = 90, pad = 8;
+  if (hist.length < 2) return `<div class="hint" style="margin:0">${hist.length ? `1 price so far: ${inr(hist[0].lowest)} (${esc(hist[0].day)})` : "No prices yet"}</div>`;
+  const ys = hist.map(h => h.lowest).concat(proj ? [proj] : []);
+  const lo = Math.min(...ys), hi = Math.max(...ys), n = hist.length + (proj ? 1 : 0) - 1;
+  const x = i => pad + i * (W - 2 * pad) / n, y = v => H - pad - (v - lo) / ((hi - lo) || 1) * (H - 2 * pad);
+  const d = hist.map((h, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(h.lowest).toFixed(1)}`).join("");
+  const last = hist.length - 1;
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Daily lowest price">
+    <path d="${d}" fill="none" stroke="#3987e5" stroke-width="2" stroke-linejoin="round"/>
+    ${proj ? `<path d="M${x(last)},${y(hist[last].lowest)}L${x(last + 1)},${y(proj)}" stroke="#3987e5" stroke-width="2" stroke-dasharray="4 4" fill="none"/>` : ""}
+    ${hist.map((h, i) => `<circle cx="${x(i)}" cy="${y(h.lowest)}" r="9" fill="transparent" data-tip="${esc(h.day)}: ${inr(h.lowest)} at ${esc(h.lowest_store || "")}"></circle>`).join("")}
+    <circle cx="${x(last)}" cy="${y(hist[last].lowest)}" r="4" fill="#3987e5" stroke="#0D1B2A" stroke-width="2"/>
+  </svg><div class="hint" style="margin:2px 0 0">${inr(lo)} – ${inr(hi)} over ${hist.length} days</div>`;
+}
+
+async function load() {
+  let items;
+  try { const r = await fetch("/api/tracked"); if (!r.ok) throw 0; items = await r.json(); }
+  catch { $("#list").innerHTML = `<div class="card empty">The price tracker runs in the DupeLens app (it needs the server to check prices each day).</div>`; $("#check").disabled = true; return; }
+  if (!items.length) { $("#list").innerHTML = `<div class="card empty">Nothing tracked yet. Search for a product and press <b>Track price</b> on the result.</div>`; return; }
+  $("#list").innerHTML = items.map(t => {
+    const last = t.history[t.history.length - 1];
+    return `<div class="card fade"><div class="tracked">
+      <img class="ph" src="${esc(t.image || "")}" alt="" referrerpolicy="no-referrer">
+      <div>
+        <div style="font-weight:600">${esc(t.title)}</div>
+        <div class="hint" style="margin:2px 0 0">Search: "${esc(t.query)}" · tracking since ${esc(t.created)}${t.target ? ` · alert at ${inr(t.target)}` : ""}</div>
+        ${last ? `<div style="margin-top:6px"><span style="font-size:22px;font-weight:800">${inr(last.lowest)}</span> <span class="hint">lowest today at ${esc(last.lowest_store || "")} · ${last.sellers} sellers · median ${inr(last.median)}</span></div>` : ""}
+        <div class="advice ${esc(t.advice.kind)}">${esc(t.advice.text)}</div>
+        ${t.alerts.map(a => `<div class="alert-line">🔔 ${esc(a.day)}: ${esc(a.message)}</div>`).join("")}
+        <div style="margin-top:8px"><a href="./?q=${encodeURIComponent(t.query)}">Search again</a> · <button class="linkbtn" data-del="${t.id}" type="button">Stop tracking</button></div>
+      </div>
+      <div class="spark chart">${spark(t.history, t.advice.projection_7d)}</div>
+    </div></div>`;
+  }).join("");
+  document.querySelectorAll("[data-del]").forEach(b => b.onclick = async () => { await fetch(`/api/tracked/${b.dataset.del}`, { method: "DELETE" }); load(); });
+  const tip = $("#tip");
+  document.querySelectorAll("[data-tip]").forEach(c => {
+    c.onmousemove = e => { tip.style.display = "block"; tip.style.left = e.clientX + 12 + "px"; tip.style.top = e.clientY + 12 + "px"; tip.textContent = c.dataset.tip; };
+    c.onmouseleave = () => tip.style.display = "none";
+  });
+}
+
+$("#check").onclick = async () => {
+  $("#check").disabled = true; $("#check-note").textContent = "Checking every tracked item…";
+  try { const r = await fetch("/api/tracked/update", { method: "POST" }); const d = await r.json(); $("#check-note").textContent = (d.report || []).join(" · ") || "Nothing tracked."; }
+  catch (e) { $("#check-note").textContent = "Check failed: " + e.message; }
+  $("#check").disabled = false; load();
+};
+
+fetch("/api/health").then(r => r.ok ? r.json() : null).catch(() => null).then(h => {
+  const st = $("#status"); st.classList.add(h ? "live" : "demo"); st.lastElementChild.textContent = h ? "Server connected" : "Static demo";
+  load();
+});
+</script>
+</body>
+</html>

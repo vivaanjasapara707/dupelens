@@ -1,0 +1,1184 @@
+{
+ "searches": 59,
+ "offers": 2260,
+ "stores": null,
+ "well_known_share_pct": 50.3,
+ "amazon_vs_flipkart": {
+  "searches_with_both": 6,
+  "median_amazon_vs_flipkart_pct": -18.8,
+  "ci": [
+   -63.8,
+   -0.3
+  ],
+  "amazon_cheaper_pct": 83.3,
+  "amazon_cheaper_ci": [
+   50.0,
+   100.0
+  ],
+  "note": "negative = Amazon cheaper; same item only (model's main group per search)"
+ },
+ "price_spread": {
+  "searches": 43,
+  "median_spread_pct": 37.9,
+  "ci": [
+   30.0,
+   69.6
+  ],
+  "share_over_20pct": 79.1,
+  "share_over_20pct_ci": [
+   67.4,
+   90.7
+  ]
+ },
+ "cheapest_platform_counts": {
+  "Amazon": 7,
+  "JioMart": 5,
+  "BigBasket": 4,
+  "Zepto": 2,
+  "Myntra": 2,
+  "1mg": 2,
+  "Blinkit": 1
+ },
+ "by_category": {
+  "Audio & wearables": {
+   "searches": 5,
+   "median_spread_pct": 27.8,
+   "median_sellers": 5.0
+  },
+  "Phones & accessories": {
+   "searches": 5,
+   "median_spread_pct": 30.8,
+   "median_sellers": 5.0
+  },
+  "Computer": {
+   "searches": 4,
+   "median_spread_pct": 80.8,
+   "median_sellers": 7.5
+  },
+  "Kitchen": {
+   "searches": 5,
+   "median_spread_pct": 22.2,
+   "median_sellers": 6.0
+  },
+  "Personal care & beauty": {
+   "searches": 11,
+   "median_spread_pct": 36.2,
+   "median_sellers": 7.0
+  },
+  "Grocery": {
+   "searches": 6,
+   "median_spread_pct": 78.2,
+   "median_sellers": 5.5
+  },
+  "Home & electrical": {
+   "searches": 2,
+   "median_spread_pct": 145.4,
+   "median_sellers": 5.5
+  },
+  "Stationery, books & toys": {
+   "searches": 3,
+   "median_spread_pct": 37.9,
+   "median_sellers": 6.0
+  },
+  "Fashion & bags": {
+   "searches": 2,
+   "median_spread_pct": 51.7,
+   "median_sellers": 5.0
+  }
+ },
+ "pca": {
+  "points": 2300,
+  "searches": 60,
+  "explained_variance_pct": [
+   9.1,
+   9.1,
+   5.8,
+   5.3,
+   4.5,
+   3.7,
+   3.3,
+   3.1,
+   3.1,
+   2.9
+  ],
+  "first_two_pct": 18.2,
+  "input": "64 numbers per offer = PCA(CLIP photo, 32) + PCA(MPNet title, 32)"
+ },
+ "per_search": [
+  {
+   "query": "boAt Rockerz 255 Pro Plus",
+   "category": "Audio & wearables",
+   "offers": 40,
+   "well_known_offers": 16,
+   "stores": 24,
+   "item": "boAt Rockerz 255 Pro+ 60H Battery Asap Charge",
+   "sellers": 3,
+   "min": 999.0,
+   "max": 7864.0,
+   "median": 3762.0,
+   "spread_pct": null,
+   "max_min_pct": 687.2,
+   "by_platform": {
+    "Flipkart": 999.0
+   },
+   "cheapest_platform": "Flipkart"
+  },
+  {
+   "query": "JBL Go 3 speaker",
+   "category": "Audio & wearables",
+   "offers": 31,
+   "well_known_offers": 14,
+   "stores": 20,
+   "item": "JBL Go 3 Portable Bluetooth Speaker",
+   "sellers": 1,
+   "min": 2999.0,
+   "max": 2999.0,
+   "median": 2999.0,
+   "spread_pct": null,
+   "max_min_pct": null,
+   "by_platform": {
+    "Amazon": 2999.0
+   },
+   "cheapest_platform": "Amazon"
+  },
+  {
+   "query": "Noise ColorFit Pro 4 smartwatch",
+   "category": "Audio & wearables",
+   "offers": 40,
+   "well_known_offers": 25,
+   "stores": 18,
+   "item": "Noise Evolve 4 Smartwatch With Bluetooth Calling",
+   "sellers": 4,
+   "min": 1579.0,
+   "max": 3499.0,
+   "median": 2599.0,
+   "spread_pct": 27.8,
+   "max_min_pct": 121.6,
+   "by_platform": {
+    "JioMart": 1579.0,
+    "Flipkart": 2499.0
+   },
+   "cheapest_platform": "JioMart"
+  },
+  {
+   "query": "Apple AirPods Pro 2",
+   "category": "Audio & wearables",
+   "offers": 40,
+   "well_known_offers": 16,
+   "stores": 21,
+   "item": "Apple AirPods Pro - 2nd generation - True wireless earphones with mic - in-ear - Bluetooth - active noise canceling - White",
+   "sellers": 4,
+   "min": 575.0,
+   "max": 4499.0,
+   "median": 3349.5,
+   "spread_pct": 136.9,
+   "max_min_pct": 682.4,
+   "by_platform": {},
+   "cheapest_platform": null
+  },
+  {
+   "query": "OnePlus Nord Buds 2r",
+   "category": "Audio & wearables",
+   "offers": 27,
+   "well_known_offers": 15,
+   "stores": 10,
+   "item": "OnePlus Buds 2r",
+   "sellers": 2,
+   "min": 678.0,
+   "max": 678.0,
+   "median": 678.0,
+   "spread_pct": null,
+   "max_min_pct": 0.0,
+   "by_platform": {
+    "Amazon": 678.0
+   },
+   "cheapest_platform": "Amazon"
+  },
+  {
+   "query": "boAt Airdopes 141",
+   "category": "Audio & wearables",
+   "offers": 40,
+   "well_known_offers": 15,
+   "stores": 24,
+   "item": "boAt Airdopes 141 True Wireless Earbuds with ENx Technology, White Purity",
+   "sellers": 5,
+   "min": 899.0,
+   "max": 1399.0,
+   "median": 899.0,
+   "spread_pct": 5.6,
+   "max_min_pct": 55.6,
+   "by_platform": {
+    "JioMart": 1399.0
+   },
+   "cheapest_platform": "JioMart"
+  },
+  {
+   "query": "Sony WH-1000XM5 headphones",
+   "category": "Audio & wearables",
+   "offers": 40,
+   "well_known_offers": 10,
+   "stores": 24,
+   "item": "Sony WH-1000XM5 Best Active Noise Cancelling Wireless Bluetooth Over Ear Headphones with Mic for Clear Calling,Battery Life 30 Hours -White WH-1000XM5",
+   "sellers": 5,
+   "min": 19900.0,
+   "max": 48928.0,
+   "median": 36736.0,
+   "spread_pct": 46.8,
+   "max_min_pct": 145.9,
+   "by_platform": {},
+   "cheapest_platform": null
+  },
+  {
+   "query": "boAt Rockerz 450 headphones",
+   "category": "Audio & wearables",
+   "offers": 26,
+   "well_known_offers": 5,
+   "stores": 18,
+   "item": "boAt Rockerz 450, 15 HRS Battery, 40mm Drivers, Padded Ear Cushions, Integrated Controls, Dual Modes, On Ear Bluetooth Headphones, Wireless Headphone",
+   "sellers": 5,
+   "min": 1153.0,
+   "max": 1899.0,
+   "median": 1499.0,
+   "spread_pct": 23.4,
+   "max_min_pct": 64.7,
+   "by_platform": {},
+   "cheapest_platform": null
+  },
+  {
+   "query": "Samsung Galaxy M15 5G 128GB",
+   "category": "Phones & accessories",
+   "offers": 8,
+   "well_known_offers": 1,
+   "stores": 5,
+   "item": "Samsung Galaxy M15 5g",
+   "sellers": 3,
+   "min": 8799.0,
+   "max": 15999.0,
+   "median": 13999.0,
+   "spread_pct": null,
+   "max_min_pct": 81.8,
+   "by_platform": {
+    "Amazon": 15999.0
+   },
+   "cheapest_platform": "Amazon"
+  },
+  {
+   "query": "iPhone 15 128GB",
+   "category": "Phones & accessories",
+   "offers": 40,
+   "well_known_offers": 1,
+   "stores": 20,
+   "item": "Apple iPhone 15 pro, 128GB / Blue Titanium / Good",
+   "sellers": 4,
+   "min": 1249.0,
+   "max": 71999.0,
+   "median": 49739.685,
+   "spread_pct": 48.3,
+   "max_min_pct": 5664.5,
+   "by_platform": {},
+   "cheapest_platform": null
+  },
+  {
+   "query": "Realme Narzo 70 5G",
+   "category": "Phones & accessories",
+   "offers": 40,
+   "well_known_offers": 8,
+   "stores": 26,
+   "item": "Realme Narzo 70x 5G",
+   "sellers": 3,
+   "min": 7000.0,
+   "max": 18978.0,
+   "median": 9999.0,
+   "spread_pct": null,
+   "max_min_pct": 171.1,
+   "by_platform": {
+    "Shopsy": 18978.0
+   },
+   "cheapest_platform": "Shopsy"
+  },
+  {
+   "query": "Anker 20W USB C charger",
+   "category": "Phones & accessories",
+   "offers": 40,
+   "well_known_offers": 7,
+   "stores": 14,
+   "item": "Anker Zolo 1 Port Compact USB-C GaN Black Charger 20W",
+   "sellers": 5,
+   "min": 1070.96,
+   "max": 1170.27,
+   "median": 1104.78,
+   "spread_pct": 7.8,
+   "max_min_pct": 9.3,
+   "by_platform": {},
+   "cheapest_platform": null
+  },
+  {
+   "query": "SanDisk Ultra 128GB microSD",
+   "category": "Phones & accessories",
+   "offers": 40,
+   "well_known_offers": 20,
+   "stores": 29,
+   "item": "SanDisk microSD Memory Card for Smartphones 128GB 140MB/s R Ultra UHS-I (Red Grey) - Girls & Boys",
+   "sellers": 9,
+   "min": 1968.0,
+   "max": 2739.0,
+   "median": 2267.0,
+   "spread_pct": 30.0,
+   "max_min_pct": 39.2,
+   "by_platform": {
+    "Amazon": 2201.0,
+    "JioMart": 2000.0,
+    "Tata CLiQ": 2599.0
+   },
+   "cheapest_platform": "JioMart"
+  },
+  {
+   "query": "Mi Power Bank 3i 20000 mAh",
+   "category": "Phones & accessories",
+   "offers": 40,
+   "well_known_offers": 10,
+   "stores": 33,
+   "item": "Redmi 20000 Mah 18 W Power Bank",
+   "sellers": 5,
+   "min": 1199.0,
+   "max": 15000.0,
+   "median": 1798.0,
+   "spread_pct": 108.3,
+   "max_min_pct": 1151.0,
+   "by_platform": {},
+   "cheapest_platform": null
+  },
+  {
+   "query": "Redmi 13C 5G 128GB",
+   "category": "Phones & accessories",
+   "offers": 40,
+   "well_known_offers": 6,
+   "stores": 17,
+   "item": "Redmi 13C (Stardust Black, 6GB RAM, 128GB Storage)",
+   "sellers": 4,
+   "min": 2250.0,
+   "max": 5599.0,
+   "median": 5279.0,
+   "spread_pct": 30.8,
+   "max_min_pct": 148.8,
+   "by_platform": {},
+   "cheapest_platform": null
+  },
+  {
+   "query": "Logitech MK270 keyboard mouse combo",
+   "category": "Computer",
+   "offers": 40,
+   "well_known_offers": 6,
+   "stores": 19,
+   "item": "Logitech MK270 Wireless Keyboard Mouse Combo Active Lifestyle Travel Home Office MustHave Modern Bundle with Micro Portable Wireless Bluetooth Spea",
+   "sellers": 5,
+   "min": 10984.0,
+   "max": 40122.0,
+   "median": 14523.0,
+   "spread_pct": 120.4,
+   "max_min_pct": 265.3,
+   "by_platform": {},
+   "cheapest_platform": null
+  },
+  {
+   "query": "HP 680 ink cartridge black",
+   "category": "Computer",
+   "offers": 40,
+   "well_known_offers": 31,
+   "stores": 16,
+   "item": "HP 680 Original Advantage Ink Cartridge",
+   "sellers": 5,
+   "min": 690.0,
+   "max": 2384.25,
+   "median": 965.0,
+   "spread_pct": 13.0,
+   "max_min_pct": 245.5,
+   "by_platform": {
+    "Zepto": 900.0,
+    "Amazon": 965.0
+   },
+   "cheapest_platform": "Zepto"
+  },
+  {
+   "query": "TP-Link Archer C6 router",
+   "category": "Computer",
+   "offers": 40,
+   "well_known_offers": 8,
+   "stores": 22,
+   "item": "TP-Link archer c6 AC1200 Dual band Gigabit Wi-Fi router",
+   "sellers": 10,
+   "min": 1909.0,
+   "max": 24492.0,
+   "median": 4929.0,
+   "spread_pct": 292.0,
+   "max_min_pct": 1183.0,
+   "by_platform": {
+    "Zepto": 1909.0,
+    "Vijay Sales": 2599.0
+   },
+   "cheapest_platform": "Zepto"
+  },
+  {
+   "query": "Samsung T7 portable SSD 1TB",
+   "category": "Computer",
+   "offers": 40,
+   "well_known_offers": 8,
+   "stores": 19,
+   "item": "Samsung Portable SSD T7 USB 3.2",
+   "sellers": 10,
+   "min": 15999.0,
+   "max": 32124.23,
+   "median": 24499.0,
+   "spread_pct": 41.2,
+   "max_min_pct": 100.8,
+   "by_platform": {
+    "Amazon": 24999.0,
+    "JioMart": 18699.0,
+    "Flipkart": 23999.0
+   },
+   "cheapest_platform": "JioMart"
+  },
+  {
+   "query": "Logitech M235 wireless mouse",
+   "category": "Computer",
+   "offers": 18,
+   "well_known_offers": 9,
+   "stores": 15,
+   "item": "Logitech MK235 Wireless Keyboard and Mouse Combo",
+   "sellers": 3,
+   "min": 1200.0,
+   "max": 5340.41,
+   "median": 1399.0,
+   "spread_pct": null,
+   "max_min_pct": 345.0,
+   "by_platform": {
+    "JioMart": 1399.0
+   },
+   "cheapest_platform": "JioMart"
+  },
+  {
+   "query": "Casio FX-991ES Plus calculator",
+   "category": "Computer",
+   "offers": 40,
+   "well_known_offers": 16,
+   "stores": 23,
+   "item": "Casio Fx-991Es Plus-2Nd Edition Scientific Calculator",
+   "sellers": 3,
+   "min": 1295.0,
+   "max": 1823.0,
+   "median": 1448.0,
+   "spread_pct": null,
+   "max_min_pct": 40.8,
+   "by_platform": {
+    "Amazon": 1448.0
+   },
+   "cheapest_platform": "Amazon"
+  },
+  {
+   "query": "Pigeon Favourite electric kettle 1.5 litre",
+   "category": "Kitchen",
+   "offers": 40,
+   "well_known_offers": 24,
+   "stores": 18,
+   "item": "Pigeon Everyday Multi Cooker Electric Kettle",
+   "sellers": 3,
+   "min": 999.0,
+   "max": 1699.0,
+   "median": 1049.0,
+   "spread_pct": null,
+   "max_min_pct": 70.1,
+   "by_platform": {
+    "Shopsy": 1699.0,
+    "Amazon": 999.0,
+    "Flipkart": 1049.0
+   },
+   "cheapest_platform": "Amazon"
+  },
+  {
+   "query": "Prestige Iris mixer grinder 750 W",
+   "category": "Kitchen",
+   "offers": 40,
+   "well_known_offers": 30,
+   "stores": 15,
+   "item": "Prestige Supreme 750 W Juicer Mixer Grinder",
+   "sellers": 3,
+   "min": 2740.0,
+   "max": 5995.0,
+   "median": 4620.0,
+   "spread_pct": null,
+   "max_min_pct": 118.8,
+   "by_platform": {
+    "Amazon": 4620.0,
+    "Myntra": 2740.0
+   },
+   "cheapest_platform": "Myntra"
+  },
+  {
+   "query": "Milton Thermosteel Duo DLX 1000 ml",
+   "category": "Kitchen",
+   "offers": 40,
+   "well_known_offers": 27,
+   "stores": 16,
+   "item": "Milton Glassy Thermosteel Flask (Milton) - Grey / 1000 ml",
+   "sellers": 5,
+   "min": 1014.3,
+   "max": 1435.0,
+   "median": 1152.0,
+   "spread_pct": 16.4,
+   "max_min_pct": 41.5,
+   "by_platform": {
+    "Amazon": 1152.0
+   },
+   "cheapest_platform": "Amazon"
+  },
+  {
+   "query": "Hawkins Contura pressure cooker 3 litre",
+   "category": "Kitchen",
+   "offers": 40,
+   "well_known_offers": 24,
+   "stores": 16,
+   "item": "Hawkins Contura Hard Anodised Aluminium Pressure Cooker, 3 Litres, Black & Hawkins Contura Pressure Cooker, 2 Litres, Silver",
+   "sellers": 9,
+   "min": 1378.0,
+   "max": 3894.0,
+   "median": 2325.0,
+   "spread_pct": 37.4,
+   "max_min_pct": 182.6,
+   "by_platform": {
+    "Amazon": 2920.0,
+    "JioMart": 2385.0
+   },
+   "cheapest_platform": "JioMart"
+  },
+  {
+   "query": "Philips HD9252 air fryer",
+   "category": "Kitchen",
+   "offers": 36,
+   "well_known_offers": 11,
+   "stores": 24,
+   "item": "Philips Essential Air Fryer 7 Presets Touch Screen HD9252/70",
+   "sellers": 6,
+   "min": 6569.1,
+   "max": 27523.68,
+   "median": 9649.5,
+   "spread_pct": 19.4,
+   "max_min_pct": 319.0,
+   "by_platform": {},
+   "cheapest_platform": null
+  },
+  {
+   "query": "Prestige Popular pressure cooker 3 litre",
+   "category": "Kitchen",
+   "offers": 40,
+   "well_known_offers": 34,
+   "stores": 13,
+   "item": "Prestige Svachh Clip Stainless Steel Pressure Cooker",
+   "sellers": 5,
+   "min": 1665.0,
+   "max": 2294.0,
+   "median": 2030.0,
+   "spread_pct": 22.2,
+   "max_min_pct": 37.8,
+   "by_platform": {
+    "JioMart": 1865.0,
+    "Amazon": 2279.0
+   },
+   "cheapest_platform": "JioMart"
+  },
+  {
+   "query": "Butterfly mixer grinder 750 W",
+   "category": "Kitchen",
+   "offers": 40,
+   "well_known_offers": 25,
+   "stores": 17,
+   "item": "Butterfly Pestle Jar 750 Mixer Grinder Jars",
+   "sellers": 3,
+   "min": 3795.0,
+   "max": 15000.0,
+   "median": 6979.0,
+   "spread_pct": null,
+   "max_min_pct": 295.3,
+   "by_platform": {
+    "Amazon": 3795.0
+   },
+   "cheapest_platform": "Amazon"
+  },
+  {
+   "query": "Prestige PIC 20 induction cooktop",
+   "category": "Kitchen",
+   "offers": 40,
+   "well_known_offers": 16,
+   "stores": 24,
+   "item": "Prestige 41955 Induction Cooktop",
+   "sellers": 6,
+   "min": 2025.0,
+   "max": 5170.0,
+   "median": 2849.5,
+   "spread_pct": 68.9,
+   "max_min_pct": 155.3,
+   "by_platform": {
+    "Amazon": 2199.0,
+    "Tata CLiQ": 5170.0
+   },
+   "cheapest_platform": "Amazon"
+  },
+  {
+   "query": "Himalaya Neem face wash 150 ml",
+   "category": "Personal care & beauty",
+   "offers": 40,
+   "well_known_offers": 22,
+   "stores": 22,
+   "item": "Himalaya Herbals Purifying Neem Face Wash",
+   "sellers": 5,
+   "min": 199.0,
+   "max": 3795.55,
+   "median": 385.14,
+   "spread_pct": 238.1,
+   "max_min_pct": 1807.3,
+   "by_platform": {
+    "Myntra": 223.0,
+    "Amazon": 385.14,
+    "Nykaa": 754.0
+   },
+   "cheapest_platform": "Myntra"
+  },
+  {
+   "query": "Dove shampoo 650 ml",
+   "category": "Personal care & beauty",
+   "offers": 40,
+   "well_known_offers": 35,
+   "stores": 19,
+   "item": "Dove Intense Repair Shampoo",
+   "sellers": 5,
+   "min": 510.0,
+   "max": 679.0,
+   "median": 522.0,
+   "spread_pct": 13.4,
+   "max_min_pct": 33.1,
+   "by_platform": {
+    "Amazon": 510.0
+   },
+   "cheapest_platform": "Amazon"
+  },
+  {
+   "query": "Maybelline Fit Me foundation 128",
+   "category": "Personal care & beauty",
+   "offers": 40,
+   "well_known_offers": 35,
+   "stores": 17,
+   "item": "Maybelline New York Fit Me Foundation 128 Warm Nude + Fit Me Matte + Poreless Primer Combo At Nykaa, Best Beauty Products Online",
+   "sellers": 4,
+   "min": 848.0,
+   "max": 5693.8,
+   "median": 2126.495,
+   "spread_pct": 329.7,
+   "max_min_pct": 571.4,
+   "by_platform": {
+    "Nykaa": 848.0
+   },
+   "cheapest_platform": "Nykaa"
+  },
+  {
+   "query": "Gillette Mach3 razor",
+   "category": "Personal care & beauty",
+   "offers": 40,
+   "well_known_offers": 35,
+   "stores": 17,
+   "item": "Gillette Mach3 Charcoal Shaving Razor Blades",
+   "sellers": 7,
+   "min": 254.0,
+   "max": 712.0,
+   "median": 399.0,
+   "spread_pct": 56.7,
+   "max_min_pct": 180.3,
+   "by_platform": {
+    "Zepto": 399.0,
+    "Blinkit": 375.0,
+    "Amazon": 254.0,
+    "Myntra": 580.0
+   },
+   "cheapest_platform": "Amazon"
+  },
+  {
+   "query": "Colgate MaxFresh toothpaste 150 g",
+   "category": "Personal care & beauty",
+   "offers": 40,
+   "well_known_offers": 21,
+   "stores": 26,
+   "item": "Colgate Maxfresh Peppermint Ice Blue Gel Toothpaste With Cooling Crystals",
+   "sellers": 9,
+   "min": 92.0,
+   "max": 416.0,
+   "median": 152.0,
+   "spread_pct": 13.5,
+   "max_min_pct": 352.2,
+   "by_platform": {
+    "1mg": 141.0,
+    "Apollo": 152.0,
+    "Myntra": 209.0,
+    "Amazon": 160.0
+   },
+   "cheapest_platform": "1mg"
+  },
+  {
+   "query": "Nivea Soft light moisturising cream 200 ml",
+   "category": "Personal care & beauty",
+   "offers": 40,
+   "well_known_offers": 31,
+   "stores": 25,
+   "item": "Nivea Soft Playful Peach Light Moisturising Cream (200ml)",
+   "sellers": 8,
+   "min": 104.7,
+   "max": 499.0,
+   "median": 337.5,
+   "spread_pct": 36.2,
+   "max_min_pct": 376.6,
+   "by_platform": {
+    "BigBasket": 104.7,
+    "Myntra": 304.0,
+    "Amazon": 244.0,
+    "Nykaa": 449.0,
+    "Flipkart": 316.0
+   },
+   "cheapest_platform": "BigBasket"
+  },
+  {
+   "query": "Philips BT3221 beard trimmer",
+   "category": "Personal care & beauty",
+   "offers": 34,
+   "well_known_offers": 17,
+   "stores": 23,
+   "item": "Philips Male Grooming Philips Beard Trimmer 3000 Series with Hair Lift&Trim Comb",
+   "sellers": 9,
+   "min": 1059.0,
+   "max": 26497.0,
+   "median": 2330.0,
+   "spread_pct": 423.8,
+   "max_min_pct": 2402.1,
+   "by_platform": {
+    "Vijay Sales": 1739.0,
+    "Flipkart": 10861.0,
+    "BigBasket": 1059.0,
+    "Amazon": 1885.0
+   },
+   "cheapest_platform": "BigBasket"
+  },
+  {
+   "query": "Boroplus antiseptic cream 80 ml",
+   "category": "Personal care & beauty",
+   "offers": 40,
+   "well_known_offers": 19,
+   "stores": 26,
+   "item": "Boro Plus Antiseptic Cream, 80gm",
+   "sellers": 8,
+   "min": 80.0,
+   "max": 200.0,
+   "median": 149.0,
+   "spread_pct": 27.2,
+   "max_min_pct": 150.0,
+   "by_platform": {
+    "DMart": 143.0
+   },
+   "cheapest_platform": "DMart"
+  },
+  {
+   "query": "Lakme 9 to 5 primer matte lipstick",
+   "category": "Personal care & beauty",
+   "offers": 40,
+   "well_known_offers": 34,
+   "stores": 21,
+   "item": "Lakme 9 to 5 Primer + Matte Lip Color",
+   "sellers": 7,
+   "min": 224.0,
+   "max": 999.0,
+   "median": 488.0,
+   "spread_pct": 28.3,
+   "max_min_pct": 346.0,
+   "by_platform": {
+    "Amazon": 224.0
+   },
+   "cheapest_platform": "Amazon"
+  },
+  {
+   "query": "Vaseline intensive care deep restore body lotion 400 ml",
+   "category": "Personal care & beauty",
+   "offers": 40,
+   "well_known_offers": 32,
+   "stores": 23,
+   "item": "Vaseline Intensive Care Deep Restore Body Lotion",
+   "sellers": 4,
+   "min": 236.0,
+   "max": 3738.0,
+   "median": 439.0,
+   "spread_pct": 233.9,
+   "max_min_pct": 1483.9,
+   "by_platform": {
+    "Amazon": 236.0,
+    "Flipkart": 429.0
+   },
+   "cheapest_platform": "Amazon"
+  },
+  {
+   "query": "Dettol original liquid handwash 200 ml",
+   "category": "Personal care & beauty",
+   "offers": 40,
+   "well_known_offers": 26,
+   "stores": 22,
+   "item": "Dettol Original Liquid Handwash-210ml",
+   "sellers": 5,
+   "min": 45.0,
+   "max": 139.0,
+   "median": 76.0,
+   "spread_pct": 26.5,
+   "max_min_pct": 208.9,
+   "by_platform": {
+    "Zepto": 76.0,
+    "1mg": 75.1,
+    "Amazon": 139.0
+   },
+   "cheapest_platform": "1mg"
+  },
+  {
+   "query": "Tata Salt 1 kg",
+   "category": "Grocery",
+   "offers": 40,
+   "well_known_offers": 19,
+   "stores": 20,
+   "item": "Tata Salt Crystal, 1.00 kg | FarmLokal",
+   "sellers": 6,
+   "min": 18.0,
+   "max": 158.51,
+   "median": 20.5,
+   "spread_pct": 15.8,
+   "max_min_pct": 780.6,
+   "by_platform": {
+    "Zepto": 22.0
+   },
+   "cheapest_platform": "Zepto"
+  },
+  {
+   "query": "Fortune sunflower oil 1 litre",
+   "category": "Grocery",
+   "offers": 40,
+   "well_known_offers": 9,
+   "stores": 22,
+   "item": "Fortune (Sunflower Oil)-1l",
+   "sellers": 5,
+   "min": 120.0,
+   "max": 195.0,
+   "median": 155.0,
+   "spread_pct": 37.0,
+   "max_min_pct": 62.5,
+   "by_platform": {},
+   "cheapest_platform": null
+  },
+  {
+   "query": "Nescafe Classic coffee 100 g",
+   "category": "Grocery",
+   "offers": 40,
+   "well_known_offers": 16,
+   "stores": 20,
+   "item": "Nescafe Classic 100 G",
+   "sellers": 7,
+   "min": 135.0,
+   "max": 2499.0,
+   "median": 370.0,
+   "spread_pct": 168.0,
+   "max_min_pct": 1751.1,
+   "by_platform": {
+    "Blinkit": 135.0,
+    "Amazon": 370.0
+   },
+   "cheapest_platform": "Blinkit"
+  },
+  {
+   "query": "Maggi noodles 12 pack",
+   "category": "Grocery",
+   "offers": 40,
+   "well_known_offers": 18,
+   "stores": 13,
+   "item": "Maggi 2 Minute Masala Noodles",
+   "sellers": 5,
+   "min": 28.0,
+   "max": 743.61,
+   "median": 108.0,
+   "spread_pct": 347.1,
+   "max_min_pct": 2555.8,
+   "by_platform": {
+    "Shopsy": 380.0,
+    "Amazon": 108.0
+   },
+   "cheapest_platform": "Amazon"
+  },
+  {
+   "query": "Cadbury Dairy Milk Silk 150 g",
+   "category": "Grocery",
+   "offers": 40,
+   "well_known_offers": 25,
+   "stores": 15,
+   "item": "Cadbury Dairy Milk Silk Heart Blush Chocolate 150 g",
+   "sellers": 4,
+   "min": 175.0,
+   "max": 779.0,
+   "median": 324.0,
+   "spread_pct": 69.6,
+   "max_min_pct": 345.1,
+   "by_platform": {
+    "Zepto": 175.0
+   },
+   "cheapest_platform": "Zepto"
+  },
+  {
+   "query": "Red Label tea 1 kg",
+   "category": "Grocery",
+   "offers": 40,
+   "well_known_offers": 15,
+   "stores": 24,
+   "item": "Brooke Bond Brook Bond Red Label Natural Care Tea",
+   "sellers": 9,
+   "min": 125.0,
+   "max": 5693.8,
+   "median": 524.0,
+   "spread_pct": 86.7,
+   "max_min_pct": 4455.0,
+   "by_platform": {
+    "BigBasket": 125.0,
+    "Zepto": 524.0,
+    "Amazon": 501.0
+   },
+   "cheapest_platform": "BigBasket"
+  },
+  {
+   "query": "Havells Stealth Air ceiling fan 1200 mm",
+   "category": "Home & electrical",
+   "offers": 40,
+   "well_known_offers": 20,
+   "stores": 15,
+   "item": "Havells Stealth Air 5 Star 1200 mm 3 Blade BLDC Motor Ceiling Fan with Remote",
+   "sellers": 5,
+   "min": 3057.0,
+   "max": 12740.0,
+   "median": 3999.0,
+   "spread_pct": 179.6,
+   "max_min_pct": 316.7,
+   "by_platform": {
+    "Amazon": 3057.0
+   },
+   "cheapest_platform": "Amazon"
+  },
+  {
+   "query": "Syska 9W LED bulb pack of 4",
+   "category": "Home & electrical",
+   "offers": 40,
+   "well_known_offers": 20,
+   "stores": 12,
+   "item": "Syska Ssk-Srl-9W Base B22 9-Watt LED Bulb",
+   "sellers": 2,
+   "min": 155.0,
+   "max": 284.0,
+   "median": 219.5,
+   "spread_pct": null,
+   "max_min_pct": 83.2,
+   "by_platform": {
+    "Amazon": 155.0
+   },
+   "cheapest_platform": "Amazon"
+  },
+  {
+   "query": "Wipro 9W LED bulb",
+   "category": "Home & electrical",
+   "offers": 40,
+   "well_known_offers": 32,
+   "stores": 13,
+   "item": "wipro Garnet 9W LED Bulb for Home & Office |Warm White (2700K) | E27 Base|220 Degree Light Coverage |4Kv Surge Protection |400V High Voltage",
+   "sellers": 6,
+   "min": 75.0,
+   "max": 279.0,
+   "median": 174.0,
+   "spread_pct": 111.2,
+   "max_min_pct": 272.0,
+   "by_platform": {
+    "Amazon": 114.0
+   },
+   "cheapest_platform": "Amazon"
+  },
+  {
+   "query": "Usha table fan 400 mm",
+   "category": "Home & electrical",
+   "offers": 40,
+   "well_known_offers": 23,
+   "stores": 12,
+   "item": "Usha Mist Air Icy 400 mm Table Fan",
+   "sellers": 3,
+   "min": 1900.0,
+   "max": 3065.64,
+   "median": 1950.0,
+   "spread_pct": null,
+   "max_min_pct": 61.3,
+   "by_platform": {},
+   "cheapest_platform": null
+  },
+  {
+   "query": "Bajaj DX 6 dry iron",
+   "category": "Home & electrical",
+   "offers": 40,
+   "well_known_offers": 24,
+   "stores": 14,
+   "item": "Bajaj Majesty DX 6 1000 Watts Dry Iron",
+   "sellers": 3,
+   "min": 749.0,
+   "max": 880.0,
+   "median": 749.0,
+   "spread_pct": null,
+   "max_min_pct": 17.5,
+   "by_platform": {
+    "Amazon": 749.0,
+    "Flipkart": 880.0
+   },
+   "cheapest_platform": "Amazon"
+  },
+  {
+   "query": "Classmate notebook 172 pages pack of 6",
+   "category": "Stationery, books & toys",
+   "offers": 40,
+   "well_known_offers": 28,
+   "stores": 17,
+   "item": "Classmate Single Line Long Notebook",
+   "sellers": 2,
+   "min": 51.0,
+   "max": 63.0,
+   "median": 57.0,
+   "spread_pct": null,
+   "max_min_pct": 23.5,
+   "by_platform": {
+    "JioMart": 51.0
+   },
+   "cheapest_platform": "JioMart"
+  },
+  {
+   "query": "Parker Vector pen",
+   "category": "Stationery, books & toys",
+   "offers": 40,
+   "well_known_offers": 22,
+   "stores": 15,
+   "item": "Parker Vector Stainless Steel Gold Nib Fountain Pen",
+   "sellers": 9,
+   "min": 420.0,
+   "max": 800.0,
+   "median": 498.0,
+   "spread_pct": 30.5,
+   "max_min_pct": 90.5,
+   "by_platform": {
+    "Amazon": 436.0,
+    "Zepto": 459.0
+   },
+   "cheapest_platform": "Amazon"
+  },
+  {
+   "query": "Faber-Castell colour pencils 24",
+   "category": "Stationery, books & toys",
+   "offers": 40,
+   "well_known_offers": 9,
+   "stores": 23,
+   "item": "Faber-Castell Dot Grip Triangle Coloured Pencil",
+   "sellers": 3,
+   "min": 179.78,
+   "max": 28300.0,
+   "median": 1210.02,
+   "spread_pct": null,
+   "max_min_pct": 15641.5,
+   "by_platform": {
+    "BigBasket": 179.78,
+    "Amazon": 28300.0
+   },
+   "cheapest_platform": "BigBasket"
+  },
+  {
+   "query": "Rubik's cube 3x3",
+   "category": "Stationery, books & toys",
+   "offers": 40,
+   "well_known_offers": 31,
+   "stores": 10,
+   "item": "Buy MoYu RS3M v5 3x3 Cube Magnetic Speedcube",
+   "sellers": 4,
+   "min": 589.0,
+   "max": 1709.0,
+   "median": 1039.0,
+   "spread_pct": 37.9,
+   "max_min_pct": 190.2,
+   "by_platform": {
+    "Amazon": 589.0
+   },
+   "cheapest_platform": "Amazon"
+  },
+  {
+   "query": "Atomic Habits book paperback",
+   "category": "Stationery, books & toys",
+   "offers": 40,
+   "well_known_offers": 4,
+   "stores": 20,
+   "item": "Atomic Habits",
+   "sellers": 6,
+   "min": 174.0,
+   "max": 1349.0,
+   "median": 469.5,
+   "spread_pct": 299.2,
+   "max_min_pct": 675.3,
+   "by_platform": {},
+   "cheapest_platform": null
+  },
+  {
+   "query": "Fastrack analog watch men",
+   "category": "Fashion & bags",
+   "offers": 40,
+   "well_known_offers": 32,
+   "stores": 13,
+   "item": "Fastrack Groove Quartz Grey Round Dial Men's Analog Watch",
+   "sellers": 6,
+   "min": 2695.0,
+   "max": 7095.0,
+   "median": 3132.5,
+   "spread_pct": 103.4,
+   "max_min_pct": 163.3,
+   "by_platform": {
+    "Myntra": 2695.0
+   },
+   "cheapest_platform": "Myntra"
+  },
+  {
+   "query": "Wildcraft 35 L backpack",
+   "category": "Fashion & bags",
+   "offers": 40,
+   "well_known_offers": 34,
+   "stores": 7,
+   "item": "Wildcraft 35 Ltrs Black Casual Backpack",
+   "sellers": 2,
+   "min": 1099.0,
+   "max": 2959.0,
+   "median": 2029.0,
+   "spread_pct": null,
+   "max_min_pct": 169.2,
+   "by_platform": {
+    "Amazon": 1099.0
+   },
+   "cheapest_platform": "Amazon"
+  },
+  {
+   "query": "Ray-Ban RB2132 sunglasses",
+   "category": "Fashion & bags",
+   "offers": 40,
+   "well_known_offers": 10,
+   "stores": 23,
+   "item": "Ray-Ban RB2132 NEW WAYFARER Full Frame Unisex Sunglasses, 901L NEW WAYFARER BLACK POLISHED G- (BLACK)",
+   "sellers": 4,
+   "min": 21924.79,
+   "max": 21924.79,
+   "median": 21924.79,
+   "spread_pct": 0.0,
+   "max_min_pct": 0.0,
+   "by_platform": {},
+   "cheapest_platform": null
+  }
+ ],
+ "method": "search-level bootstrap (1,000 resamples) for CIs; prices as shown by Google Shopping India on the search date"
+}
