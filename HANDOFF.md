@@ -230,6 +230,21 @@ Affiliate API for a fresh Indian catalog once the user has an affiliate account.
   scripts/deploy_hf.py (needs HF_TOKEN), .github/workflows/tests.yml. 42 tests pass. README rewritten from the
   results files. PUSH FAILED: account vivaanjasapara707 has no write access to figureitoutwithkrish/dupelens.
   NEXT: keys from user (GROQ_API_KEY, Kaggle token, HF_TOKEN), push route, then run llm_labels + calibrate, deploy.
+- 2026-11-01: user: show ALL listings (iPhone 17 Pro showed only Amazon), big stores first, >= 5-6 shown; push to
+  their own GitHub; maximum accuracy; what data is needed for buy-now-or-wait. Done:
+  model-level view (index.html): listing = offers called same OR variant with the top offer, big stores first,
+  tags "same item as top pick"/"other variant", attrs pills + variant chips (live.attributes: storage, RAM,
+  colour, size, pack; 5G/4G not grams), fair price per chosen variant, ONLY_KNOWN default false.
+  Rules v3 (verdict.py): hyphenated codes as one code, colour_conflict, pack_mismatch (bundle/combo/multi-size),
+  storage_unconfirmed, name_levels (0/1/2: colour-only or vague-vs-named -> variant, else other model).
+  Round 4 (frozen first, 8 new products, 130 pairs incl. new stratum V): listing same-model 84.0% weighted;
+  S same-model 35/40, V same-model 25/30, S identical 13/40 [0.16, 0.593], H same-model missed 13/30, R 0/30.
+  iPhone 17 Pro now lists 6 offers from 5 stores. 43 tests.
+  GitHub: creating a public repo via API was BLOCKED by the auto-mode classifier; remote "mine" =
+  github.com/vivaanjasapara707/dupelens added; user must create the empty repo, then `git push mine main`.
+  History keeps Krish's 8 commits under his name (not rewritten).
+  Buy-now-or-wait data: no free daily Indian price-history dataset found; Keepa API (paid, from ~EUR 49/month per
+  a July-2026 review, amazon.in API coverage unconfirmed) or own daily collection (tracker) for weeks.
   NEXT (user said: deploy LAST): Hugging Face Spaces (needs user's HF account + write
   token; set SERPER_API_KEY as a Space secret and PUBLIC_URL for photo upload), update Vercel static site, push to
   GitHub (ask first).

@@ -24,6 +24,7 @@ cache/*
 !cache/live_final_key.csv
 !cache/ablation_key.csv
 !cache/calibrator_v2.joblib
+!cache/live_round4_key.csv
 .venv/
 __pycache__/
 .pytest_cache/

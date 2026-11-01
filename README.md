@@ -8,7 +8,7 @@ Status (1 Nov 2026): runs locally; not yet hosted (a Docker / Hugging Face Space
 
 | Page | What it does | Code |
 |---|---|---|
-| **Search** (`/`) | Name, store link or photo address -> up to 40 live offers; likely-same-item sellers with fair price, cheapest, sort order, "suspiciously cheap" flag; colour/pack variants and look-alikes shown apart; well-known stores only by default (toggle); "Behind the scenes" panel with a per-search PCA map | `src/live.py`, `src/verdict.py`, `dashboard/index.html` |
+| **Search** (`/`) | Name, store link or photo address -> up to 40 live offers; every listing of the same model, big stores first, each tagged "same item" or "other variant" with storage / colour / size / pack read from the title and filter chips per variant; fair price, cheapest, sort order, "suspiciously cheap" flag; look-alikes shown apart; "big stores only" toggle; "Behind the scenes" panel with a per-search PCA map | `src/live.py`, `src/verdict.py`, `dashboard/index.html` |
 | **Ask DupeLens AI** | Questions about the search on screen ("Is Amazon cheaper than Flipkart here?"), answered by a Groq-hosted LLM from that data only; store-vs-store numbers are computed by the page, not the LLM | `src/assistant.py` |
 | **Store insights** (`/insights.html`) | 60 live searches: price spread for the same item, cheapest store, Amazon vs Flipkart, and a PCA map of 2,300 offers | `src/insights.py` |
 | **Price tracker** (`/tracker.html`) | Track an item; a daily job re-runs the search, the model finds the item again, history + buy-now-or-wait advice + price-drop alerts (in-app, optional Telegram) | `src/tracker.py` |
@@ -48,6 +48,18 @@ Three rounds of 8 product searches each; pairs of offers labelled blind (same / 
 | **Final** (`live_eval_final.json`) | 8 new products, rules frozen first, run once | **23/40 = 57.5% (CI 28.6–81.4%)** | **33/40 = 82.5% (CI 63.9–94.3%)** |
 
 Final round baselines: a random pair from the same search was the identical item 3/30 = 10.0% (CI 3.4–15.4%); among rejected look-alikes, 2/30 = 6.7% were actually identical (CI 0–15.4%).
+
+**Round 4: the model-level "where to buy" list** (`live_eval_round4.json`; 8 more new products, run once after the rules v3 and the model-level view were frozen: hyphenated codes, colours, packs, storage stated on one side only, vague-vs-named titles as variants). The search page now lists every listing of the same model (pairs called *same* or *other variant*), big stores first:
+
+| Round 4 | Result | 95% CI |
+|---|---|---|
+| listing pairs (S + V, weighted by the 97 S and 525 V pairs in the 8 searches) that are the same model | **84.0%** | – |
+| "same item" pairs that are at least the same model | 35/40 = 87.5% | 46.7–97.6% |
+| "other variant" pairs that are at least the same model | 25/30 = 83.3% | 41.7–96.6% |
+| "same item" pairs that are the identical item | 13/40 = 32.5% | 16.0–59.3% |
+| rejected look-alikes that are actually the same model (missed) | 13/30 = 43.3% | 18.7–75.0% |
+
+The list is usually the right model; telling the exact version apart (shampoo variants, kajal versions, colours) is the weak point and depends heavily on the product (57.5% identical on the final round, 32.5% on round 4).
 
 **Ablation, final round** (`src/ablation.py`, `results/json/ablation_final.json`). The live rules only remove "same" verdicts, so a fresh blind sample of the removed pairs (40, mixed with 20 decoys) gives the model-alone precision:
 

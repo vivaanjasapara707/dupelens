@@ -131,6 +131,16 @@ def stats():
         if r:
             out[key] = dict(what=name, **r)
             print(f"{key:<18} {r['hits']}/{r['n']} = {r['rate']:.3f}  CI (search bootstrap) {r['ci_search_bootstrap']}  - {name}")
+    counts_path = config.RESULTS_DIR / f"live_{SET}_counts.csv"
+    if counts_path.exists() and "S_same_or_variant" in out and "V_same_model" in out:
+        # every listing on the page is a pair called S or V with the top pick: weight each stratum's
+        # same-model rate by how many such pairs the 8 searches really contain
+        c = pd.read_csv(counts_path)
+        n_s, n_v = int(c["S"].sum()), int(c["V"].sum())
+        rate = (n_s * out["S_same_or_variant"]["rate"] + n_v * out["V_same_model"]["rate"]) / (n_s + n_v)
+        out["listing_same_model_weighted"] = dict(pairs_S=n_s, pairs_V=n_v, rate=round(rate, 3),
+                                                  what="share of listing pairs (S or V) that are the same product line")
+        print(f"listing (S+V, weighted by {n_s} S and {n_v} V pairs): same model {rate:.3f}")
     import json
     (config.RESULTS_DIR / "json" / f"live_eval_{SET}.json").write_text(json.dumps(out, indent=1))
     return out

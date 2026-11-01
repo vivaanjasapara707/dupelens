@@ -1,0 +1,131 @@
+pair_id,stratum,verdict,tfidf,query
+L000,S,S,0.776,Maybelline Colossal kajal
+L001,S,S,0.791,Philips HL7756 mixer grinder 750 W
+L002,R,D,0.429,Maybelline Colossal kajal
+L003,R,D,0.45,OnePlus Nord CE4 Lite 5G 128GB
+L004,S,S,0.687,Samsung Galaxy S24 FE 128GB
+L005,V,V,0.375,Head & Shoulders shampoo 340 ml
+L006,S,S,0.87,Maybelline Colossal kajal
+L007,S,S,0.753,Maybelline Colossal kajal
+L008,S,S,0.575,Cello Opalware dinner set
+L009,V,V,0.84,Head & Shoulders shampoo 340 ml
+L010,S,S,0.526,Head & Shoulders shampoo 340 ml
+L011,H,D,0.519,Skybags backpack 30 L
+L012,V,V,0.393,Head & Shoulders shampoo 340 ml
+L013,S,S,0.712,Head & Shoulders shampoo 340 ml
+L014,S,S,0.887,Maybelline Colossal kajal
+L015,S,S,0.574,Cello Opalware dinner set
+L016,V,V,0.846,Head & Shoulders shampoo 340 ml
+L017,S,S,0.83,Head & Shoulders shampoo 340 ml
+L018,S,S,0.841,boAt Stone 350 speaker
+L019,V,V,0.739,Maybelline Colossal kajal
+L020,S,S,0.695,Maybelline Colossal kajal
+L021,S,S,0.814,Maybelline Colossal kajal
+L022,R,D,0.451,Skybags backpack 30 L
+L023,R,D,0.343,Philips HL7756 mixer grinder 750 W
+L024,V,V,0.559,Skybags backpack 30 L
+L025,S,S,0.591,Cello Opalware dinner set
+L026,H,D,0.566,boAt Stone 350 speaker
+L027,R,D,0.43,Philips HL7756 mixer grinder 750 W
+L028,H,D,0.565,boAt Stone 350 speaker
+L029,S,S,0.696,Head & Shoulders shampoo 340 ml
+L030,H,D,0.539,boAt Stone 350 speaker
+L031,S,S,0.237,Maybelline Colossal kajal
+L032,S,S,0.839,Maybelline Colossal kajal
+L033,H,D,0.666,Philips HL7756 mixer grinder 750 W
+L034,R,D,0.453,Cello Opalware dinner set
+L035,S,S,0.724,Maybelline Colossal kajal
+L036,R,D,0.338,boAt Stone 350 speaker
+L037,R,D,0.0,OnePlus Nord CE4 Lite 5G 128GB
+L038,H,D,0.582,OnePlus Nord CE4 Lite 5G 128GB
+L039,R,V,0.768,Philips HL7756 mixer grinder 750 W
+L040,R,D,0.54,Head & Shoulders shampoo 340 ml
+L041,S,S,0.68,Head & Shoulders shampoo 340 ml
+L042,V,V,0.968,Cello Opalware dinner set
+L043,R,D,0.464,Cello Opalware dinner set
+L044,R,D,0.279,boAt Stone 350 speaker
+L045,V,V,0.476,Cello Opalware dinner set
+L046,H,D,0.769,Philips HL7756 mixer grinder 750 W
+L047,S,S,0.847,Head & Shoulders shampoo 340 ml
+L048,R,D,0.427,Samsung Galaxy S24 FE 128GB
+L049,R,D,0.402,Philips HL7756 mixer grinder 750 W
+L050,S,S,0.888,Maybelline Colossal kajal
+L051,R,D,0.473,Samsung Galaxy S24 FE 128GB
+L052,V,V,0.818,Head & Shoulders shampoo 340 ml
+L053,S,S,0.75,Head & Shoulders shampoo 340 ml
+L054,S,S,0.632,Maybelline Colossal kajal
+L055,R,D,0.736,Skybags backpack 30 L
+L056,R,D,0.269,Maybelline Colossal kajal
+L057,S,S,0.601,Head & Shoulders shampoo 340 ml
+L058,V,V,0.886,Head & Shoulders shampoo 340 ml
+L059,H,D,0.626,Skybags backpack 30 L
+L060,R,D,0.592,Head & Shoulders shampoo 340 ml
+L061,V,V,0.527,Head & Shoulders shampoo 340 ml
+L062,S,S,0.786,Head & Shoulders shampoo 340 ml
+L063,R,D,0.336,Head & Shoulders shampoo 340 ml
+L064,R,D,0.406,Head & Shoulders shampoo 340 ml
+L065,V,V,0.396,Head & Shoulders shampoo 340 ml
+L066,R,V,0.583,Head & Shoulders shampoo 340 ml
+L067,H,V,0.733,boAt Stone 350 speaker
+L068,V,V,0.611,Maybelline Colossal kajal
+L069,H,D,0.51,boAt Stone 350 speaker
+L070,H,D,0.632,Maybelline Colossal kajal
+L071,R,D,0.532,Head & Shoulders shampoo 340 ml
+L072,R,D,0.639,Maybelline Colossal kajal
+L073,V,V,0.604,Philips HL7756 mixer grinder 750 W
+L074,V,V,0.76,Head & Shoulders shampoo 340 ml
+L075,S,S,0.721,Maybelline Colossal kajal
+L076,S,S,0.752,Philips HL7756 mixer grinder 750 W
+L077,R,V,0.564,Maybelline Colossal kajal
+L078,V,V,0.582,Head & Shoulders shampoo 340 ml
+L079,V,V,0.783,Head & Shoulders shampoo 340 ml
+L080,H,D,0.523,Skybags backpack 30 L
+L081,S,S,0.711,Maybelline Colossal kajal
+L082,H,V,0.581,Maybelline Colossal kajal
+L083,H,D,0.768,Maybelline Colossal kajal
+L084,R,D,0.193,OnePlus Nord CE4 Lite 5G 128GB
+L085,H,D,0.626,boAt Stone 350 speaker
+L086,S,S,0.917,Cello Opalware dinner set
+L087,R,D,0.582,Philips HL7756 mixer grinder 750 W
+L088,S,S,0.694,Maybelline Colossal kajal
+L089,V,V,0.634,Head & Shoulders shampoo 340 ml
+L090,V,V,0.595,Head & Shoulders shampoo 340 ml
+L091,V,V,0.292,Head & Shoulders shampoo 340 ml
+L092,S,S,0.599,Skybags backpack 30 L
+L093,H,D,0.547,Samsung Galaxy S24 FE 128GB
+L094,H,D,0.602,Cello Opalware dinner set
+L095,H,D,0.767,boAt Stone 350 speaker
+L096,V,V,0.654,Skybags backpack 30 L
+L097,S,S,0.807,Cello Opalware dinner set
+L098,S,S,0.497,Head & Shoulders shampoo 340 ml
+L099,V,V,0.738,Head & Shoulders shampoo 340 ml
+L100,V,V,0.797,boAt Stone 350 speaker
+L101,V,V,0.65,Philips HL7756 mixer grinder 750 W
+L102,H,D,0.669,Maybelline Colossal kajal
+L103,H,D,0.725,Philips HL7756 mixer grinder 750 W
+L104,R,D,0.783,OnePlus Nord CE4 Lite 5G 128GB
+L105,H,D,0.531,Cello Opalware dinner set
+L106,S,S,0.596,Maybelline Colossal kajal
+L107,H,V,0.714,Maybelline Colossal kajal
+L108,S,S,0.556,Maybelline Colossal kajal
+L109,S,S,0.836,Cello Opalware dinner set
+L110,V,V,0.267,boAt Stone 350 speaker
+L111,H,V,0.619,Maybelline Colossal kajal
+L112,S,S,0.721,Maybelline Colossal kajal
+L113,V,V,0.368,Head & Shoulders shampoo 340 ml
+L114,H,V,0.729,Head & Shoulders shampoo 340 ml
+L115,S,S,0.775,Maybelline Colossal kajal
+L116,H,V,0.855,Samsung Galaxy S24 FE 128GB
+L117,V,V,0.752,Maybelline Colossal kajal
+L118,H,D,0.63,boAt Stone 350 speaker
+L119,V,V,0.712,Head & Shoulders shampoo 340 ml
+L120,R,D,0.564,Skybags backpack 30 L
+L121,H,D,0.767,Maybelline Colossal kajal
+L122,H,D,0.623,Head & Shoulders shampoo 340 ml
+L123,V,V,0.777,Cello Opalware dinner set
+L124,S,S,0.746,Head & Shoulders shampoo 340 ml
+L125,V,V,0.496,Maybelline Colossal kajal
+L126,R,D,0.451,Skybags backpack 30 L
+L127,R,D,0.43,Maybelline Colossal kajal
+L128,H,D,0.7,boAt Stone 350 speaker
+L129,H,D,0.577,Samsung Galaxy S24 FE 128GB

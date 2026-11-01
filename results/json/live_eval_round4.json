@@ -1,0 +1,87 @@
+{
+ "set": "round4",
+ "labels": "Claude, an AI assistant, not humans",
+ "S_same": {
+  "what": "model says same -> truly the identical item",
+  "n": 40,
+  "hits": 13,
+  "rate": 0.325,
+  "searches": 7,
+  "ci_search_bootstrap": [
+   0.16,
+   0.593
+  ]
+ },
+ "S_same_or_variant": {
+  "what": "model says same -> at least the same product line",
+  "n": 40,
+  "hits": 35,
+  "rate": 0.875,
+  "searches": 7,
+  "ci_search_bootstrap": [
+   0.467,
+   0.976
+  ]
+ },
+ "R_same": {
+  "what": "random pair from a search -> identical item (naive baseline)",
+  "n": 30,
+  "hits": 0,
+  "rate": 0.0,
+  "searches": 8,
+  "ci_search_bootstrap": [
+   0.0,
+   0.0
+  ]
+ },
+ "V_same_model": {
+  "what": "model says other variant -> at least the same product line",
+  "n": 30,
+  "hits": 25,
+  "rate": 0.833,
+  "searches": 6,
+  "ci_search_bootstrap": [
+   0.417,
+   0.966
+  ]
+ },
+ "V_same": {
+  "what": "model says other variant -> actually the identical item",
+  "n": 30,
+  "hits": 2,
+  "rate": 0.067,
+  "searches": 6,
+  "ci_search_bootstrap": [
+   0.0,
+   0.2
+  ]
+ },
+ "H_same": {
+  "what": "rejected look-alike -> actually identical (missed)",
+  "n": 30,
+  "hits": 2,
+  "rate": 0.067,
+  "searches": 8,
+  "ci_search_bootstrap": [
+   0.0,
+   0.105
+  ]
+ },
+ "H_same_model": {
+  "what": "rejected look-alike -> actually the same product line (missed)",
+  "n": 30,
+  "hits": 13,
+  "rate": 0.433,
+  "searches": 8,
+  "ci_search_bootstrap": [
+   0.187,
+   0.75
+  ]
+ },
+ "listing_same_model_weighted": {
+  "pairs_S": 97,
+  "pairs_V": 525,
+  "rate": 0.84,
+  "what": "share of listing pairs (S or V) that are the same product line"
+ }
+}
