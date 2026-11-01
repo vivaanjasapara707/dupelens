@@ -26,7 +26,7 @@ Example (search on 1 Nov 2026, saved in `dashboard/data/searches/`): Sony WH-100
 | baseline: a random pair of offers from the same search is the identical item | 3 / 30 = 10% | 0–23% |
 | true matches missed among look-alikes the model rejected | 2 / 30 = 6.7% | 0–17% |
 
-Two earlier rounds of 8 searches each were used to design the rules and are not reported as accuracy (on the first, before the rules, "same" was right 20 / 40 times). Once the models are loaded a search took 2–4 s on a Windows laptop CPU.
+Two earlier rounds of 8 searches each were used to design the rules and are not reported as accuracy (on the first, before the rules, "same" was right 20 / 40 times). Once the models are loaded a search took 2–5 s on a Windows laptop CPU (measured 2.2–4.6 s).
 
 Limits of live search: shades, scents and pack sizes that only differ in the photo or are not named in the title are still the main error; the seller score weights are a design choice; uploaded photos need the online version (Google Lens must reach the photo), on a laptop paste the photo's address instead; prices are what Google Shopping shows at search time.
 

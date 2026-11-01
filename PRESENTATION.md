@@ -59,7 +59,7 @@ was by product group: 70% train, 15% validation, 15% test, so the test only cont
   - it is at least the same product line 33 of 40 times: **82.5%** (CI 67.5–95%)
   - baseline: a random pair from the same search is the identical item only 3 of 30 times (10%)
   - the model missed only 2 of 30 true matches among the look-alikes it rejected
-- **Speed:** a live search takes 2–4 seconds once the models are loaded.
+- **Speed:** a live search takes 2–5 seconds once the models are loaded (measured 2.2–4.6 s).
 
 **CI (confidence interval):** we resampled the labelled pairs 1,000 times. The true rate is very likely inside the range.
 It is wide because we have only 40 pairs.
