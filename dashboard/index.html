@@ -12,7 +12,7 @@
 <body>
 <div class="topbar"><div class="in">
   <div class="brand"><a href="./" style="display:flex;gap:12px;align-items:center"><div class="logo" aria-hidden="true">DL</div>DupeLens</a></div>
-  <nav class="navlinks"><a class="navlink active" href="./">Search</a><a class="navlink" href="insights.html">Store insights</a><a class="navlink" href="tracker.html">Price tracker</a><a class="navlink" href="evidence.html">How we tested</a></nav>
+  <nav class="navlinks"><a class="navlink active" href="./">Search</a><a class="navlink" href="deal.html">Scam checker</a><a class="navlink" href="basket.html">Smart basket</a><a class="navlink" href="tracker.html">Price tracker</a></nav>
   <span class="chip" id="status"><span class="dot"></span><span>Connecting…</span></span>
 </div></div>
 <main>
@@ -62,15 +62,13 @@
       <p class="sub" id="radar-sub"></p>
       <svg id="radar" viewBox="0 0 760 380" width="100%" role="img" aria-label="Scam Radar: genuine look against price"></svg>
       <div class="legend"><span><i style="background:#2589FF"></i>trusted store (big store, authorised reseller, brand store): never flagged</span><span><i style="background:#8a9bb0"></i>less-known shop, looks fine</span><span><i style="background:#f87171"></i>less-known shop in the risk zone</span></div>
-      <p class="hint" style="margin:10px 0 0">How it works: PCA learns what this product really looks like from the photos of all its listings (most sellers show the real thing), then rebuilds every photo from that look. A photo it cannot rebuild gets a low genuine-look %. Tested by slipping other products' photos in under this product's name: caught 98.4% of the time (95% CI 97.1–99.6%, 13 searches), while 7.8% of small shops' own listings were flagged (some of them are real copies). A copy made to look exactly like the original passes any photo check, so the radar adds the price: a less-known shop is in the risk zone when its photo does not look genuine or its price is more than 40% below the fair price.</p>
-    </div>
+          </div>
 
     <div class="card xray" id="xray-card" hidden>
       <h2>Photo X-ray <span class="ai-badge">PCA on the product photos</span></h2>
-      <p class="sub">Like "eigenfaces" for products. Every listing photo of this model is cut out of its background and shrunk to 48×48 pixels (6,912 numbers). PCA finds the <b>average photo</b> and the <b>eigen-images</b>: the directions in which these photos differ most. Each photo is then rebuilt from the main directions of the <i>other</i> photos; what cannot be rebuilt is shown as a heatmap, and the odd-one-out score (the same idea on DINOv2 features) flags photos unlike the rest: possibly another item, a used or fake product, or an accessory. Only less-known shops are warned about: an unusual photo at a big store is a photo choice, not a scam.</p>
+      <p class="sub">Average photo and eigen-images of this product's listing photos (PCA). Each photo is rebuilt from the others; red shows what does not fit.</p>
       <div id="xray"></div>
-      <p class="hint" style="margin:12px 0 0">Tested on 48 real listings (<code>results/json/photo_xray_test*.json</code>): a photo of a different product slipped in was ranked the most unusual 95.8% of the time (chance 12.4%); a look-alike from the same search (for example the Pro Max among Pro listings) only 31.2% of the time. So: good at catching a wrong product, weak at telling close versions apart.</p>
-    </div>
+          </div>
 
     <div class="card" id="ask-card">
       <h2>Ask DupeLens AI <span class="ai-badge" id="ai-model">Groq</span></h2>
@@ -119,10 +117,7 @@
     </div>
   </section>
 
-  <footer>
-    <b>How accurate is it?</b> Tested on 8 fresh products never used to build the rules (Prestige cooker, Philips trimmer, Mi power bank, Boroplus, Casio calculator, Sony headphones, Wipro bulb, Vaseline lotion): when DupeLens says two listings are the same item, it was the identical item in 23 of 40 pairs (57.5%; 95% CI 28.6–81.4%, resampling whole searches) and at least the same product line in 33 of 40 (82.5%; CI 63.9–94.3%); a random pair from the same search was the identical item only 3 of 30 times (10%). Without the hand-written rules the model alone was right about 26% of the time. Labelled blind by Claude, an AI assistant, not humans.
-    Prices, ratings and links come live from Google Shopping (India) at search time. The matching model is DupeLens's own (trained on 34,250 Shopee listings, validation F1 0.864); the sort order is a fixed, transparent rule, not a trained model. Details and limits: <a href="evidence.html">how we tested the model</a>.
-  </footer>
+  <footer>Prices, ratings and links come live from Google Shopping India at search time. Check the store page before you buy.</footer>
 </main>
 <div class="tip" id="tip"></div>
 
@@ -375,7 +370,7 @@ function render(seed) {
       <button type="button" data-sort="price" aria-pressed="${SORT === "price"}">Cheapest first (big stores before small)</button>
       <button type="button" data-sort="score" aria-pressed="${SORT === "score"}">Sort-order score</button>
       <button type="button" data-sort="rating" aria-pressed="${SORT === "rating"}">Best rated first</button></div>` +
-    "Best price = the cheapest new listing from a big store; never one priced more than 40% below the typical price, a refurbished or bulk listing, or one whose photo does not match the product (PCA bait-listing check: in tests it caught a wrong product's photo 95.8% of the time). Sort-order score = how sure the model is it's the same item (35) + fair price (25) + star rating (15) + number of reviews (10) + well-known store (15)." +
+    "Best price = the cheapest new listing from a trusted store." +
     (g.hidden > 0 ? ` <b>${g.hidden} listing${g.hidden > 1 ? "s" : ""} from less-known stores hidden.</b> <button class="linkbtn" id="show-all" type="button">Show them</button>` : "");
   if (g.hidden > 0) $("#show-all").onclick = () => { ONLY_KNOWN = false; render(seed); };
   document.querySelectorAll("[data-sort]").forEach(b => b.onclick = () => { SORT = b.dataset.sort; render(seed); });

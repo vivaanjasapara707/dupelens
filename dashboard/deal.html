@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DupeLens Scam Checker</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔎</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+  .form-grid { display: grid; grid-template-columns: 2fr 1fr 1.6fr auto; gap: 10px; align-items: end; }
+  .form-grid label { display: block; font-size: 13px; color: var(--muted); margin: 0 0 6px; }
+  .field { width: 100%; box-sizing: border-box; background: var(--raised); border: 1px solid var(--line); border-radius: 10px; color: var(--ink); font: inherit; padding: 11px 12px; }
+  .verdict { border-radius: 14px; padding: 22px; margin: 0 0 16px; border: 1px solid var(--line); }
+  .verdict h2 { margin: 0 0 6px; font-size: 26px; }
+  .verdict.bad { background: rgba(248,113,113,.10); border-color: rgba(248,113,113,.5); }
+  .verdict.warn { background: rgba(251,191,36,.08); border-color: rgba(251,191,36,.45); }
+  .verdict.good { background: rgba(52,211,153,.08); border-color: rgba(52,211,153,.45); }
+  .meter { height: 12px; border-radius: 6px; background: linear-gradient(90deg, #34d399, #fbbf24 45%, #f87171); position: relative; margin: 14px 0 4px; }
+  .meter i { position: absolute; top: -5px; width: 4px; height: 22px; background: var(--ink); border-radius: 2px; }
+  .reason { display: flex; gap: 10px; padding: 10px 0; border-top: 1px solid var(--line); font-size: 14.5px; }
+  .reason b { flex: none; width: 22px; }
+  @media (max-width: 760px) { .form-grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="topbar"><div class="in">
+  <div class="brand"><a href="./" style="display:flex;gap:12px;align-items:center"><div class="logo" aria-hidden="true">DL</div>DupeLens</a></div>
+  <nav class="navlinks"><a class="navlink" href="./">Search</a><a class="navlink active" href="deal.html">Scam checker</a><a class="navlink" href="basket.html">Smart basket</a><a class="navlink" href="tracker.html">Price tracker</a></nav>
+  <span class="chip" id="status"><span class="dot"></span><span>Connecting…</span></span>
+</div></div>
+<main>
+  <section class="page-head">
+    <h1>Is this deal real?</h1>
+    <p>Saw a deal on Instagram, WhatsApp or an unknown website? Enter the product, the price it claims and where it is sold. DupeLens checks every trusted store live and inspects the seller's website, then tells you if it is a scam.</p>
+  </section>
+  <section class="card">
+    <form id="form" class="form-grid">
+      <div><label for="q">Product</label><input class="field" id="q" placeholder="e.g. iphone 16" autocomplete="off" required></div>
+      <div><label for="price">Price in the deal (₹)</label><input class="field" id="price" type="number" min="1" placeholder="e.g. 24999" required></div>
+      <div><label for="seller">Where is it sold? (website, store or app)</label><input class="field" id="seller" placeholder="e.g. amaz0n-sale.shop or Instagram" autocomplete="off"></div>
+      <button class="btn" id="go" type="submit">Check deal</button>
+    </form>
+    <div class="examples" style="justify-content:flex-start;margin:14px 0 0">
+      <span>Try:</span>
+      <button class="ex" type="button" data-ex="iphone 16|24999|amaz0n-mega-sale.shop">iPhone 16 for ₹24,999</button>
+      <button class="ex" type="button" data-ex="sony wh-1000xm5|9999|Instagram">Sony XM5 on Instagram</button>
+      <button class="ex" type="button" data-ex="apple airpods pro 2|19499|flipkart.com">AirPods Pro 2 on Flipkart</button>
+    </div>
+    <div class="notice" id="note" hidden></div>
+  </section>
+  <section id="out" hidden>
+    <div class="verdict" id="verdict"></div>
+    <div class="top2">
+      <div class="card"><h2>Why</h2><div id="reasons"></div></div>
+      <div class="card side" id="safe"></div>
+    </div>
+  </section>
+</main>
+<div class="tip" id="tip"></div>
+<script src="tools.js"></script>
+<script>
+let LIVE = false;
+connect().then(ok => { LIVE = ok; if (!ok) note("The checker needs the DupeLens server (live search)."); });
+function note(msg) { const n = $("#note"); n.hidden = !msg; n.textContent = msg || ""; }
+
+document.querySelectorAll("[data-ex]").forEach(b => b.onclick = () => {
+  const [q, p, s] = b.dataset.ex.split("|"); $("#q").value = q; $("#price").value = p; $("#seller").value = s; check();
+});
+$("#form").onsubmit = e => { e.preventDefault(); check(); };
+
+async function check() {
+  const q = $("#q").value.trim(), price = parseFloat($("#price").value), seller = $("#seller").value.trim();
+  if (!q || !(price > 0)) { note("Enter the product and the price in the deal."); return; }
+  if (!LIVE) { note("The checker needs the DupeLens server (live search)."); return; }
+  note(""); $("#go").disabled = true; $("#go").textContent = "Checking stores…"; $("#out").hidden = true;
+  try {
+    const D = await liveSearch(q);
+    render(q, price, seller, D);
+  } catch (e) { note("Check failed: " + e.message); }
+  finally { $("#go").disabled = false; $("#go").textContent = "Check deal"; }
+}
+
+function render(q, price, seller, D) {
+  const offers = trustedOffers(D).sort((a, b) => a.price_value - b.price_value);
+  const best = offers[0] || null, fair = D.typical || null;
+  const s = checkSeller(seller);
+  const reasons = [];   // [level, text]; risk points add up to the score
+  let risk = 0;
+  // 1. the price against the lowest price at a trusted store (live)
+  if (best) {
+    const r = price / best.price_value, pct = Math.round(100 * (1 - r));
+    if (r < 0.5) { risk += 60; reasons.push(["bad", `${inr(price)} is ${pct}% below the lowest price at any trusted store (${inr(best.price_value)} at ${platform(best.store)}). No genuine seller can sell this far below what Amazon, Flipkart or the brand charge: the item is fake, used, or never sent.`]); }
+    else if (r < 0.8) { risk += 35; reasons.push(["warn", `${inr(price)} is ${pct}% below the lowest trusted price (${inr(best.price_value)} at ${platform(best.store)}). Too good to be true for a new, genuine item.`]); }
+    else if (r <= 1.05) reasons.push(["good", `${inr(price)} is in line with the lowest trusted price (${inr(best.price_value)} at ${platform(best.store)}).`]);
+    else reasons.push(["warn", `${inr(price)} is ${inr(price - best.price_value)} more than ${platform(best.store)} charges (${inr(best.price_value)}): not a scam sign, but you are overpaying.`]);
+  } else reasons.push(["warn", `No trusted store sells "${q}" new right now, so the price cannot be compared. Be extra careful with a seller offering what big stores do not have.`]);
+  // 2. the seller
+  if (s.kind === "official") risk -= 30;
+  if (s.kind === "store-name") risk -= 10;
+  if (s.kind === "fake") risk += 60;
+  if (s.kind === "risky") risk += 30;
+  if (s.kind === "unknown") risk += 15;
+  if (s.kind === "social") risk += 30;
+  if (s.reasons.some(([l, t]) => t.includes("http://"))) risk += 10;
+  reasons.push(...s.reasons);
+  if (s.kind === "none") reasons.push(["warn", "No seller given: add the website or app to check it too."]);
+  risk = Math.max(0, Math.min(100, risk));
+  const overpriced = best && price > 1.05 * best.price_value && risk < 40;
+  const [cls, icon, title] = risk >= 70 ? ["bad", "🚨", "Almost certainly a scam"] : risk >= 40 ? ["bad", "⚠️", "High risk: do not pay in advance"]
+    : risk >= 15 ? ["warn", "⚠️", "Be careful"] : overpriced ? ["warn", "💸", "Safe, but overpriced"] : ["good", "✅", "Looks like a fair deal"];
+  $("#verdict").className = "verdict " + cls;
+  $("#verdict").innerHTML = `<div class="label">Scam risk ${risk}/100</div><h2>${icon} ${title}</h2>
+    <div class="sub" style="margin:0">${esc(q)} for ${inr(price)}${seller ? " · " + esc(seller) : ""} · checked against ${D.offers.filter(o => !o.is_ref).length} live listings in ${D.seconds} s</div>
+    <div class="meter"><i style="left:calc(${risk}% - 2px)"></i></div>
+    <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted)"><span>safe</span><span>scam</span></div>`;
+  const ic = { bad: "🚨", warn: "⚠️", good: "✅" };
+  $("#reasons").innerHTML = reasons.map(([l, t]) => `<div class="reason"><b>${ic[l]}</b><span>${esc(t)}</span></div>`).join("");
+  $("#safe").innerHTML = best ? `<div class="label">Buy it safely instead</div>
+      <h2 style="margin:6px 0">${inr(best.price_value)} at ${esc(platform(best.store))}</h2>
+      <p class="sub">${esc(best.title)}</p>
+      <a class="go" href="${esc(best.link || "./?q=" + encodeURIComponent(q))}" target="_blank" rel="noopener">Open ${esc(platform(best.store))} →</a>
+      ${fair ? `<div class="stat" style="margin-top:14px"><div class="v num">${inr(fair)}</div><div class="l">fair price (typical at trusted stores)</div></div>` : ""}
+      <div class="stat"><div class="v num">${offers.length}</div><div class="l">trusted listings checked live</div></div>
+      <p class="hint" style="margin:10px 0 0"><a href="./?q=${encodeURIComponent(q)}">See every seller of ${esc(q)} →</a></p>`
+    : `<div class="label">No trusted store found</div><p class="sub">Search Amazon or Flipkart directly before paying anyone.</p>`;
+  $("#out").hidden = false; $("#out").scrollIntoView({ behavior: "smooth" });
+}
+</script>
+</body>
+</html>

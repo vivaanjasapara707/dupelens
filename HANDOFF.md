@@ -312,3 +312,12 @@ Affiliate API for a fresh Indian catalog once the user has an affiliate account.
   are never called risky (a far-below price there = "check the variant", still never the best price). Limit shown
   on the AirPods search: perfect visual copies pass the photo check, the price exposes them. Cloudflare Tunnel
   script: scripts/go_public_cloudflare.bat (user installs cloudflared once with winget).
+- 2026-11-02: Store insights / How we tested replaced in the nav by two tools (pages kept as files):
+  Scam checker (dashboard/deal.html): product + claimed price + seller -> live trusted-store price comparison +
+  fake-website detector (official domains, brand names on other domains, lookalike spellings with digit swaps and
+  edit distance, risky domain endings, social-media sellers, http) -> risk score 0-100 with every reason.
+  Smart basket (dashboard/basket.html): up to 6 items searched live, cheapest trusted listing per store, then the
+  exact optimum over every combination of stores (delivery fee per store, max stores), compared with buying each
+  item at its own cheapest store and with single stores. Shared rules in dashboard/tools.js (same trusted-listing
+  rule as the search page). Detector checked on 18 addresses; both pages click-tested, no errors. Search page
+  explanations trimmed.

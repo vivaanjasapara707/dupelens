@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DupeLens Smart Basket</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔎</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+  .form-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; }
+  .form-grid label { display: block; font-size: 13px; color: var(--muted); margin: 0 0 6px; }
+  .field { width: 100%; box-sizing: border-box; background: var(--raised); border: 1px solid var(--line); border-radius: 10px; color: var(--ink); font: inherit; padding: 11px 12px; }
+  textarea.field { min-height: 150px; resize: vertical; line-height: 1.6; }
+  .storebox { border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; margin: 0 0 12px; }
+  .storebox h3 { margin: 0 0 8px; display: flex; justify-content: space-between; }
+  .item { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; border-top: 1px solid var(--line); font-size: 14.5px; }
+  .item a { color: var(--accent-2); }
+  .prog { font-size: 14px; color: var(--muted); padding: 4px 0; }
+  .compare td, .compare th { padding: 8px 10px; border-top: 1px solid var(--line); text-align: left; font-size: 14.5px; }
+  .compare { border-collapse: collapse; width: 100%; }
+  @media (max-width: 760px) { .form-grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="topbar"><div class="in">
+  <div class="brand"><a href="./" style="display:flex;gap:12px;align-items:center"><div class="logo" aria-hidden="true">DL</div>DupeLens</a></div>
+  <nav class="navlinks"><a class="navlink" href="./">Search</a><a class="navlink" href="deal.html">Scam checker</a><a class="navlink active" href="basket.html">Smart basket</a><a class="navlink" href="tracker.html">Price tracker</a></nav>
+  <span class="chip" id="status"><span class="dot"></span><span>Connecting…</span></span>
+</div></div>
+<main>
+  <section class="page-head">
+    <h1>Smart basket</h1>
+    <p>Buying several things? List them. DupeLens finds every item at every trusted store live, then tries every combination of stores to find the cheapest way to buy the whole basket, delivery fees included.</p>
+  </section>
+  <section class="card">
+    <form id="form" class="form-grid">
+      <div><label for="items">Items, one per line (up to 6)</label>
+        <textarea class="field" id="items" placeholder="boat airdopes 141&#10;logitech mx master 3s&#10;nivea soft 200ml"></textarea></div>
+      <div>
+        <label for="fee">Delivery fee per store (₹)</label><input class="field" id="fee" type="number" min="0" value="40">
+        <label for="maxs" style="margin-top:14px">Buy from at most</label>
+        <select class="field" id="maxs"><option value="99">any number of stores</option><option value="1">1 store</option><option value="2">2 stores</option><option value="3">3 stores</option></select>
+        <button class="btn" id="go" type="submit" style="margin-top:16px;width:100%">Find the cheapest plan</button>
+      </div>
+    </form>
+    <div class="examples" style="justify-content:flex-start;margin:14px 0 0">
+      <span>Try:</span>
+      <button class="ex" type="button" data-ex="boat airdopes 141|logitech mx master 3s|wildcraft backpack">Back to college</button>
+      <button class="ex" type="button" data-ex="tata salt 1kg|amul butter 500g|nescafe classic 200g|maggi masala noodles">Monthly groceries</button>
+    </div>
+    <div class="notice" id="note" hidden></div>
+    <div id="progress"></div>
+  </section>
+  <section id="out" hidden>
+    <div class="card best" style="display:block">
+      <div class="label">Cheapest way to buy your basket</div>
+      <h2 id="total" style="margin:6px 0"></h2>
+      <p class="sub" id="summary"></p>
+      <div id="plan"></div>
+    </div>
+    <div class="card">
+      <h2>Compared with other ways to buy</h2>
+      <table class="compare" id="compare"></table>
+      <p class="hint" style="margin:10px 0 0" id="method"></p>
+    </div>
+  </section>
+</main>
+<script src="tools.js"></script>
+<script>
+let LIVE = false;
+connect().then(ok => { LIVE = ok; if (!ok) note("The basket needs the DupeLens server (live search)."); });
+function note(msg) { const n = $("#note"); n.hidden = !msg; n.textContent = msg || ""; }
+document.querySelectorAll("[data-ex]").forEach(b => b.onclick = () => { $("#items").value = b.dataset.ex.split("|").join("\n"); run(); });
+$("#form").onsubmit = e => { e.preventDefault(); run(); };
+
+async function run() {
+  const items = [...new Set($("#items").value.split("\n").map(s => s.trim()).filter(Boolean))].slice(0, 6);
+  const fee = Math.max(0, parseFloat($("#fee").value) || 0), maxS = parseInt($("#maxs").value, 10);
+  if (!items.length) { note("Add at least one item."); return; }
+  if (!LIVE) { note("The basket needs the DupeLens server (live search)."); return; }
+  note(""); $("#out").hidden = true; $("#go").disabled = true;
+  const prog = $("#progress"); prog.innerHTML = items.map((q, i) => `<div class="prog" id="p${i}">⏳ ${esc(q)}</div>`).join("");
+  // 1. every item, live: the cheapest trusted listing at each store
+  const found = [];   // {q, at: {store: offer}}
+  for (let i = 0; i < items.length; i++) {
+    try {
+      const D = await liveSearch(items[i]), at = {};
+      for (const o of trustedOffers(D)) { const s = platform(o.store); if (!at[s] || o.price_value < at[s].price_value) at[s] = o; }
+      found.push({ q: items[i], at });
+      $("#p" + i).textContent = `${Object.keys(at).length ? "✓" : "✗"} ${items[i]}: ${Object.keys(at).length} trusted store${Object.keys(at).length === 1 ? "" : "s"}`;
+    } catch (e) { found.push({ q: items[i], at: {} }); $("#p" + i).textContent = `✗ ${items[i]}: ${e.message}`; }
+  }
+  $("#go").disabled = false;
+  const ok = found.filter(f => Object.keys(f.at).length), missing = found.filter(f => !Object.keys(f.at).length);
+  if (!ok.length) { note("None of the items is sold new by a trusted store right now."); return; }
+  // 2. exact optimum: try every set of stores (up to the limit), each item at its cheapest store in the set
+  const stores = [...new Set(ok.flatMap(f => Object.keys(f.at)))];
+  const n = Math.min(stores.length, 16), S = stores.slice(0, n);
+  let best = null, tried = 0;
+  const plan = mask => {
+    let cost = 0; const pick = [];
+    for (const f of ok) {
+      let b = null;
+      for (let k = 0; k < n; k++) if (mask & (1 << k)) { const o = f.at[S[k]]; if (o && (!b || o.price_value < b.o.price_value)) b = { s: S[k], o }; }
+      if (!b) return null;
+      cost += b.o.price_value; pick.push({ q: f.q, ...b });
+    }
+    const used = new Set(pick.map(p => p.s));
+    return { cost: cost + fee * used.size, items: cost, fees: fee * used.size, used: [...used], pick };
+  };
+  const bits = m => { let c = 0; while (m) { c += m & 1; m >>= 1; } return c; };
+  for (let mask = 1; mask < (1 << n); mask++) {
+    if (bits(mask) > maxS) continue;
+    tried++;
+    const p = plan(mask);
+    if (p && (!best || p.cost < best.cost - 1e-9 || (Math.abs(p.cost - best.cost) < 1e-9 && p.used.length < best.used.length))) best = p;
+  }
+  if (!best) { note(`No combination of ${maxS} store${maxS === 1 ? "" : "s"} sells every item. Allow more stores.`); return; }
+  // 3. what the buyer would pay otherwise
+  const each = (() => { let c = 0; const used = new Set(); for (const f of ok) { const [s, o] = Object.entries(f.at).sort((a, b) => a[1].price_value - b[1].price_value)[0]; c += o.price_value; used.add(s); } return { cost: c + fee * used.size, n: used.size }; })();
+  const singles = S.map((s, k) => ({ s, p: plan(1 << k) })).filter(x => x.p).sort((a, b) => a.p.cost - b.p.cost);
+  $("#total").textContent = `${inr(best.cost)} from ${best.used.length} store${best.used.length === 1 ? "" : "s"}`;
+  const next = [each.cost, ...singles.map(x => x.p.cost)].filter(c => c > best.cost + 0.5).sort((a, b) => a - b)[0];
+  $("#summary").textContent = `${inr(best.items)} for ${ok.length} item${ok.length === 1 ? "" : "s"} + ${inr(best.fees)} delivery.${next ? ` ${inr(next - best.cost)} less than the next best way to buy (table below).` : ""}` +
+    (missing.length ? ` Not found at a trusted store: ${missing.map(m => m.q).join(", ")}.` : "");
+  $("#plan").innerHTML = best.used.map(s => { const its = best.pick.filter(p => p.s === s);
+    return `<div class="storebox"><h3><span>${esc(s)}</span><span class="num">${inr(its.reduce((c, p) => c + p.o.price_value, 0) + fee)}</span></h3>` +
+      its.map(p => `<div class="item"><span>${esc(p.q)} · <a href="${esc(p.o.link || "./?q=" + encodeURIComponent(p.q))}" target="_blank" rel="noopener">${esc(p.o.title)}</a></span><b class="num">${inr(p.o.price_value)}</b></div>`).join("") +
+      (fee ? `<div class="item"><span>Delivery</span><span class="num">${inr(fee)}</span></div>` : "") + `</div>`; }).join("");
+  $("#compare").innerHTML = `<tr><th>Way to buy</th><th>Total</th><th>vs best plan</th></tr>
+    <tr><td><b>DupeLens plan</b> (${best.used.join(" + ")})</td><td class="num"><b>${inr(best.cost)}</b></td><td>—</td></tr>
+    <tr><td>Each item at its own cheapest store (${each.n} store${each.n === 1 ? "" : "s"}, ${each.n} deliveries)</td><td class="num">${inr(each.cost)}</td><td class="num">${each.cost > best.cost ? "+" + inr(each.cost - best.cost) : "same"}</td></tr>` +
+    singles.slice(0, 3).map(x => `<tr><td>Everything from ${esc(x.s)}</td><td class="num">${inr(x.p.cost)}</td><td class="num">${x.p.cost > best.cost ? "+" + inr(x.p.cost - best.cost) : "same"}</td></tr>`).join("") +
+    (singles.length ? "" : `<tr><td colspan="3">No single store sells every item.</td></tr>`);
+  $("#method").textContent = `Exact optimum: ${tried.toLocaleString("en-IN")} combinations of ${n} trusted stores checked, each item bought at its cheapest store in the combination. Prices are live from trusted stores only (big stores, authorised resellers, brand stores; new, exact product).`;
+  $("#out").hidden = false; $("#out").scrollIntoView({ behavior: "smooth" });
+}
+</script>
+</body>
+</html>
