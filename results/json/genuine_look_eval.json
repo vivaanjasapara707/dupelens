@@ -1,0 +1,36 @@
+{
+ "searches_with_reference": 13,
+ "injected wrong photo caught (tried: own-stock stores as reference)": {
+  "n": 1131,
+  "flagged_pct": 84.3,
+  "ci95": [
+   61.2,
+   100.0
+  ]
+ },
+ "injected wrong photo caught (used: all listings as reference)": {
+  "n": 1131,
+  "flagged_pct": 98.4,
+  "ci95": [
+   97.1,
+   99.6
+  ]
+ },
+ "small-shop listing flagged (tried: own-stock stores as reference)": {
+  "n": 154,
+  "flagged_pct": 27.3,
+  "ci95": [
+   10.0,
+   48.2
+  ]
+ },
+ "small-shop listing flagged (used: all listings as reference)": {
+  "n": 154,
+  "flagged_pct": 7.8,
+  "ci95": [
+   4.3,
+   11.7
+  ]
+ },
+ "note": "Injected photos are other products' real listing photos, so the label is known by construction (no hand labels). Own less-known listings include real copies, so their flag rate is an upper bound on false alarms."
+}

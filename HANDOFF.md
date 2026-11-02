@@ -304,3 +304,11 @@ Affiliate API for a fresh Indian catalog once the user has an affiliate account.
   selling their own stock (Zepto, Croma, brand stores...) may be up to 60% below typical without "suspiciously
   cheap"; packs of 2+ are not the single item; brand word must be in the name before "|" (keyword stuffing);
   removed the unused variants card; app detects its public address for photo upload; go_public.bat. 59 tests pass.
+- 2026-11-02: PCA Genuine Look score + Scam Radar (src/genuine.py, dashboard). Every listing of the searched product
+  gets a genuine-look % (PCA on DINOv2 of all its listings, rebuild error, robust z, 50% = the z 2.5 line). Tested
+  a trusted-store reference instead of the consensus: worse (13 searches: injected wrong photos caught 84.3% vs
+  98.4%, small-shop listings flagged 27.3% vs 7.8%; results/json/genuine_look_eval.json), so the consensus is used.
+  Scam Radar = genuine look (x) vs price vs fair price (y); risk zone applies to less-known shops only; big stores
+  are never called risky (a far-below price there = "check the variant", still never the best price). Limit shown
+  on the AirPods search: perfect visual copies pass the photo check, the price exposes them. Cloudflare Tunnel
+  script: scripts/go_public_cloudflare.bat (user installs cloudflared once with winget).

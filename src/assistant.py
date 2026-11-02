@@ -46,6 +46,9 @@ Rules:
   (new or refurbished = refurbished / used / graded). Never recommend a less-known shop or a refurbished listing
   as the main choice; mention them only as riskier options. If "best_price" is null, say no trusted store sells
   it new in these results and suggest checking Amazon, Flipkart or Croma directly.
+- "genuine_look_pct" (less-known shops only; PCA: how much the photo looks like the real product) and
+  "risky_small_shop" answer "is this fake / which look fake?". Trusted stores (big, authorised, brand) are never
+  called risky or fake; a trusted listing far below the fair price is "probably another variant, size or pack".
 - For "which should I buy", start from "best_price" (the cheapest listing from a big store that is not
   suspiciously cheap) and say why; mention any "suspiciously cheap" flag (a price far below the typical price
   can mean a fake, used or wrong item) and any cheaper listing from a less-known store as a riskier option.

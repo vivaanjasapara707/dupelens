@@ -570,21 +570,21 @@ def search(matcher, text=None, image_bytes=None, image_url=None, num=40, vectors
         out["verdict_lr"] = [[v[0].upper() for v in row] for row in V_lr]  # model + v2 rules only (ablation)
         out["features"] = {f: np.round(m, 3).tolist() for f, m in F.items()}
         out["pca_xy"], out["pca_share"] = pca_map(ret)
-        # Bait-listing detector (PCA): among listings whose TITLE names the searched product, a photo that the other
-        # listings' main PCA directions cannot rebuild (DINOv2 features, leave-one-out, robust z > 2.5) shows
-        # something else. Only less-known shops are flagged (a big store, authorised reseller or brand store with an
-        # unusual photo is a photo choice, not a scam); flagged listings are never the best price.
-        # Injection test: results/json/photo_xray_test*.json.
-        from src.photo_xray import loo_residuals, robust_z
-        exact = [i for i, o in enumerate(offers) if o.get("match") == "exact"]
-        if len(exact) >= 5:
-            D = np.asarray(sig["dino"], dtype=np.float64)[exact]
-            z = robust_z(np.sqrt((loo_residuals(D, min(3, len(exact) - 2)) ** 2).sum(1)))
-            for i, zi in zip(exact, z):
-                offers[i]["photo_z"] = round(float(zi), 2)
-                offers[i]["photo_mismatch"] = bool(zi > 2.5 and offers[i]["tier"] == "other")
+        # PCA Genuine Look (src/genuine.py): PCA learns what the real product looks like from the photos of all its
+        # listings (their consensus), then every listing of the searched product gets a genuine-look %. Only a less-known
+        # shop whose photo does not look like the real product (z > 2.5) is flagged; trusted stores never are.
+        # Flagged listings are never the best price.
+        from src.genuine import LINE, genuine_look
+        exact = [i for i, o in enumerate(offers) if o.get("match") == "exact" and not o.get("is_ref")]
+        if len(exact) >= 4:
+            g = genuine_look(np.asarray(sig["dino"])[exact])
+            for i, zi, si in zip(exact, g["z"], g["score"]):
+                offers[i]["photo_z"], offers[i]["genuine"] = zi, si
+                offers[i]["photo_mismatch"] = bool(zi > LINE and offers[i]["tier"] == "other")
+            out["genuine_reference"] = dict(kind=g["reference"], n=g["n_ref"])
         if vectors:  # 64-number retrieval vectors (PCA 32 + 32), for the cross-search PCA map in src/insights.py
             out["vectors"] = np.round(ret, 5).tolist()
+            out["dino"] = np.round(np.asarray(sig["dino"]), 5).tolist()   # for src/genuine.py --eval
         t["score"] = time.time()
     # Big-store product pages for name / link searches: added AFTER the model scored the shopping offers (they have
     # no photo); matched to the search by name only, so their "probability" is -1 (shown as "matched by name").
