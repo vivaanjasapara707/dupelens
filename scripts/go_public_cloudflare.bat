@@ -14,4 +14,4 @@ echo.
 echo App is running. Your public link is the https://....trycloudflare.com address printed below.
 echo Keep this window open; close it to take the site offline.
 echo.
-cloudflared tunnel --url http://127.0.0.1:8000
+cloudflared tunnel --protocol http2 --url http://127.0.0.1:8000
