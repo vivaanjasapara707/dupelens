@@ -376,7 +376,9 @@ def score_pairs(matcher, sig, titles):
     F = {f: np.zeros((n, n)) for f in ("tfidf_cos", "img_cos", "dino_cos", "colour_dist")}
     for f in F:
         F[f][a, b] = F[f][b, a] = X[f].to_numpy()
-    return P, V, F, ret, V_lr
+    X.insert(0, "b", b)
+    X.insert(0, "a", a)
+    return P, V, F, ret, V_lr, X
 
 
 CALIBRATOR = config.CACHE_DIR / "calibrator_v2.joblib"  # written by src/calibrate.py (Shopee validation)
@@ -558,7 +560,7 @@ def search(matcher, text=None, image_bytes=None, image_url=None, num=40, vectors
         titles = [o["title"] for o in offers]
         sig = encode_all(matcher, titles, photos)
         t["encode"] = time.time()
-        P, V, F, ret, V_lr = score_pairs(matcher, sig, titles)
+        P, V, F, ret, V_lr, pairX = score_pairs(matcher, sig, titles)
         # Start each group from the offer most other offers confirm as the same item (the user's photo first).
         links = (V == "same").sum(1)
         order = sorted(range(len(offers)), key=lambda j: (not offers[j].get("is_ref"), -links[j], j))
@@ -585,6 +587,7 @@ def search(matcher, text=None, image_bytes=None, image_url=None, num=40, vectors
         if vectors:  # 64-number retrieval vectors (PCA 32 + 32), for the cross-search PCA map in src/insights.py
             out["vectors"] = np.round(ret, 5).tolist()
             out["dino"] = np.round(np.asarray(sig["dino"]), 5).tolist()   # for src/genuine.py --eval
+            out["pair_features"] = pairX   # the 12 named pair features (for notebooks/pca_dupelens.ipynb)
         t["score"] = time.time()
     # Big-store product pages for name / link searches: added AFTER the model scored the shopping offers (they have
     # no photo); matched to the search by name only, so their "probability" is -1 (shown as "matched by name").

@@ -71,6 +71,7 @@ def collect():
         if path.exists():
             continue
         res = search(m, q, vectors=True)
+        res.pop("pair_features", None)   # a table, only for the PCA notebook export
         path.write_text(json.dumps(res, ensure_ascii=False), encoding="utf-8")
         print(f"{q}: {len(res['offers'])} offers", flush=True)
 

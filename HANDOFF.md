@@ -321,3 +321,10 @@ Affiliate API for a fresh Indian catalog once the user has an affiliate account.
   item at its own cheapest store and with single stores. Shared rules in dashboard/tools.js (same trusted-listing
   rule as the search page). Detector checked on 18 addresses; both pages click-tested, no errors. Search page
   explanations trimmed.
+- 2026-11-02: PCA notebook for the viva: notebooks/pca_dupelens.ipynb (executed, outputs saved) + plain script
+  notebooks/pca_manual.py, data exported by src/pca_export.py (430 labelled live pairs x 12 named pair features;
+  DINOv2 vectors of the iPhone 16 listings + 1 injected Sony photo). Manual PCA (mean, centring, covariance, eig,
+  sorting, projection) matches sklearn exactly. Results: `mutual` constant (dropped), 11 features, 8 components keep
+  90% (PC1 32.9%); unscaled PCA dominated by rank/phash (why standardise); LR test accuracy 72.1% with all 11
+  features vs 61.2% with 8 PCs (so the matcher keeps the features; PCA is for the 512/768-d vectors: 32 comps keep
+  70.8% / 71.2% of the India catalogue variance); Genuine Look demo flags the injected photo (z 21.2).
